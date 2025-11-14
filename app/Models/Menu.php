@@ -37,6 +37,10 @@ class Menu extends Model
     public function getFullUrlAttribute()
     {
         if ($this->route) {
+            // Check if route requires authentication and user is not authenticated
+            if ($this->route === 'member.dashboard' && !auth()->check()) {
+                return route('login');
+            }
             return route($this->route);
         }
         

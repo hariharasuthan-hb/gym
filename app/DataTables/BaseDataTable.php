@@ -19,7 +19,8 @@ abstract class BaseDataTable
             ->orderBy(0, 'asc')
             ->parameters([
                 'layout' => [
-                    'topStart' => ['pageLength', 'search', 'buttons'],
+                    'topStart' => ['pageLength'],
+                    'topEnd' => ['buttons', 'search'],
                     'bottomStart' => ['info'],
                     'bottomEnd' => ['paging'],
                 ],

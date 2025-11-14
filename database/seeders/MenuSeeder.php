@@ -49,10 +49,22 @@ class MenuSeeder extends Seeder
                 'is_active' => true,
                 'target' => '_self',
             ],
+            [
+                'title' => 'Dashboard',
+                'url' => null,
+                'route' => 'member.dashboard',
+                'icon' => null,
+                'order' => 5,
+                'is_active' => true,
+                'target' => '_self',
+            ],
         ];
 
         foreach ($menus as $menu) {
-            Menu::create($menu);
+            Menu::updateOrCreate(
+                ['title' => $menu['title']],
+                $menu
+            );
         }
     }
 }

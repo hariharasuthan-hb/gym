@@ -24,26 +24,9 @@
             </div>
             
             <div class="hidden md:flex space-x-6 items-center">
-                @foreach($menus as $menu)
-                    @if($menu->title === 'Pages')
-                        {{-- Skip Pages menu item --}}
-                        @continue
-                    @else
-                        {{-- Regular Menu Item --}}
-                        <a href="{{ $menu->getFullUrlAttribute() }}" 
-                           target="{{ $menu->target }}"
-                           class="text-gray-700 hover:text-blue-600 transition">
-                            {{ $menu->title }}
-                        </a>
-                    @endif
-                @endforeach
+                @include('frontend.components.navigation-links', ['class' => 'text-gray-700 hover:text-blue-600 transition'])
                 
                 @auth
-                    @if(auth()->user()->hasRole('member'))
-                        <a href="{{ route('member.dashboard') }}" class="text-gray-700 hover:text-blue-600 transition">Dashboard</a>
-                    @elseif(auth()->user()->hasRole('admin'))
-                        <a href="{{ route('admin.dashboard') }}" class="text-gray-700 hover:text-blue-600 transition">Admin</a>
-                    @endif
                     <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf
                         <button type="submit" class="text-gray-700 hover:text-blue-600 transition">Logout</button>

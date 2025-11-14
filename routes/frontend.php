@@ -33,6 +33,8 @@ Route::name('frontend.')->group(function () {
 Route::prefix('member')->name('member.')->middleware(['auth', 'role:member'])->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Frontend\MemberController::class, 'dashboard'])->name('dashboard');
     Route::get('/profile', [\App\Http\Controllers\Frontend\MemberController::class, 'profile'])->name('profile');
+    Route::put('/profile', [\App\Http\Controllers\Frontend\MemberController::class, 'updateProfile'])->name('profile.update');
+    Route::put('/password', [\App\Http\Controllers\Frontend\MemberController::class, 'updatePassword'])->name('password.update');
     Route::get('/subscriptions', [\App\Http\Controllers\Frontend\MemberController::class, 'subscriptions'])->name('subscriptions');
     Route::get('/activities', [\App\Http\Controllers\Frontend\MemberController::class, 'activities'])->name('activities');
     Route::get('/workout-plans', [\App\Http\Controllers\Frontend\MemberController::class, 'workoutPlans'])->name('workout-plans');

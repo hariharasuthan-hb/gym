@@ -40,9 +40,20 @@
             <div>
                 <h4 class="text-xl font-semibold mb-4">Quick Links</h4>
                 <ul class="space-y-2">
-                    <li><a href="#about" class="text-gray-400 hover:text-white transition">About Us</a></li>
-                    <li><a href="#services" class="text-gray-400 hover:text-white transition">Services</a></li>
-                    <li><a href="#contact" class="text-gray-400 hover:text-white transition">Contact</a></li>
+                    @php
+                        $menus = \App\Models\Menu::getActiveMenus();
+                    @endphp
+                    @foreach($menus as $menu)
+                        @if($menu->title !== 'Pages')
+                            <li>
+                                <a href="{{ $menu->getFullUrlAttribute() }}" 
+                                   target="{{ $menu->target }}"
+                                   class="text-gray-400 hover:text-white transition">
+                                    {{ $menu->title }}
+                                </a>
+                            </li>
+                        @endif
+                    @endforeach
                     <li><a href="{{ route('frontend.register') }}" class="text-gray-400 hover:text-white transition">Register</a></li>
                 </ul>
             </div>
