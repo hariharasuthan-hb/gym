@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('plan_name');
             $table->text('description')->nullable();
-            $table->enum('duration_type', ['daily', 'weekly', 'monthly', 'yearly']);
+            $table->enum('duration_type', ['trial', 'daily', 'weekly', 'monthly', 'yearly']);
             $table->integer('duration'); // Number of days/weeks/months/years
             $table->decimal('price', 10, 2);
             $table->boolean('is_active')->default(true);
