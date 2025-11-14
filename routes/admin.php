@@ -66,5 +66,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     
     // Banners Management
     Route::resource('banners', \App\Http\Controllers\Admin\BannerController::class);
+    
+    // Payment Settings
+    Route::get('/payment-settings', [\App\Http\Controllers\Admin\PaymentSettingController::class, 'index'])
+        ->name('payment-settings.index');
+    Route::put('/payment-settings', [\App\Http\Controllers\Admin\PaymentSettingController::class, 'update'])
+        ->name('payment-settings.update');
 });
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\SubscriptionPlan;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -62,7 +63,24 @@ class MemberController extends Controller
      */
     public function dashboard(): View
     {
-        return view('frontend.member.dashboard');
+        $user = auth()->user();
+        
+        // Check if user has an active subscription
+        $activeSubscription = $user->subscriptions()
+            ->with('subscriptionPlan')
+            ->where('status', 'active')
+            ->where('end_date', '>=', now())
+            ->first();
+        
+        // Get active subscription plans if user has no active subscription
+        $subscriptionPlans = null;
+        if (!$activeSubscription) {
+            $subscriptionPlans = SubscriptionPlan::active()
+                ->orderBy('price', 'asc')
+                ->get();
+        }
+        
+        return view('frontend.member.dashboard', compact('activeSubscription', 'subscriptionPlans'));
     }
 
     /**

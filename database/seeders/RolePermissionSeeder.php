@@ -87,6 +87,10 @@ class RolePermissionSeeder extends Seeder
             'view site settings',
             'edit site settings',
             
+            // Payment Settings
+            'view payment settings',
+            'edit payment settings',
+            
             // Banners
             'view banners',
             'create banners',

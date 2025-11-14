@@ -260,7 +260,7 @@
             @endcan
 
             {{-- CMS Management Group --}}
-            @canany(['view cms pages', 'view cms content', 'view landing page', 'view site settings', 'view banners'])
+            @canany(['view cms pages', 'view cms content', 'view landing page', 'view site settings', 'view payment settings', 'view banners'])
             <div class="pt-1">
                 <button @click="toggleGroup('cms')" 
                         class="w-full flex items-center justify-between px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
@@ -320,6 +320,19 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                         </svg>
                         <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Site Settings</span>
+                    </a>
+                    @endcan
+                    @can('view payment settings')
+                    <a href="{{ route('admin.payment-settings.index') }}" 
+                       class="admin-sidebar-item {{ request()->routeIs('admin.payment-settings.*') ? 'active' : '' }}"
+                       :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                       :title="$root.sidebarCollapsed ? 'Payment Settings' : ''">
+                        <svg class="w-4 h-4 transition-all duration-300" 
+                             :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                        </svg>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Payment Settings</span>
                     </a>
                     @endcan
                     @can('view banners')
@@ -387,7 +400,7 @@ function sidebarMenu() {
             subscriptions: {{ request()->routeIs('admin.subscription-plans.*') || request()->routeIs('admin.subscriptions.*') ? 'true' : 'false' }},
             plans: {{ request()->routeIs('admin.workout-plans.*') || request()->routeIs('admin.diet-plans.*') ? 'true' : 'false' }},
             financial: {{ request()->routeIs('admin.payments.*') || request()->routeIs('admin.invoices.*') ? 'true' : 'false' }},
-            cms: {{ request()->routeIs('admin.cms.*') || request()->routeIs('admin.landing-page.*') || request()->routeIs('admin.site-settings.*') || request()->routeIs('admin.banners.*') ? 'true' : 'false' }},
+            cms: {{ request()->routeIs('admin.cms.*') || request()->routeIs('admin.landing-page.*') || request()->routeIs('admin.site-settings.*') || request()->routeIs('admin.payment-settings.*') || request()->routeIs('admin.banners.*') ? 'true' : 'false' }},
         },
         toggleGroup(group) {
             // Don't toggle if sidebar is collapsed

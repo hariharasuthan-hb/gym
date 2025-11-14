@@ -1,5 +1,7 @@
 @extends('frontend.layouts.app')
 
+@php use Illuminate\Support\Facades\Storage; @endphp
+
 @section('content')
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -14,14 +16,20 @@
             {{-- Active Subscription Card --}}
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-blue-100 rounded-lg p-3">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex-shrink-0 {{ $activeSubscription ? 'bg-blue-100' : 'bg-gray-100' }} rounded-lg p-3">
+                        <svg class="w-6 h-6 {{ $activeSubscription ? 'text-blue-600' : 'text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-500">Active Subscription</p>
-                        <p class="text-2xl font-semibold text-gray-900">Premium</p>
+                        @if($activeSubscription && $activeSubscription->subscriptionPlan)
+                            <p class="text-2xl font-semibold text-gray-900">{{ $activeSubscription->subscriptionPlan->plan_name }}</p>
+                            <p class="text-xs text-gray-500">Expires: {{ $activeSubscription->end_date->format('M d, Y') }}</p>
+                        @else
+                            <p class="text-2xl font-semibold text-gray-900">None</p>
+                            <p class="text-xs text-red-500">No active plan</p>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -71,6 +79,68 @@
                 </div>
             </div>
         </div>
+
+        {{-- Subscription Plans Section (Show if user has no active subscription) --}}
+        @if(!$activeSubscription && $subscriptionPlans && $subscriptionPlans->count() > 0)
+        <div class="bg-white rounded-lg shadow mb-8 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">Choose Your Plan</h2>
+                    <p class="mt-1 text-gray-600">Select a subscription plan to get started</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @foreach($subscriptionPlans as $plan)
+                <div class="border-2 rounded-xl p-6 hover:shadow-lg transition-all duration-300 {{ $plan->price == $subscriptionPlans->min('price') ? 'border-blue-500 bg-blue-50' : 'border-gray-200' }}">
+                    @if($plan->price == $subscriptionPlans->min('price'))
+                    <div class="inline-block bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full mb-4">
+                        Most Popular
+                    </div>
+                    @endif
+                    
+                    @if($plan->image)
+                    <div class="mb-4">
+                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($plan->image) }}" 
+                             alt="{{ $plan->plan_name }}" 
+                             class="w-full h-32 object-cover rounded-lg">
+                    </div>
+                    @endif
+                    
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $plan->plan_name }}</h3>
+                    
+                    <div class="mb-4">
+                        <span class="text-3xl font-bold text-gray-900">${{ $plan->formatted_price }}</span>
+                        <span class="text-gray-600">/{{ $plan->formatted_duration }}</span>
+                    </div>
+                    
+                    @if($plan->description)
+                    <p class="text-gray-600 text-sm mb-4">{{ Str::limit($plan->description, 100) }}</p>
+                    @endif
+                    
+                    @if($plan->features && count($plan->features) > 0)
+                    <ul class="space-y-2 mb-6">
+                        @foreach(array_slice($plan->features, 0, 5) as $feature)
+                            @if(!empty($feature))
+                            <li class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-sm text-gray-700">{{ $feature }}</span>
+                            </li>
+                            @endif
+                        @endforeach
+                    </ul>
+                    @endif
+                    
+                    <button class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                        Subscribe Now
+                    </button>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
 
         {{-- Quick Actions --}}
         <div class="bg-white rounded-lg shadow mb-8 p-6">

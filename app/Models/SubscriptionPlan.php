@@ -57,6 +57,14 @@ class SubscriptionPlan extends Model
     }
 
     /**
+     * Get the subscriptions for this plan.
+     */
+    public function subscriptions()
+    {
+        return $this->hasMany(\App\Models\Subscription::class);
+    }
+
+    /**
      * Get formatted price.
      */
     public function getFormattedPriceAttribute(): string

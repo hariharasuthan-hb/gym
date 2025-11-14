@@ -52,4 +52,23 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Get the subscriptions for the user.
+     */
+    public function subscriptions()
+    {
+        return $this->hasMany(\App\Models\Subscription::class);
+    }
+
+    /**
+     * Get the active subscription for the user.
+     */
+    public function activeSubscription()
+    {
+        return $this->hasOne(\App\Models\Subscription::class)
+            ->where('status', 'active')
+            ->where('end_date', '>=', now())
+            ->latest();
+    }
 }
