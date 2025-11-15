@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\DataTables\BannerDataTable;
 use App\Http\Requests\Admin\StoreBannerRequest;
 use App\Http\Requests\Admin\UpdateBannerRequest;
 use App\Models\Banner;
@@ -15,10 +16,15 @@ class BannerController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): View
+    public function index(BannerDataTable $dataTable)
     {
-        $banners = Banner::orderBy('order', 'asc')->orderBy('created_at', 'desc')->get();
-        return view('admin.banners.index', compact('banners'));
+        if (request()->ajax() || request()->wantsJson()) {
+            return $dataTable->dataTable($dataTable->query(new Banner))->toJson();
+        }
+        
+        return view('admin.banners.index', [
+            'dataTable' => $dataTable
+        ]);
     }
 
     /**
