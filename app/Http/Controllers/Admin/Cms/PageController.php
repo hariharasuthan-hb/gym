@@ -33,7 +33,7 @@ class PageController extends Controller
         if (request()->ajax() || request()->wantsJson()) {
             return $dataTable->dataTable($dataTable->query(new \App\Models\CmsPage))->toJson();
         }
-        
+
         return view('admin.cms.pages.index', [
             'dataTable' => $dataTable
         ]);

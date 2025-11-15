@@ -33,7 +33,7 @@ class ContentController extends Controller
         if (request()->ajax() || request()->wantsJson()) {
             return $dataTable->dataTable($dataTable->query(new \App\Models\CmsContent))->toJson();
         }
-        
+
         return view('admin.cms.content.index', [
             'dataTable' => $dataTable
         ]);
