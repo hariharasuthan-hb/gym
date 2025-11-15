@@ -1,14 +1,28 @@
 {{-- Testimonials Section --}}
 @php
+    $cmsTestimonialsSection = $cmsTestimonialsSection ?? null;
     $cmsTestimonials = $cmsTestimonials ?? collect();
+    $testimonialsTitle = $cmsTestimonialsSection->title ?? 'What Our Members Say';
+    $testimonialsDescription = $cmsTestimonialsSection->description ?? $cmsTestimonialsSection->content ?? 'Read testimonials from our satisfied members';
+    $testimonialsBackgroundImage = ($cmsTestimonialsSection && $cmsTestimonialsSection->background_image) 
+        ? \Illuminate\Support\Facades\Storage::url($cmsTestimonialsSection->background_image) 
+        : null;
 @endphp
 @if($cmsTestimonials->isNotEmpty())
-<section id="testimonials" class="py-20 bg-gray-50">
-    <div class="container mx-auto px-4">
+@php
+    $testimonialsBgStyle = $testimonialsBackgroundImage 
+        ? "background-image: url('{$testimonialsBackgroundImage}'); background-size: cover; background-position: center; background-attachment: fixed;"
+        : '';
+@endphp
+<section id="testimonials" class="py-20 {{ $testimonialsBackgroundImage ? 'relative' : 'bg-gray-50' }}" style="{{ $testimonialsBgStyle }}">
+    @if($testimonialsBackgroundImage)
+        <div class="absolute inset-0 bg-black bg-opacity-40 z-0"></div>
+    @endif
+    <div class="container mx-auto px-4 relative z-10">
         <div class="text-center mb-12">
-            <h2 class="text-4xl font-bold mb-4">What Our Members Say</h2>
-            <p class="text-gray-600 max-w-2xl mx-auto">
-                Read testimonials from our satisfied members
+            <h2 class="text-4xl font-bold mb-4 {{ $testimonialsBackgroundImage ? 'text-white' : 'text-gray-900' }}">{{ $testimonialsTitle }}</h2>
+            <p class="{{ $testimonialsBackgroundImage ? 'text-white' : 'text-gray-600' }} max-w-2xl mx-auto">
+                {{ $testimonialsDescription }}
             </p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

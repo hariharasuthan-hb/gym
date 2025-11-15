@@ -22,13 +22,21 @@ class HomeController extends Controller
         
         $cmsHero = $cmsContentRepository->findByKey('hero-banner') ?? $cmsContentRepository->findByType('hero')->first();
         $cmsAbout = $cmsContentRepository->findByKey('about-section') ?? $cmsContentRepository->findByType('about')->first();
-        $cmsServicesSection = $cmsContentRepository->findByKey('services-section');
+        $cmsServicesSection = $cmsContentRepository->findByKey('services-section') ?? $cmsContentRepository->findByType('services')->first();
         $allServices = $cmsContentRepository->getFrontendContent('services');
-        $cmsServices = $allServices->filter(function($item) {
+        $cmsServices = $allServices->filter(function($item) use ($cmsServicesSection) {
+            // Exclude the section header from the services list
+            if ($cmsServicesSection) {
+                return $item->id !== $cmsServicesSection->id && $item->key !== 'services-section';
+            }
             return $item->key !== 'services-section';
         });
         $cmsFeatures = $cmsContentRepository->getFrontendContent('features');
-        $cmsTestimonials = $cmsContentRepository->getFrontendContent('testimonials');
+        $cmsTestimonialsSection = $cmsContentRepository->findByKey('testimonials-section');
+        $allTestimonials = $cmsContentRepository->getFrontendContent('testimonials');
+        $cmsTestimonials = $allTestimonials->filter(function($item) {
+            return $item->key !== 'testimonials-section';
+        });
         
         return view('frontend.home.index', compact(
             'landingPage',
@@ -37,6 +45,7 @@ class HomeController extends Controller
             'cmsServicesSection',
             'cmsServices',
             'cmsFeatures',
+            'cmsTestimonialsSection',
             'cmsTestimonials'
         ));
     }

@@ -6,11 +6,14 @@
     // Priority: CMS Content > Landing Page Content > Default
     $heroTitle = $cmsHero->title ?? $landingPage->welcome_title ?? 'Welcome to Our Gym';
     $heroSubtitle = $cmsHero->description ?? $cmsHero->content ?? $landingPage->welcome_subtitle ?? 'Transform your body, transform your life';
-    $heroImage = $cmsHero && $cmsHero->image 
-        ? \Illuminate\Support\Facades\Storage::url($cmsHero->image) 
-        : ($landingPage && $landingPage->hero_background_image 
-            ? \Illuminate\Support\Facades\Storage::url($landingPage->hero_background_image) 
-            : null);
+    // Priority: CMS background_image > CMS image > Landing Page background_image
+    $heroImage = ($cmsHero && $cmsHero->background_image) 
+        ? \Illuminate\Support\Facades\Storage::url($cmsHero->background_image)
+        : (($cmsHero && $cmsHero->image) 
+            ? \Illuminate\Support\Facades\Storage::url($cmsHero->image) 
+            : ($landingPage && $landingPage->hero_background_image 
+                ? \Illuminate\Support\Facades\Storage::url($landingPage->hero_background_image) 
+                : null));
     $heroLink = $cmsHero->link ?? '#register';
     $heroLinkText = $cmsHero->link_text ?? 'Join Now';
     
