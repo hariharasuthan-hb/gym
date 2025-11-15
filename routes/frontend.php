@@ -41,13 +41,14 @@ Route::prefix('member')->name('member.')->middleware(['auth', 'role:member'])->g
     Route::get('/diet-plans', [\App\Http\Controllers\Frontend\MemberController::class, 'dietPlans'])->name('diet-plans');
     
     // Subscription routes
-    Route::prefix('subscription')->name('subscription.')->group(function () {
-        Route::get('/checkout/{plan}', [\App\Http\Controllers\Member\CheckoutController::class, 'checkout'])->name('checkout');
-        Route::post('/create/{plan}', [\App\Http\Controllers\Member\CheckoutController::class, 'create'])->name('create');
-        Route::get('/success', [\App\Http\Controllers\Member\SubscriptionController::class, 'success'])->name('success');
-        Route::get('/', [\App\Http\Controllers\Member\SubscriptionController::class, 'index'])->name('index');
-        Route::post('/cancel/{subscription}', [\App\Http\Controllers\Member\SubscriptionController::class, 'cancel'])->name('cancel');
-    });
+            Route::prefix('subscription')->name('subscription.')->group(function () {
+                Route::get('/checkout/{plan}', [\App\Http\Controllers\Member\CheckoutController::class, 'checkout'])->name('checkout');
+                Route::post('/create/{plan}', [\App\Http\Controllers\Member\CheckoutController::class, 'create'])->name('create');
+                Route::get('/success', [\App\Http\Controllers\Member\SubscriptionController::class, 'success'])->name('success');
+                Route::get('/', [\App\Http\Controllers\Member\SubscriptionController::class, 'index'])->name('index');
+                Route::post('/cancel/{subscription}', [\App\Http\Controllers\Member\SubscriptionController::class, 'cancel'])->name('cancel');
+                Route::post('/refresh/{subscription}', [\App\Http\Controllers\Member\SubscriptionController::class, 'refresh'])->name('refresh');
+            });
 });
 
 // API Routes for CMS (for fetching dynamic content)

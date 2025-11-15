@@ -128,13 +128,24 @@
                                         <div class="text-sm text-gray-500">₹{{ number_format($subscription->subscriptionPlan->price, 2) }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                            {{ $subscription->status === 'active' ? 'bg-green-100 text-green-800' : '' }}
-                                            {{ $subscription->status === 'trialing' ? 'bg-blue-100 text-blue-800' : '' }}
-                                            {{ $subscription->status === 'canceled' ? 'bg-gray-100 text-gray-800' : '' }}
-                                            {{ $subscription->status === 'past_due' ? 'bg-red-100 text-red-800' : '' }}">
-                                            {{ ucfirst($subscription->status) }}
-                                        </span>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                {{ $subscription->status === 'active' ? 'bg-green-100 text-green-800' : '' }}
+                                                {{ $subscription->status === 'trialing' ? 'bg-blue-100 text-blue-800' : '' }}
+                                                {{ $subscription->status === 'canceled' ? 'bg-gray-100 text-gray-800' : '' }}
+                                                {{ $subscription->status === 'past_due' ? 'bg-red-100 text-red-800' : '' }}
+                                                {{ $subscription->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}">
+                                                {{ ucfirst($subscription->status) }}
+                                            </span>
+                                            @if($subscription->status === 'pending' && $subscription->gateway === 'stripe')
+                                                <form action="{{ route('member.subscription.refresh', $subscription->id) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="text-xs text-blue-600 hover:text-blue-800 underline" title="Refresh status from payment gateway">
+                                                        Refresh
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {{ ucfirst($subscription->gateway ?? 'N/A') }}

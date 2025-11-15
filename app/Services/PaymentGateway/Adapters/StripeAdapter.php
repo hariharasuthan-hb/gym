@@ -507,6 +507,14 @@ class StripeAdapter
                     $this->handlePaymentSucceeded($data);
                     break;
                 
+                case 'payment_intent.succeeded':
+                    $this->handlePaymentIntentSucceeded($data);
+                    break;
+                
+                case 'setup_intent.succeeded':
+                    $this->handleSetupIntentSucceeded($data);
+                    break;
+                
                 case 'invoice.payment_failed':
                     $this->handlePaymentFailed($data);
                     break;
@@ -575,9 +583,136 @@ class StripeAdapter
 
         $subscription = Subscription::where('gateway_subscription_id', $subscriptionId)->first();
         
-        if ($subscription && $subscription->status === 'trialing') {
+        if ($subscription) {
+            // Update status based on current state
+            if ($subscription->status === 'pending') {
+                // Payment succeeded, activate subscription
+                $plan = $subscription->subscriptionPlan;
+                $status = ($plan && $plan->hasTrial()) ? 'trialing' : 'active';
+                
+                $subscription->update([
+                    'status' => $status,
+                    'started_at' => now(),
+                ]);
+                
+                Log::info('Subscription activated via invoice.payment_succeeded webhook', [
+                    'subscription_id' => $subscription->id,
+                    'stripe_subscription_id' => $subscriptionId,
+                    'status' => $status,
+                ]);
+            } elseif ($subscription->status === 'trialing') {
+                // Trial ended, payment succeeded, activate
+                $subscription->update([
+                    'status' => 'active',
+                ]);
+                
+                Log::info('Subscription activated from trialing via invoice.payment_succeeded webhook', [
+                    'subscription_id' => $subscription->id,
+                    'stripe_subscription_id' => $subscriptionId,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Handle payment intent succeeded.
+     */
+    protected function handlePaymentIntentSucceeded(array $data): void
+    {
+        $paymentIntentId = $data['id'] ?? null;
+        $subscriptionId = $data['metadata']['subscription_id'] ?? null;
+        
+        if (!$paymentIntentId) {
+            return;
+        }
+
+        // Find subscription by payment intent in metadata or by subscription ID
+        $subscription = null;
+        
+        if ($subscriptionId) {
+            $subscription = Subscription::where('gateway_subscription_id', $subscriptionId)->first();
+        }
+        
+        // If not found, try to find by payment intent in metadata
+        if (!$subscription) {
+            $subscription = Subscription::where('metadata->payment_intent_id', $paymentIntentId)
+                ->orWhereJsonContains('metadata->payment_intent_id', $paymentIntentId)
+                ->first();
+        }
+        
+        // If still not found, find most recent pending subscription for the customer
+        if (!$subscription && isset($data['customer'])) {
+            $subscription = Subscription::where('gateway_customer_id', $data['customer'])
+                ->where('status', 'pending')
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
+
+        if ($subscription && $subscription->status === 'pending') {
+            $plan = $subscription->subscriptionPlan;
+            $status = ($plan && $plan->hasTrial()) ? 'trialing' : 'active';
+            
             $subscription->update([
-                'status' => 'active',
+                'status' => $status,
+                'started_at' => now(),
+            ]);
+            
+            Log::info('Subscription activated via payment_intent.succeeded webhook', [
+                'subscription_id' => $subscription->id,
+                'payment_intent_id' => $paymentIntentId,
+                'status' => $status,
+            ]);
+        }
+    }
+
+    /**
+     * Handle setup intent succeeded.
+     */
+    protected function handleSetupIntentSucceeded(array $data): void
+    {
+        $setupIntentId = $data['id'] ?? null;
+        $subscriptionId = $data['metadata']['subscription_id'] ?? null;
+        
+        if (!$setupIntentId) {
+            return;
+        }
+
+        // Find subscription by setup intent
+        $subscription = null;
+        
+        if ($subscriptionId) {
+            $subscription = Subscription::where('gateway_subscription_id', $subscriptionId)->first();
+        }
+        
+        // If not found, try to find by setup intent in metadata
+        if (!$subscription) {
+            $subscription = Subscription::where('metadata->setup_intent_id', $setupIntentId)
+                ->orWhereJsonContains('metadata->setup_intent_id', $setupIntentId)
+                ->first();
+        }
+        
+        // If still not found, find most recent pending subscription for the customer
+        if (!$subscription && isset($data['customer'])) {
+            $subscription = Subscription::where('gateway_customer_id', $data['customer'])
+                ->where('status', 'pending')
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
+
+        if ($subscription && $subscription->status === 'pending') {
+            // Setup intent succeeded means payment method is saved, subscription should be trialing
+            $plan = $subscription->subscriptionPlan;
+            $status = ($plan && $plan->hasTrial()) ? 'trialing' : 'active';
+            
+            $subscription->update([
+                'status' => $status,
+                'started_at' => now(),
+            ]);
+            
+            Log::info('Subscription activated via setup_intent.succeeded webhook', [
+                'subscription_id' => $subscription->id,
+                'setup_intent_id' => $setupIntentId,
+                'status' => $status,
             ]);
         }
     }

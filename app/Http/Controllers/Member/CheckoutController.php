@@ -129,6 +129,20 @@ class CheckoutController extends Controller
                 }
             }
 
+            // Prepare metadata with payment intent IDs for webhook matching
+            $metadata = $result;
+            if (isset($result['client_secret'])) {
+                // Extract payment intent or setup intent ID from client secret
+                $clientSecret = $result['client_secret'];
+                if (str_starts_with($clientSecret, 'pi_')) {
+                    $paymentIntentId = explode('_secret_', $clientSecret)[0];
+                    $metadata['payment_intent_id'] = $paymentIntentId;
+                } elseif (str_starts_with($clientSecret, 'seti_')) {
+                    $setupIntentId = explode('_secret_', $clientSecret)[0];
+                    $metadata['setup_intent_id'] = $setupIntentId;
+                }
+            }
+
             $subscription = Subscription::create([
                 'user_id' => $user->id,
                 'subscription_plan_id' => $plan->id,
@@ -138,7 +152,7 @@ class CheckoutController extends Controller
                 'status' => $result['status'] ?? 'pending',
                 'trial_end_at' => $trialEndAt,
                 'started_at' => now(),
-                'metadata' => $result,
+                'metadata' => $metadata,
             ]);
 
             session([

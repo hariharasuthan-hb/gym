@@ -131,23 +131,46 @@ class SubscriptionController extends Controller
 
             // If we have a subscription ID, check its status
             if ($subscription->gateway_subscription_id) {
-                $stripeSubscription = $stripe->subscriptions->retrieve($subscription->gateway_subscription_id);
-                
-                $status = $this->mapStripeStatus($stripeSubscription->status);
-                
-                $subscription->update([
-                    'status' => $status,
-                    'trial_end_at' => $stripeSubscription->trial_end ? date('Y-m-d H:i:s', $stripeSubscription->trial_end) : null,
-                    'next_billing_at' => $stripeSubscription->current_period_end ? date('Y-m-d H:i:s', $stripeSubscription->current_period_end) : null,
-                    'started_at' => $stripeSubscription->start_date ? date('Y-m-d H:i:s', $stripeSubscription->start_date) : now(),
-                ]);
+                try {
+                    $stripeSubscription = $stripe->subscriptions->retrieve($subscription->gateway_subscription_id);
+                    
+                    $status = $this->mapStripeStatus($stripeSubscription->status);
+                    
+                    // Also check the latest invoice to see if payment succeeded
+                    if (isset($stripeSubscription->latest_invoice)) {
+                        $invoice = is_string($stripeSubscription->latest_invoice)
+                            ? $stripe->invoices->retrieve($stripeSubscription->latest_invoice)
+                            : $stripeSubscription->latest_invoice;
+                        
+                        // If invoice is paid and subscription is still pending, activate it
+                        if ($invoice->paid && $subscription->status === 'pending') {
+                            $plan = $subscription->subscriptionPlan;
+                            $status = ($plan && $plan->hasTrial()) ? 'trialing' : 'active';
+                        }
+                    }
+                    
+                    $subscription->update([
+                        'status' => $status,
+                        'trial_end_at' => $stripeSubscription->trial_end ? date('Y-m-d H:i:s', $stripeSubscription->trial_end) : null,
+                        'next_billing_at' => $stripeSubscription->current_period_end ? date('Y-m-d H:i:s', $stripeSubscription->current_period_end) : null,
+                        'started_at' => $stripeSubscription->start_date ? date('Y-m-d H:i:s', $stripeSubscription->start_date) : now(),
+                    ]);
 
-                Log::info('Stripe subscription status verified', [
-                    'subscription_id' => $subscription->id,
-                    'stripe_subscription_id' => $subscription->gateway_subscription_id,
-                    'status' => $status,
-                ]);
-            } elseif ($paymentIntentId || $setupIntentId) {
+                    Log::info('Stripe subscription status verified', [
+                        'subscription_id' => $subscription->id,
+                        'stripe_subscription_id' => $subscription->gateway_subscription_id,
+                        'status' => $status,
+                    ]);
+                } catch (\Exception $e) {
+                    Log::warning('Failed to retrieve Stripe subscription', [
+                        'subscription_id' => $subscription->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+            
+            // Also check payment/setup intent if provided
+            if ($paymentIntentId || $setupIntentId) {
                 // Verify payment/setup intent status
                 $intentId = $paymentIntentId ?? $setupIntentId;
                 $intentType = $paymentIntentId ? 'payment_intent' : 'setup_intent';
@@ -214,6 +237,48 @@ class SubscriptionController extends Controller
                 'subscription_id' => $subscription->id,
                 'error' => $e->getMessage(),
             ]);
+        }
+    }
+
+    /**
+     * Refresh subscription status from payment gateway.
+     */
+    public function refresh(Subscription $subscription): RedirectResponse
+    {
+        $user = auth()->user();
+
+        // Verify subscription belongs to user
+        if ($subscription->user_id !== $user->id) {
+            abort(403, 'Unauthorized');
+        }
+
+        try {
+            if ($subscription->gateway === 'stripe') {
+                $this->verifyStripeSubscription($subscription);
+            } elseif ($subscription->gateway === 'razorpay') {
+                // For Razorpay, we'd need payment ID to verify
+                // For now, just return with message
+                return redirect()->route('member.subscription.index')
+                    ->with('info', 'Razorpay status refresh requires payment ID. Please contact support if status is incorrect.');
+            }
+
+            $subscription->refresh();
+
+            if ($subscription->status !== 'pending') {
+                return redirect()->route('member.subscription.index')
+                    ->with('success', 'Subscription status updated successfully.');
+            } else {
+                return redirect()->route('member.subscription.index')
+                    ->with('info', 'Subscription status is still pending. Payment may still be processing. Webhooks will update the status automatically.');
+            }
+        } catch (\Exception $e) {
+            Log::error('Subscription refresh failed', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('member.subscription.index')
+                ->with('error', 'Failed to refresh subscription status. Please try again later.');
         }
     }
 
