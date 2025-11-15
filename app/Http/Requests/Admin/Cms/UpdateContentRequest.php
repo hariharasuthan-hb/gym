@@ -34,6 +34,7 @@ class UpdateContentRequest extends FormRequest
             'content' => 'nullable|string',
             'description' => 'nullable|string|max:1000',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'background_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'link' => 'nullable|url|max:500',
             'link_text' => 'nullable|string|max:100',
             'order' => 'nullable|integer|min:0',

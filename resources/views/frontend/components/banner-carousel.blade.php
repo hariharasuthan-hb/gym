@@ -3,7 +3,7 @@
     $banners = \App\Models\Banner::getActiveBanners();
 @endphp
 @if($banners->isNotEmpty())
-<section class="banner-carousel relative h-[600px] overflow-hidden">
+<section class="banner-carousel relative h-[700px] md:h-[800px] overflow-hidden">
     <div id="banner-carousel" class="relative h-full">
         @foreach($banners as $index => $banner)
             <div class="banner-slide absolute inset-0 transition-opacity duration-1000 {{ $index === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0' }}" 
@@ -25,8 +25,14 @@
                     <div class="container mx-auto px-4 h-full flex items-center relative z-10">
                         <div class="text-center text-white max-w-4xl mx-auto">
                             @if($banner->title)
-                                <h1 class="text-5xl md:text-6xl font-bold mb-4 animate-fade-in-up">
-                                    {{ $banner->title }}
+                                @php
+                                    // Process title to make "Burn" and "Build" bold and italic
+                                    $title = $banner->title;
+                                    $title = preg_replace('/\b(Burn)\b/i', '<span class="font-bold italic">$1</span>', $title);
+                                    $title = preg_replace('/\b(Build)\b/i', '<span class="font-bold italic">$1</span>', $title);
+                                @endphp
+                                <h1 class="text-5xl md:text-6xl font-bold mb-4 animate-fade-in-up whitespace-nowrap">
+                                    {!! $title !!}
                                 </h1>
                             @endif
                             @if($banner->subtitle)

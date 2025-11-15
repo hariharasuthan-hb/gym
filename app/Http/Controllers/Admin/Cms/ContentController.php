@@ -62,6 +62,14 @@ class ContentController extends Controller
             );
         }
 
+        // Handle background image upload
+        if ($request->hasFile('background_image')) {
+            $data['background_image'] = $this->imageService->upload(
+                $request->file('background_image'),
+                'cms/content'
+            );
+        }
+
         $data['created_by'] = auth()->id();
         $data['updated_by'] = auth()->id();
 
@@ -106,6 +114,15 @@ class ContentController extends Controller
             );
         }
 
+        // Handle background image upload
+        if ($request->hasFile('background_image')) {
+            $data['background_image'] = $this->imageService->upload(
+                $request->file('background_image'),
+                'cms/content',
+                $content->background_image
+            );
+        }
+
         $data['updated_by'] = auth()->id();
 
         $this->repository->update($id, $data);
@@ -121,9 +138,12 @@ class ContentController extends Controller
     {
         $content = $this->repository->findOrFail($id);
 
-        // Delete image if exists
+        // Delete images if exist
         if ($content->image) {
             $this->imageService->delete($content->image);
+        }
+        if ($content->background_image) {
+            $this->imageService->delete($content->background_image);
         }
 
         $this->repository->delete($id);

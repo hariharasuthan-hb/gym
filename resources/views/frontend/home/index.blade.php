@@ -31,7 +31,10 @@
     
     {{-- Testimonials Section (if CMS content exists) --}}
     @if(isset($cmsTestimonials) && $cmsTestimonials->isNotEmpty())
-        @include('frontend.components.testimonials', ['cmsTestimonials' => $cmsTestimonials])
+        @include('frontend.components.testimonials', [
+            'cmsTestimonialsSection' => $cmsTestimonialsSection ?? null,
+            'cmsTestimonials' => $cmsTestimonials
+        ])
     @endif
     
     {{-- Contact Section --}}

@@ -101,6 +101,19 @@
                     <p class="mt-1 text-sm text-gray-500">Max size: 5MB. Formats: JPEG, PNG, JPG, GIF, WEBP</p>
                 </div>
 
+                {{-- Background Image --}}
+                <div>
+                    <label for="background_image" class="block text-sm font-medium text-gray-700 mb-2">
+                        Background Image
+                    </label>
+                    <input type="file" 
+                           name="background_image" 
+                           id="background_image" 
+                           accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="mt-1 text-sm text-gray-500">Max size: 5MB. Formats: JPEG, PNG, JPG, GIF, WEBP. Used as background for content sections.</p>
+                </div>
+
                 {{-- Link --}}
                 <div>
                     <label for="link" class="block text-sm font-medium text-gray-700 mb-2">
