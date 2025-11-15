@@ -17,6 +17,7 @@ abstract class BaseDataTable
             ->columns($this->getColumns())
             ->minifiedAjax()
             ->orderBy(0, 'asc')
+            ->buttons($this->getButtons())
             ->parameters([
                 'layout' => [
                     'topStart' => ['pageLength'],
@@ -24,7 +25,6 @@ abstract class BaseDataTable
                     'bottomStart' => ['info'],
                     'bottomEnd' => ['paging'],
                 ],
-                'buttons' => $this->getButtons(),
                 'language' => [
                     'search' => '',
                     'searchPlaceholder' => 'Search...',

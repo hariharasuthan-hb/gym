@@ -2,6 +2,7 @@
 
 namespace App\Services\PaymentGateway\Adapters;
 
+use App\Models\Payment;
 use App\Models\PaymentSetting;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
@@ -317,17 +318,24 @@ class RazorpayAdapter
     {
         $subscription = Subscription::where('gateway_subscription_id', $data['id'])->first();
         
-        if ($subscription && $subscription->status === 'trialing') {
-            $subscription->update([
-                'status' => 'active',
-            ]);
-        }
+        if ($subscription) {
+            $oldStatus = $subscription->status;
+            
+            if ($subscription->status === 'trialing') {
+                $subscription->update([
+                    'status' => 'active',
+                ]);
+            }
 
-        // Update next billing date
-        if ($subscription && isset($data['current_end'])) {
-            $subscription->update([
-                'next_billing_at' => date('Y-m-d H:i:s', $data['current_end']),
-            ]);
+            // Update next billing date
+            if (isset($data['current_end'])) {
+                $subscription->update([
+                    'next_billing_at' => date('Y-m-d H:i:s', $data['current_end']),
+                ]);
+            }
+
+            // Create payment record for the charge
+            $this->createPaymentFromRazorpayCharge($subscription, $data);
         }
     }
 
@@ -372,6 +380,105 @@ class RazorpayAdapter
                 'status' => 'canceled',
             ]);
         }
+    }
+
+    /**
+     * Create payment record from Razorpay charge.
+     */
+    protected function createPaymentFromRazorpayCharge(Subscription $subscription, array $data): void
+    {
+        try {
+            $plan = $subscription->subscriptionPlan;
+            if (!$plan) {
+                return;
+            }
+
+            // Get payment ID from invoice or payment link
+            $paymentId = $data['invoice']['payment_id'] ?? $data['payment_id'] ?? null;
+            $invoiceId = $data['invoice']['id'] ?? $data['invoice_id'] ?? null;
+            $transactionId = $paymentId ?? $invoiceId ?? $data['id'];
+
+            // Check if payment already exists
+            $existingPayment = Payment::where('subscription_id', $subscription->id)
+                ->where('transaction_id', $transactionId)
+                ->first();
+
+            if ($existingPayment) {
+                return;
+            }
+
+            // Get amount from invoice or subscription
+            $amount = 0;
+            if (isset($data['invoice']['amount'])) {
+                $amount = $data['invoice']['amount'] / 100; // Convert from paise
+            } elseif (isset($data['amount'])) {
+                $amount = $data['amount'] / 100;
+            } else {
+                $amount = $plan->price;
+            }
+
+            // Try to fetch payment details if payment ID exists
+            $paymentMethod = 'other';
+            if ($paymentId) {
+                try {
+                    $payment = $this->razorpay->payment->fetch($paymentId);
+                    $paymentMethod = $this->mapRazorpayPaymentMethodToEnum($payment->method ?? 'other');
+                } catch (\Exception $e) {
+                    Log::warning('Could not fetch Razorpay payment details', [
+                        'payment_id' => $paymentId,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            Payment::create([
+                'user_id' => $subscription->user_id,
+                'subscription_id' => $subscription->id,
+                'amount' => $amount,
+                'payment_method' => $paymentMethod,
+                'transaction_id' => $transactionId,
+                'status' => 'completed',
+                'payment_details' => [
+                    'subscription_id' => $data['id'] ?? null,
+                    'invoice_id' => $invoiceId,
+                    'payment_id' => $paymentId,
+                    'currency' => $data['invoice']['currency'] ?? $data['currency'] ?? 'INR',
+                    'gateway' => 'razorpay',
+                ],
+                'discount_amount' => 0,
+                'final_amount' => $amount,
+                'paid_at' => now(),
+            ]);
+
+            Log::info('Payment record created from Razorpay charge webhook', [
+                'subscription_id' => $subscription->id,
+                'transaction_id' => $transactionId,
+                'amount' => $amount,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to create payment from Razorpay charge', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Map Razorpay payment method to our payment method enum.
+     */
+    protected function mapRazorpayPaymentMethodToEnum(?string $method): string
+    {
+        if (!$method) {
+            return 'other';
+        }
+
+        return match(strtolower($method)) {
+            'card' => 'credit_card',
+            'upi' => 'upi',
+            'netbanking' => 'bank_transfer',
+            'wallet' => 'other',
+            default => 'other',
+        };
     }
 
     /**

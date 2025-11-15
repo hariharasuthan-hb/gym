@@ -283,7 +283,7 @@
             successUrl: '{{ route('member.subscription.success') }}',
         };
     </script>
-    <script src="{{ asset('js/stripe-checkout.js') }}"></script>
+    <script src="{{ asset('js/stripe-checkout.js') }}?v={{ filemtime(public_path('js/stripe-checkout.js')) }}"></script>
 @endif
 
 {{-- Razorpay JS init --}}

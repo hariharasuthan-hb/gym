@@ -2,6 +2,7 @@
 
 namespace App\Services\PaymentGateway\Adapters;
 
+use App\Models\Payment;
 use App\Models\PaymentSetting;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
@@ -584,6 +585,8 @@ class StripeAdapter
         $subscription = Subscription::where('gateway_subscription_id', $subscriptionId)->first();
         
         if ($subscription) {
+            $oldStatus = $subscription->status;
+            
             // Update status based on current state
             if ($subscription->status === 'pending') {
                 // Payment succeeded, activate subscription
@@ -595,6 +598,9 @@ class StripeAdapter
                     'started_at' => now(),
                 ]);
                 
+                // Create payment record
+                $this->createPaymentFromInvoiceData($subscription, $data);
+                
                 Log::info('Subscription activated via invoice.payment_succeeded webhook', [
                     'subscription_id' => $subscription->id,
                     'stripe_subscription_id' => $subscriptionId,
@@ -605,6 +611,9 @@ class StripeAdapter
                 $subscription->update([
                     'status' => 'active',
                 ]);
+                
+                // Create payment record for renewal
+                $this->createPaymentFromInvoiceData($subscription, $data);
                 
                 Log::info('Subscription activated from trialing via invoice.payment_succeeded webhook', [
                     'subscription_id' => $subscription->id,
@@ -656,6 +665,9 @@ class StripeAdapter
                 'status' => $status,
                 'started_at' => now(),
             ]);
+            
+            // Create payment record
+            $this->createPaymentFromPaymentIntent($subscription, $data);
             
             Log::info('Subscription activated via payment_intent.succeeded webhook', [
                 'subscription_id' => $subscription->id,
@@ -757,6 +769,138 @@ class StripeAdapter
             'past_due' => 'past_due',
             'canceled', 'unpaid' => 'canceled',
             default => 'pending',
+        };
+    }
+
+    /**
+     * Create payment record from invoice data.
+     */
+    protected function createPaymentFromInvoiceData(Subscription $subscription, array $data): void
+    {
+        try {
+            $plan = $subscription->subscriptionPlan;
+            if (!$plan) {
+                return;
+            }
+
+            $invoiceId = $data['id'] ?? null;
+            $paymentIntentId = $data['payment_intent'] ?? null;
+            $transactionId = $paymentIntentId ?? $invoiceId;
+
+            // Check if payment already exists
+            $existingPayment = Payment::where('subscription_id', $subscription->id)
+                ->where('transaction_id', $transactionId)
+                ->first();
+
+            if ($existingPayment) {
+                return;
+            }
+
+            $amount = ($data['amount_paid'] ?? $data['amount_due'] ?? 0) / 100; // Convert from cents
+            $paymentMethod = $this->mapStripePaymentMethodToEnum($data['payment_method_types'] ?? ['card']);
+
+            Payment::create([
+                'user_id' => $subscription->user_id,
+                'subscription_id' => $subscription->id,
+                'amount' => $amount,
+                'payment_method' => $paymentMethod,
+                'transaction_id' => $transactionId,
+                'status' => ($data['paid'] ?? false) ? 'completed' : 'pending',
+                'payment_details' => [
+                    'invoice_id' => $invoiceId,
+                    'payment_intent_id' => $paymentIntentId,
+                    'currency' => $data['currency'] ?? 'usd',
+                    'gateway' => 'stripe',
+                ],
+                'discount_amount' => 0,
+                'final_amount' => $amount,
+                'paid_at' => ($data['paid'] ?? false) ? now() : null,
+            ]);
+
+            Log::info('Payment record created from invoice webhook', [
+                'subscription_id' => $subscription->id,
+                'invoice_id' => $invoiceId,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to create payment from invoice data', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Create payment record from payment intent data.
+     */
+    protected function createPaymentFromPaymentIntent(Subscription $subscription, array $data): void
+    {
+        try {
+            $plan = $subscription->subscriptionPlan;
+            if (!$plan) {
+                return;
+            }
+
+            $paymentIntentId = $data['id'] ?? null;
+            if (!$paymentIntentId) {
+                return;
+            }
+
+            // Check if payment already exists
+            $existingPayment = Payment::where('subscription_id', $subscription->id)
+                ->where('transaction_id', $paymentIntentId)
+                ->first();
+
+            if ($existingPayment) {
+                return;
+            }
+
+            $amount = ($data['amount'] ?? $data['amount_received'] ?? 0) / 100; // Convert from cents
+            $paymentMethod = $this->mapStripePaymentMethodToEnum($data['payment_method_types'] ?? ['card']);
+
+            Payment::create([
+                'user_id' => $subscription->user_id,
+                'subscription_id' => $subscription->id,
+                'amount' => $amount,
+                'payment_method' => $paymentMethod,
+                'transaction_id' => $paymentIntentId,
+                'status' => ($data['status'] === 'succeeded') ? 'completed' : 'pending',
+                'payment_details' => [
+                    'payment_intent_id' => $paymentIntentId,
+                    'currency' => $data['currency'] ?? 'usd',
+                    'gateway' => 'stripe',
+                ],
+                'discount_amount' => 0,
+                'final_amount' => $amount,
+                'paid_at' => ($data['status'] === 'succeeded') ? now() : null,
+            ]);
+
+            Log::info('Payment record created from payment intent webhook', [
+                'subscription_id' => $subscription->id,
+                'payment_intent_id' => $paymentIntentId,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to create payment from payment intent', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Map Stripe payment method types to our payment method enum.
+     */
+    protected function mapStripePaymentMethodToEnum(array $paymentMethodTypes): string
+    {
+        if (empty($paymentMethodTypes)) {
+            return 'credit_card';
+        }
+
+        $method = $paymentMethodTypes[0] ?? 'card';
+        
+        return match($method) {
+            'card' => 'credit_card',
+            'upi' => 'upi',
+            default => 'other',
         };
     }
 

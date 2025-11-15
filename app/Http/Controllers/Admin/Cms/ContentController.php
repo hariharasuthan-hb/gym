@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Cms;
 
 use App\Http\Controllers\Controller;
+use App\DataTables\CmsContentDataTable;
 use App\Http\Requests\Admin\Cms\StoreContentRequest;
 use App\Http\Requests\Admin\Cms\UpdateContentRequest;
 use App\Repositories\Interfaces\CmsContentRepositoryInterface;
@@ -27,23 +28,15 @@ class ContentController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request): View
+    public function index(CmsContentDataTable $dataTable)
     {
-        $filters = [
-            'search' => $request->get('search'),
-            'type' => $request->get('type'),
-            'is_active' => $request->get('is_active'),
-        ];
+        if (request()->ajax() || request()->wantsJson()) {
+            return $dataTable->dataTable($dataTable->query(new \App\Models\CmsContent))->toJson();
+        }
 
-        $sort = [
-            $request->get('sort_by', 'order') => $request->get('sort_dir', 'asc')
-        ];
-
-        $perPage = $request->get('per_page', 15);
-
-        $contents = $this->repository->all($filters, $sort, $perPage);
-
-        return view('admin.cms.content.index', compact('contents'));
+        return view('admin.cms.content.index', [
+            'dataTable' => $dataTable
+        ]);
     }
 
     /**

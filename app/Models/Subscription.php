@@ -61,6 +61,14 @@ class Subscription extends Model
     }
 
     /**
+     * Get the payments for the subscription.
+     */
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
      * Scope a query to only include active subscriptions.
      */
     public function scopeActive($query)
