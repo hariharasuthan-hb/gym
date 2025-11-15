@@ -6,21 +6,20 @@
 <header class="bg-white shadow-md sticky top-0 z-50">
     <nav class="container mx-auto px-4 py-4">
         <div class="flex justify-between items-center">
-            <div class="text-2xl font-bold text-blue-600">
+            <div class="flex items-center gap-3">
                 @php
                     $siteSettings = \App\Models\SiteSetting::getSettings();
                     $landingPage = \App\Models\LandingPageContent::getActive();
-                    // Priority: Site Settings Logo > Landing Page Logo > Site Title
+                    // Priority: Site Settings Logo > Landing Page Logo
                     $logo = $siteSettings->logo ?? ($landingPage->logo ?? null);
                     $siteTitle = $siteSettings->site_title ?? 'Gym Management';
                 @endphp
-                @if($logo)
-                    <a href="{{ route('frontend.home') }}">
+                <a href="{{ route('frontend.home') }}" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                    @if($logo)
                         <img src="{{ \Illuminate\Support\Facades\Storage::url($logo) }}" alt="{{ $siteTitle }}" class="h-12 object-contain">
-                    </a>
-                @else
-                    <a href="{{ route('frontend.home') }}">{{ $siteTitle }}</a>
-                @endif
+                    @endif
+                    <span class="text-2xl font-bold bg-gradient-to-r from-orange-500 to-black bg-clip-text text-transparent">{{ $siteTitle }}</span>
+                </a>
             </div>
             
             <div class="hidden md:flex space-x-6 items-center">

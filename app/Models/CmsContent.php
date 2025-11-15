@@ -16,6 +16,7 @@ class CmsContent extends Model
         'content',
         'description',
         'image',
+        'background_image',
         'link',
         'link_text',
         'extra_data',
