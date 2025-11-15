@@ -21,6 +21,9 @@ class SubscriptionPlan extends Model
         'duration_type',
         'duration',
         'price',
+        'trial_days',
+        'stripe_price_id',
+        'razorpay_plan_id',
         'is_active',
         'features',
     ];
@@ -36,6 +39,7 @@ class SubscriptionPlan extends Model
             'is_active' => 'boolean',
             'price' => 'decimal:2',
             'duration' => 'integer',
+            'trial_days' => 'integer',
             'features' => 'array',
         ];
     }
@@ -169,6 +173,26 @@ class SubscriptionPlan extends Model
         }
 
         return true; // Default to active
+    }
+
+    /**
+     * Check if plan has trial period.
+     */
+    public function hasTrial(): bool
+    {
+        return $this->trial_days > 0 || $this->duration_type === 'trial';
+    }
+
+    /**
+     * Get trial days for this plan.
+     */
+    public function getTrialDays(): int
+    {
+        if ($this->duration_type === 'trial') {
+            return $this->duration;
+        }
+        
+        return $this->trial_days ?? 0;
     }
 }
 

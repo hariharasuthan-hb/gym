@@ -26,6 +26,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::resource('subscription-plans', \App\Http\Controllers\Admin\SubscriptionPlanController::class);
     
     // Subscriptions
+    Route::post('subscriptions/{subscription}/cancel', [\App\Http\Controllers\Admin\SubscriptionController::class, 'cancel'])->name('subscriptions.cancel');
     Route::resource('subscriptions', \App\Http\Controllers\Admin\SubscriptionController::class);
     
     // Activity Logs

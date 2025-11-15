@@ -39,6 +39,15 @@ Route::prefix('member')->name('member.')->middleware(['auth', 'role:member'])->g
     Route::get('/activities', [\App\Http\Controllers\Frontend\MemberController::class, 'activities'])->name('activities');
     Route::get('/workout-plans', [\App\Http\Controllers\Frontend\MemberController::class, 'workoutPlans'])->name('workout-plans');
     Route::get('/diet-plans', [\App\Http\Controllers\Frontend\MemberController::class, 'dietPlans'])->name('diet-plans');
+    
+    // Subscription routes
+    Route::prefix('subscription')->name('subscription.')->group(function () {
+        Route::get('/checkout/{plan}', [\App\Http\Controllers\Member\CheckoutController::class, 'checkout'])->name('checkout');
+        Route::post('/create/{plan}', [\App\Http\Controllers\Member\CheckoutController::class, 'create'])->name('create');
+        Route::get('/success', [\App\Http\Controllers\Member\SubscriptionController::class, 'success'])->name('success');
+        Route::get('/', [\App\Http\Controllers\Member\SubscriptionController::class, 'index'])->name('index');
+        Route::post('/cancel/{subscription}', [\App\Http\Controllers\Member\SubscriptionController::class, 'cancel'])->name('cancel');
+    });
 });
 
 // API Routes for CMS (for fetching dynamic content)

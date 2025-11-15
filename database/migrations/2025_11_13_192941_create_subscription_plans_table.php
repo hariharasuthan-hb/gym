@@ -18,6 +18,9 @@ return new class extends Migration
             $table->enum('duration_type', ['trial', 'daily', 'weekly', 'monthly', 'yearly']);
             $table->integer('duration'); // Number of days/weeks/months/years
             $table->decimal('price', 10, 2);
+            $table->integer('trial_days')->default(0)->after('price');
+            $table->string('stripe_price_id')->nullable()->after('trial_days');
+            $table->string('razorpay_plan_id')->nullable()->after('stripe_price_id');
             $table->boolean('is_active')->default(true);
             $table->text('features')->nullable(); // JSON or text field for plan features
             $table->timestamps();
