@@ -68,8 +68,11 @@ class MemberController extends Controller
         // Check if user has an active subscription
         $activeSubscription = $user->subscriptions()
             ->with('subscriptionPlan')
-            ->where('status', 'active')
-            ->where('end_date', '>=', now())
+            ->whereIn('status', ['active', 'trialing'])
+            ->where(function ($query) {
+                $query->whereNull('next_billing_at')
+                      ->orWhere('next_billing_at', '>=', now());
+            })
             ->first();
         
         // Get active subscription plans if user has no active subscription

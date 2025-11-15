@@ -25,3 +25,4 @@ Thumbs.db
 *.md
 /tests
 !readme.md
+*.ps1

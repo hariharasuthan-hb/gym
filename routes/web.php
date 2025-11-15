@@ -18,6 +18,19 @@ require __DIR__.'/auth.php';
 require __DIR__.'/frontend.php';
 require __DIR__.'/admin.php';
 
+// Debug routes (only in local environment)
+if (app()->environment('local')) {
+    require __DIR__.'/debug.php';
+}
+
+// Webhook routes (no authentication or CSRF required)
+Route::post('/webhook/stripe', [\App\Http\Controllers\WebhookController::class, 'stripe'])
+    ->name('webhook.stripe')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
+Route::post('/webhook/razorpay', [\App\Http\Controllers\WebhookController::class, 'razorpay'])
+    ->name('webhook.razorpay')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
+
 // Dashboard route - redirects based on user role
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function () {

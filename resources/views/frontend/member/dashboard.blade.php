@@ -25,7 +25,11 @@
                         <p class="text-sm font-medium text-gray-500">Active Subscription</p>
                         @if($activeSubscription && $activeSubscription->subscriptionPlan)
                             <p class="text-2xl font-semibold text-gray-900">{{ $activeSubscription->subscriptionPlan->plan_name }}</p>
-                            <p class="text-xs text-gray-500">Expires: {{ $activeSubscription->end_date->format('M d, Y') }}</p>
+                            @if($activeSubscription->next_billing_at)
+                                <p class="text-xs text-gray-500">Next billing: {{ $activeSubscription->next_billing_at->format('M d, Y') }}</p>
+                            @elseif($activeSubscription->trial_end_at)
+                                <p class="text-xs text-gray-500">Trial ends: {{ $activeSubscription->trial_end_at->format('M d, Y') }}</p>
+                            @endif
                         @else
                             <p class="text-2xl font-semibold text-gray-900">None</p>
                             <p class="text-xs text-red-500">No active plan</p>
@@ -133,9 +137,9 @@
                     </ul>
                     @endif
                     
-                    <button class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                    <a href="{{ route('member.subscription.checkout', $plan->id) }}" class="block w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-center">
                         Subscribe Now
-                    </button>
+                    </a>
                 </div>
                 @endforeach
             </div>

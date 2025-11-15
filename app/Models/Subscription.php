@@ -17,10 +17,15 @@ class Subscription extends Model
     protected $fillable = [
         'user_id',
         'subscription_plan_id',
-        'start_date',
-        'end_date',
+        'gateway',
+        'gateway_customer_id',
+        'gateway_subscription_id',
         'status',
-        'auto_renew',
+        'trial_end_at',
+        'next_billing_at',
+        'started_at',
+        'canceled_at',
+        'metadata',
     ];
 
     /**
@@ -31,9 +36,11 @@ class Subscription extends Model
     protected function casts(): array
     {
         return [
-            'start_date' => 'date',
-            'end_date' => 'date',
-            'auto_renew' => 'boolean',
+            'trial_end_at' => 'datetime',
+            'next_billing_at' => 'datetime',
+            'started_at' => 'datetime',
+            'canceled_at' => 'datetime',
+            'metadata' => 'array',
         ];
     }
 
@@ -58,7 +65,37 @@ class Subscription extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('status', 'active')
-            ->where('end_date', '>=', now());
+        return $query->whereIn('status', ['active', 'trialing'])
+            ->where(function ($q) {
+                $q->whereNull('next_billing_at')
+                  ->orWhere('next_billing_at', '>=', now());
+            });
+    }
+
+    /**
+     * Check if subscription is in trial period.
+     */
+    public function isTrialing(): bool
+    {
+        return $this->status === 'trialing' 
+            && $this->trial_end_at 
+            && $this->trial_end_at->isFuture();
+    }
+
+    /**
+     * Check if subscription is active.
+     */
+    public function isActive(): bool
+    {
+        return $this->status === 'active' 
+            && (!$this->next_billing_at || $this->next_billing_at->isFuture());
+    }
+
+    /**
+     * Check if subscription is canceled.
+     */
+    public function isCanceled(): bool
+    {
+        return $this->status === 'canceled' || $this->canceled_at !== null;
     }
 }

@@ -12,7 +12,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Modify the ENUM column to include 'trial'
+        if (!Schema::hasTable('subscription_plans')) {
+            return;
+        }
+
+        // SQLite doesn't support MODIFY COLUMN, skip for SQLite (tests)
+        // The create migration already has the correct enum values
+        if (config('database.default') === 'sqlite' || DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
+        // Modify the ENUM column to include 'trial' (MySQL/MariaDB only)
         DB::statement("ALTER TABLE `subscription_plans` MODIFY COLUMN `duration_type` ENUM('trial', 'daily', 'weekly', 'monthly', 'yearly') NOT NULL");
     }
 
