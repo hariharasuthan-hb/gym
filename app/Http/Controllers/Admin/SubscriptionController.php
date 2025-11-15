@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\DataTables\SubscriptionDataTable;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
@@ -16,33 +17,15 @@ class SubscriptionController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request): View
+    public function index(SubscriptionDataTable $dataTable)
     {
-        $query = Subscription::with(['user', 'subscriptionPlan'])
-            ->orderBy('created_at', 'desc');
-
-        // Apply filters
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        if (request()->ajax() || request()->wantsJson()) {
+            return $dataTable->dataTable($dataTable->query(new Subscription))->toJson();
         }
-
-        if ($request->filled('gateway')) {
-            $query->where('gateway', $request->gateway);
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
-
-        $subscriptions = $query->paginate(15);
-
+        
         return view('admin.subscriptions.index', [
-            'subscriptions' => $subscriptions,
-            'filters' => $request->only(['status', 'gateway', 'search']),
+            'dataTable' => $dataTable,
+            'filters' => request()->only(['status', 'gateway', 'search']),
         ]);
     }
 

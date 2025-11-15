@@ -9,6 +9,28 @@
 /* CRITICAL STYLES - Outside @layer for maximum specificity */
 /* These styles MUST override DataTables defaults */
 
+/* Remove ALL styling from dt-buttons container - MUST BE FIRST */
+.dt-buttons,
+div.dt-buttons,
+.dataTables_wrapper .dt-buttons,
+.dt-container .dt-buttons,
+:is(.dt-container, .dataTables_wrapper) .dt-buttons,
+.dataTables_wrapper div.dt-buttons,
+div.dataTables_wrapper .dt-buttons {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    min-width: auto !important;
+    min-height: auto !important;
+    width: auto !important;
+    height: auto !important;
+}
+
 /* Modern Professional Styling for dt-button class - MAXIMUM SPECIFICITY */
 .dt-button,
 button.dt-button,
@@ -103,7 +125,7 @@ a.dt-button:disabled,
     pointer-events: none !important;
 }
 
-/* CSV Button Specific Professional Styling */
+/* CSV Button Specific Professional Styling - Override general dt-button styles */
 .dt-button.buttons-csv,
 button.dt-button.buttons-csv,
 a.dt-button.buttons-csv,
@@ -119,6 +141,12 @@ a.dt-button.buttons-csv,
     font-weight: 600 !important;
     border-radius: 0.5rem !important;
     border: 1px solid #d1d5db !important;
+    border-width: 1px !important;
+    border-style: solid !important;
+    border-top-width: 1px !important;
+    border-right-width: 1px !important;
+    border-bottom-width: 1px !important;
+    border-left-width: 1px !important;
     background: linear-gradient(to bottom, #ffffff, #f9fafb) !important;
     color: #374151 !important;
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
@@ -161,6 +189,8 @@ a.dt-button.buttons-csv:hover:not(:disabled),
 .dataTables_wrapper .dt-buttons a.buttons-csv:hover:not(:disabled),
 [class*="buttons-csv"]:hover:not(:disabled) {
     border: 1px solid #3b82f6 !important;
+    border-width: 1px !important;
+    border-style: solid !important;
     color: #2563eb !important;
     background: linear-gradient(to bottom, #eff6ff, #ffffff) !important;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
@@ -185,8 +215,11 @@ a.dt-button.buttons-csv:focus:not(:disabled),
 [class*="buttons-csv"]:focus:not(:disabled) {
     outline: none !important;
     border: 1px solid #3b82f6 !important;
+    border-width: 1px !important;
+    border-style: solid !important;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5), 0 0 0 4px rgba(59, 130, 246, 0.2) !important;
 }
+
 
 /* Specific styling for dt-container select.dt-input - MAXIMUM SPECIFICITY */
 div.dt-container select.dt-input,
