@@ -106,4 +106,23 @@ class Subscription extends Model
     {
         return $this->status === 'canceled' || $this->canceled_at !== null;
     }
+
+    /**
+     * Check if user still has access to subscription.
+     * Returns true if subscription is active/trialing OR if canceled but period hasn't ended yet.
+     */
+    public function hasAccess(): bool
+    {
+        // If active or trialing, user has access
+        if ($this->isActive() || $this->isTrialing()) {
+            return true;
+        }
+
+        // If canceled but next_billing_at is in the future, user still has access
+        if ($this->isCanceled() && $this->next_billing_at && $this->next_billing_at->isFuture()) {
+            return true;
+        }
+
+        return false;
+    }
 }
