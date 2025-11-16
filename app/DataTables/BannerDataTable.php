@@ -13,8 +13,13 @@ class BannerDataTable extends BaseDataTable
      */
     public function dataTable($query)
     {
-        return datatables()
-            ->eloquent($query)
+        $dataTable = datatables()
+            ->eloquent($query);
+        
+        // Automatically format date columns
+        $this->autoFormatDates($dataTable);
+        
+        return $dataTable
             ->addColumn('image_preview', function ($banner) {
                 if ($banner->image) {
                     $imageUrl = Storage::url($banner->image);

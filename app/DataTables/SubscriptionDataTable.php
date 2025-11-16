@@ -12,8 +12,13 @@ class SubscriptionDataTable extends BaseDataTable
      */
     public function dataTable($query)
     {
-        return datatables()
-            ->eloquent($query)
+        $dataTable = datatables()
+            ->eloquent($query);
+        
+        // Automatically format date columns
+        $this->autoFormatDates($dataTable);
+        
+        return $dataTable
             ->addColumn('user_name', function ($subscription) {
                 return $subscription->user?->name ?? 'N/A';
             })
@@ -50,7 +55,7 @@ class SubscriptionDataTable extends BaseDataTable
                 return '<span class="px-2 py-1 text-xs font-semibold rounded-full ' . $statusColor . '">' . $statusLabel . '</span>';
             })
             ->addColumn('next_billing', function ($subscription) {
-                return $subscription->next_billing_at ? $subscription->next_billing_at->format('M d, Y') : 'N/A';
+                return $subscription->next_billing_at ? format_date($subscription->next_billing_at) : 'N/A';
             })
             ->addColumn('action', function ($subscription) {
                 $showUrl = route('admin.subscriptions.show', $subscription->id);
@@ -66,9 +71,6 @@ class SubscriptionDataTable extends BaseDataTable
                 $html .= '</div>';
                 
                 return $html;
-            })
-            ->editColumn('created_at', function ($subscription) {
-                return $subscription->created_at->format('M d, Y');
             })
             ->filterColumn('user_name', function ($query, $keyword) {
                 if (empty($keyword)) {

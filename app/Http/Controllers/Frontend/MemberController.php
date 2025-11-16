@@ -55,7 +55,7 @@ class MemberController extends Controller
         $this->userRepository->createWithRole($validated);
 
         return redirect()->route('login')
-            ->with('success', 'Registration successful! Please login.');
+->with('success', 'Registration successful! Please login.');
     }
 
     /**
@@ -83,7 +83,36 @@ class MemberController extends Controller
                 ->get();
         }
         
-        return view('frontend.member.dashboard', compact('activeSubscription', 'subscriptionPlans'));
+        // Get active workout plans for the member
+        $activeWorkoutPlans = $user->workoutPlans()
+            ->with('trainer')
+            ->where('status', 'active')
+            ->latest('start_date')
+            ->limit(3)
+            ->get();
+        
+        // Get active diet plans for the member
+        $activeDietPlans = $user->dietPlans()
+            ->with('trainer')
+            ->where('status', 'active')
+            ->latest('start_date')
+            ->limit(3)
+            ->get();
+        
+        // Count totals for stats
+        $totalWorkoutPlans = $user->workoutPlans()->where('status', 'active')->count();
+        $totalDietPlans = $user->dietPlans()->where('status', 'active')->count();
+        $totalActivities = \App\Models\ActivityLog::where('user_id', $user->id)->count();
+        
+        return view('frontend.member.dashboard', compact(
+            'activeSubscription', 
+            'subscriptionPlans',
+            'activeWorkoutPlans',
+            'activeDietPlans',
+            'totalWorkoutPlans',
+            'totalDietPlans',
+            'totalActivities'
+        ));
     }
 
     /**
@@ -152,9 +181,225 @@ class MemberController extends Controller
     /**
      * Show member workout plans.
      */
-    public function workoutPlans(): View
+    public function workoutPlans(Request $request): View
     {
-        return view('frontend.member.workout-plans');
+        $user = auth()->user();
+        
+        // Get all workout plans for the member with trainer relationship
+        $query = $user->workoutPlans()
+            ->with('trainer')
+            ->latest('start_date');
+        
+        // Filter by status if provided
+        if ($request->has('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+        
+        // Paginate results
+        $workoutPlans = $query->paginate(12)->withQueryString();
+        
+        // Get counts by status for filter tabs
+        $statusCounts = [
+            'all' => $user->workoutPlans()->count(),
+            'active' => $user->workoutPlans()->where('status', 'active')->count(),
+            'completed' => $user->workoutPlans()->where('status', 'completed')->count(),
+            'paused' => $user->workoutPlans()->where('status', 'paused')->count(),
+            'cancelled' => $user->workoutPlans()->where('status', 'cancelled')->count(),
+        ];
+        
+        return view('frontend.member.workout-plans', compact('workoutPlans', 'statusCounts'));
+    }
+
+    /**
+     * Show member workout plan details.
+     */
+    public function showWorkoutPlan(\App\Models\WorkoutPlan $workoutPlan): View
+    {
+        $user = auth()->user();
+        
+        // Ensure the plan belongs to the authenticated member
+        if ($workoutPlan->member_id !== $user->id) {
+            abort(403, 'Unauthorized access to this workout plan.');
+        }
+        
+        // Load relationships
+        $workoutPlan->load(['trainer', 'member']);
+        
+        // Calculate difficulty
+        $exerciseCount = is_array($workoutPlan->exercises) ? count($workoutPlan->exercises) : 0;
+        $difficulty = 'Intermediate';
+        $difficultyColor = 'bg-orange-100 text-orange-800';
+        if ($exerciseCount <= 5) {
+            $difficulty = 'Beginner';
+            $difficultyColor = 'bg-green-100 text-green-800';
+        } elseif ($exerciseCount >= 10) {
+            $difficulty = 'Advanced';
+            $difficultyColor = 'bg-red-100 text-red-800';
+        }
+        
+        // Calculate duration
+        $durationMinutes = $exerciseCount * 5;
+        
+        // Get attendance records for this plan period
+        $attendanceRecords = [];
+        $attendedDates = [];
+        if ($workoutPlan->start_date && $workoutPlan->end_date) {
+            $attendanceLogs = \App\Models\ActivityLog::where('user_id', $user->id)
+                ->whereBetween('date', [$workoutPlan->start_date, $workoutPlan->end_date])
+                ->whereNotNull('check_in_time')
+                ->get();
+            
+            $attendedDates = $attendanceLogs->pluck('date')->map(function($date) {
+                return \Carbon\Carbon::parse($date)->format('Y-m-d');
+            })->toArray();
+        }
+        
+        return view('frontend.member.workout-plans.show', compact(
+            'workoutPlan', 
+            'difficulty', 
+            'difficultyColor', 
+            'durationMinutes', 
+            'exerciseCount',
+            'attendedDates'
+        ));
+    }
+
+    /**
+     * Upload workout video for trainer approval (direct upload).
+     */
+    public function uploadWorkoutVideo(
+        Request $request,
+        \App\Models\WorkoutPlan $workoutPlan,
+        \App\Services\WorkoutVideoService $videoService
+    ): \Illuminate\Http\JsonResponse {
+        $user = auth()->user();
+        
+        // Ensure the plan belongs to the authenticated member
+        if ($workoutPlan->member_id !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to this workout plan.',
+            ], 403);
+        }
+        
+        $request->validate([
+            'video' => ['required', 'file', 'mimes:mp4,webm,mov', 'max:102400'], // Max 100MB
+            'exercise_name' => ['required', 'string', 'max:255'],
+            'duration_seconds' => ['nullable', 'integer', 'min:1', 'max:120'],
+        ]);
+        
+        // Upload video using service
+        $workoutVideo = $videoService->uploadVideo(
+            $workoutPlan,
+            $user,
+            $request->input('exercise_name'),
+            $request->file('video'),
+            $request->input('duration_seconds', 60)
+        );
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Video uploaded successfully. Waiting for trainer approval.',
+            'video' => $workoutVideo,
+        ]);
+    }
+
+    /**
+     * Handle chunked video upload.
+     */
+    public function uploadWorkoutVideoChunk(
+        Request $request,
+        \App\Models\WorkoutPlan $workoutPlan,
+        \App\Services\WorkoutVideoService $videoService
+    ): \Illuminate\Http\JsonResponse {
+        $user = auth()->user();
+        
+        // Ensure the plan belongs to the authenticated member
+        if ($workoutPlan->member_id !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to this workout plan.',
+            ], 403);
+        }
+        
+        $request->validate([
+            'video_chunk' => ['required', 'file'],
+            'chunk_index' => ['required', 'integer', 'min:0'],
+            'total_chunks' => ['required', 'integer', 'min:1'],
+            'upload_id' => ['required', 'string'],
+            'exercise_name' => ['required', 'string', 'max:255'],
+            'file_name' => ['required', 'string'],
+            'file_size' => ['required', 'integer'],
+            'duration_seconds' => ['nullable', 'integer', 'min:1', 'max:120'],
+        ]);
+        
+        $chunk = $request->file('video_chunk');
+        $chunkIndex = $request->input('chunk_index');
+        $totalChunks = $request->input('total_chunks');
+        $uploadId = $request->input('upload_id');
+        $exerciseName = $request->input('exercise_name');
+        $fileName = $request->input('file_name');
+        $fileSize = $request->input('file_size');
+        $durationSeconds = $request->input('duration_seconds', 60);
+        
+        // Store chunk in temporary directory
+        $tempDir = storage_path('app/temp/video-uploads/' . $uploadId);
+        if (!\Illuminate\Support\Facades\File::exists($tempDir)) {
+            \Illuminate\Support\Facades\File::makeDirectory($tempDir, 0755, true);
+        }
+        
+        $chunkPath = $tempDir . '/chunk_' . $chunkIndex;
+        $chunk->move($tempDir, 'chunk_' . $chunkIndex);
+        
+        // If this is the last chunk, combine all chunks and save
+        if ($chunkIndex === $totalChunks - 1) {
+            $finalPath = storage_path('app/temp/video-uploads/' . $uploadId . '/final.webm');
+            $finalFile = fopen($finalPath, 'wb');
+            
+            for ($i = 0; $i < $totalChunks; $i++) {
+                $chunkFile = $tempDir . '/chunk_' . $i;
+                if (file_exists($chunkFile)) {
+                    $chunkContent = file_get_contents($chunkFile);
+                    fwrite($finalFile, $chunkContent);
+                }
+            }
+            
+            fclose($finalFile);
+            
+            // Create UploadedFile from final file
+            $uploadedFile = new \Illuminate\Http\UploadedFile(
+                $finalPath,
+                $fileName,
+                mime_content_type($finalPath) ?: 'video/webm',
+                null,
+                true
+            );
+            
+            // Upload using service (will convert to web format)
+            $workoutVideo = $videoService->uploadVideo(
+                $workoutPlan,
+                $user,
+                $exerciseName,
+                $uploadedFile,
+                $durationSeconds
+            );
+            
+            // Clean up temporary files
+            \Illuminate\Support\Facades\File::deleteDirectory($tempDir);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Video uploaded successfully. Waiting for trainer approval.',
+                'video' => $workoutVideo,
+            ]);
+        }
+        
+        // Return success for intermediate chunks
+        return response()->json([
+            'success' => true,
+            'message' => 'Chunk uploaded successfully.',
+            'chunk_index' => $chunkIndex,
+        ]);
     }
 
     /**
@@ -165,4 +410,3 @@ class MemberController extends Controller
         return view('frontend.member.diet-plans');
     }
 }
-

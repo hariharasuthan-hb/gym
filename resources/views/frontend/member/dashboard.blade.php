@@ -48,7 +48,8 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-500">Workout Plans</p>
-                        <p class="text-2xl font-semibold text-gray-900">3</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ $totalWorkoutPlans ?? 0 }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Active plans</p>
                     </div>
                 </div>
             </div>
@@ -63,7 +64,8 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-500">Diet Plans</p>
-                        <p class="text-2xl font-semibold text-gray-900">2</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ $totalDietPlans ?? 0 }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Active plans</p>
                     </div>
                 </div>
             </div>
@@ -78,7 +80,8 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-500">Activities</p>
-                        <p class="text-2xl font-semibold text-gray-900">12</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ $totalActivities ?? 0 }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Total check-ins</p>
                     </div>
                 </div>
             </div>
@@ -143,6 +146,53 @@
                 </div>
                 @endforeach
             </div>
+        </div>
+        @endif
+
+        {{-- Active Plans Section --}}
+        @if(($activeWorkoutPlans && $activeWorkoutPlans->count() > 0) || ($activeDietPlans && $activeDietPlans->count() > 0))
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {{-- Active Workout Plans --}}
+            @if($activeWorkoutPlans && $activeWorkoutPlans->count() > 0)
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900">Active Workout Plans</h2>
+                    <a href="{{ route('member.workout-plans') }}" class="text-sm text-green-600 hover:text-green-800 font-medium">
+                        View All →
+                    </a>
+                </div>
+                <div class="space-y-4">
+                    @foreach($activeWorkoutPlans as $plan)
+                        @include('frontend.components.plan-card', [
+                            'plan' => $plan,
+                            'type' => 'workout',
+                            'viewRoute' => null // Add route if needed
+                        ])
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            {{-- Active Diet Plans --}}
+            @if($activeDietPlans && $activeDietPlans->count() > 0)
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900">Active Diet Plans</h2>
+                    <a href="{{ route('member.diet-plans') }}" class="text-sm text-purple-600 hover:text-purple-800 font-medium">
+                        View All →
+                    </a>
+                </div>
+                <div class="space-y-4">
+                    @foreach($activeDietPlans as $plan)
+                        @include('frontend.components.plan-card', [
+                            'plan' => $plan,
+                            'type' => 'diet',
+                            'viewRoute' => null // Add route if needed
+                        ])
+                    @endforeach
+                </div>
+            </div>
+            @endif
         </div>
         @endif
 

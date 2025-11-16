@@ -22,8 +22,22 @@ class PermissionMiddleware
 
         $user = auth()->user();
         
-        // Check if user has any of the required permissions
+        // Parse permissions - support both pipe-separated and multiple parameters
+        $allPermissions = [];
         foreach ($permissions as $permission) {
+            // If permission contains pipe, split it
+            if (strpos($permission, '|') !== false) {
+                $allPermissions = array_merge($allPermissions, explode('|', $permission));
+            } else {
+                $allPermissions[] = $permission;
+            }
+        }
+        
+        // Remove duplicates and trim whitespace
+        $allPermissions = array_unique(array_map('trim', $allPermissions));
+        
+        // Check if user has any of the required permissions
+        foreach ($allPermissions as $permission) {
             if ($user->can($permission)) {
                 return $next($request);
             }
