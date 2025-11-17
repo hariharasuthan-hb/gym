@@ -110,7 +110,6 @@ class StripeAdapter
             'payment_behavior' => 'default_incomplete',
             'payment_settings' => [
                 'payment_method_types' => ['card'],
-                'save_default_payment_method' => null, // Don't save payment method - always show card entry
             ],
             'expand' => ['latest_invoice.payment_intent', 'pending_setup_intent'],
             'metadata' => [
@@ -281,7 +280,6 @@ class StripeAdapter
             'payment_behavior' => 'default_incomplete',
             'payment_settings' => [
                 'payment_method_types' => ['card'],
-                'save_default_payment_method' => null, // Don't save payment method - always show card entry
             ],
             'expand' => ['latest_invoice.payment_intent'],
             'metadata' => [

@@ -285,6 +285,9 @@ class MemberController extends Controller
         // Today's recording progress
         $today = now()->toDateString();
         $todayVideos = $this->workoutVideoRepository->getVideosUploadedOnDate($workoutPlan, $user, $today);
+        $todayVideosByExercise = $todayVideos
+            ->groupBy('exercise_name')
+            ->map(fn($videos) => $videos->sortByDesc('created_at')->first());
         $todayRecordedExercises = $todayVideos->pluck('exercise_name')->unique()->toArray();
         $recordedTodayCount = count($todayRecordedExercises);
         $todayRecordingPercent = $exerciseCount > 0 ? round(($recordedTodayCount / $exerciseCount) * 100, 1) : 0;
@@ -301,6 +304,7 @@ class MemberController extends Controller
             'exerciseCount',
             'attendedDates',
             'todayRecordedExercises',
+            'todayVideosByExercise',
             'recordedTodayCount',
             'todayRecordingPercent',
             'attendanceMarkedToday'

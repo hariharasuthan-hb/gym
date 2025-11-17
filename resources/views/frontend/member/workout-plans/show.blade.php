@@ -751,8 +751,7 @@ async function checkAndMarkAttendance(workoutPlanId) {
             <div class="space-y-6">
                 @foreach($workoutPlan->exercises as $index => $exercise)
                     @php
-                        $uploadedVideo = app(\App\Repositories\Interfaces\WorkoutVideoRepositoryInterface::class)
-                            ->getLatestByExercise($workoutPlan, auth()->user(), $exercise);
+                        $uploadedVideo = ($todayVideosByExercise ?? collect())->get($exercise);
                     @endphp
                     
                     <div class="border border-gray-200 rounded-lg p-4" id="exercise-{{ $index }}">
