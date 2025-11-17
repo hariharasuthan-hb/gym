@@ -19,6 +19,8 @@ class DietPlanController extends Controller
      */
     public function index(DietPlanDataTable $dataTable)
     {
+        DietPlan::autoCompleteExpired();
+
         if (request()->ajax() || request()->wantsJson()) {
             return $dataTable->dataTable($dataTable->query(new DietPlan))->toJson();
         }
@@ -101,6 +103,8 @@ class DietPlanController extends Controller
      */
     public function show(DietPlan $dietPlan): View
     {
+        DietPlan::autoCompleteExpired();
+
         // Check if trainer can view this plan
         if (auth()->user()->hasRole('trainer') && $dietPlan->trainer_id !== auth()->id()) {
             abort(403, 'Unauthorized');

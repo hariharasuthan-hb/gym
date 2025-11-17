@@ -66,6 +66,7 @@ class MemberController extends Controller
     public function dashboard(): View
     {
         $user = auth()->user();
+        \App\Models\DietPlan::autoCompleteExpired();
         
         // Check if user has an active subscription
         $activeSubscription = $user->subscriptions()
@@ -524,6 +525,8 @@ class MemberController extends Controller
     {
         $user = auth()->user();
 
+        \App\Models\DietPlan::autoCompleteExpired();
+
         $query = $user->dietPlans()
             ->with('trainer')
             ->latest('start_date');
@@ -532,7 +535,7 @@ class MemberController extends Controller
             $query->where('status', $request->status);
         }
 
-        $dietPlans = $query->paginate(12)->withQueryString();
+        $dietPlans = $query->paginate(12);
 
         $statusCounts = [
             'all' => $user->dietPlans()->count(),
