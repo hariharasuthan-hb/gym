@@ -13,8 +13,13 @@ class CmsContentDataTable extends BaseDataTable
      */
     public function dataTable($query)
     {
-        return datatables()
-            ->eloquent($query)
+        $dataTable = datatables()
+            ->eloquent($query);
+        
+        // Automatically format date columns
+        $this->autoFormatDates($dataTable);
+        
+        return $dataTable
             ->addColumn('image_preview', function ($content) {
                 if ($content->image) {
                     $imageUrl = Storage::url($content->image);
@@ -60,9 +65,6 @@ class CmsContentDataTable extends BaseDataTable
                     return '<div><div class="font-medium">' . $title . '</div><div class="text-xs text-gray-500">' . $description . '</div></div>';
                 }
                 return '<div class="font-medium">' . $title . '</div>';
-            })
-            ->editColumn('created_at', function ($content) {
-                return $content->created_at->format('M d, Y');
             })
             ->rawColumns(['action', 'status', 'type_badge', 'image_preview', 'title']);
     }

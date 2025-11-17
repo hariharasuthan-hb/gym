@@ -12,8 +12,13 @@ class SubscriptionPlanDataTable extends BaseDataTable
      */
     public function dataTable($query)
     {
-        return datatables()
-            ->eloquent($query)
+        $dataTable = datatables()
+            ->eloquent($query);
+        
+        // Automatically format date columns
+        $this->autoFormatDates($dataTable);
+        
+        return $dataTable
             ->addColumn('formatted_price', function ($plan) {
                 return '$' . number_format($plan->price, 2);
             })

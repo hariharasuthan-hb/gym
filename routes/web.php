@@ -23,6 +23,13 @@ if (app()->environment('local')) {
     require __DIR__.'/debug.php';
 }
 
+// PHP Configuration Check (only in local environment)
+if (app()->environment('local')) {
+    Route::get('/check-php-config', function () {
+        return response()->file(public_path('../check-php-config.php'));
+    })->name('check.php.config');
+}
+
 // Webhook routes (no authentication or CSRF required)
 Route::post('/webhook/stripe', [\App\Http\Controllers\WebhookController::class, 'stripe'])
     ->name('webhook.stripe')

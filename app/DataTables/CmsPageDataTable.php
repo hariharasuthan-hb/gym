@@ -12,8 +12,13 @@ class CmsPageDataTable extends BaseDataTable
      */
     public function dataTable($query)
     {
-        return datatables()
-            ->eloquent($query)
+        $dataTable = datatables()
+            ->eloquent($query);
+        
+        // Automatically format date columns
+        $this->autoFormatDates($dataTable);
+        
+        return $dataTable
             ->addColumn('status', function ($page) {
                 if ($page->is_active) {
                     return '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>';
@@ -41,9 +46,6 @@ class CmsPageDataTable extends BaseDataTable
                 $html .= '</div>';
                 
                 return $html;
-            })
-            ->editColumn('created_at', function ($page) {
-                return $page->created_at->format('M d, Y');
             })
             ->rawColumns(['action', 'status']);
     }

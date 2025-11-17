@@ -2,11 +2,13 @@
 
 namespace App\DataTables;
 
+use App\DataTables\Traits\AutoFormatsDates;
 use Yajra\DataTables\Html\Builder;
 use Yajra\DataTables\Html\Column;
 
 abstract class BaseDataTable
 {
+    use AutoFormatsDates;
     /**
      * Build DataTable html.
      */

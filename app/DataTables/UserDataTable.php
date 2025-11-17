@@ -13,8 +13,13 @@ class UserDataTable extends BaseDataTable
      */
     public function dataTable($query)
     {
-        return datatables()
-            ->eloquent($query)
+        $dataTable = datatables()
+            ->eloquent($query);
+        
+        // Automatically format date columns
+        $this->autoFormatDates($dataTable);
+        
+        return $dataTable
             ->addColumn('roles', function ($user) {
                 return $user->roles->pluck('name')->implode(', ') ?: '-';
             })
