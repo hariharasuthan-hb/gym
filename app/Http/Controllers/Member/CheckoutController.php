@@ -164,6 +164,9 @@ class CheckoutController extends Controller
                 'metadata' => $metadata,
             ]);
 
+            // Payment records will be created automatically via webhooks after payment confirmation
+            // No need to create them here - they will be created when payment_intent.succeeded or invoice.payment_succeeded webhooks are received
+
             session([
                 'subscription_data' => [
                     'plan_id' => $plan->id,

@@ -37,8 +37,26 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         // Invoices
         Route::resource('invoices', \App\Http\Controllers\Admin\InvoiceController::class);
         
+        // Expenses
+        Route::resource('expenses', \App\Http\Controllers\Admin\ExpenseController::class);
+        
+        // Incomes
+        Route::resource('incomes', \App\Http\Controllers\Admin\IncomeController::class);
+
+        // Finances Overview
+        Route::get('/finances', [\App\Http\Controllers\Admin\FinanceController::class, 'index'])
+            ->name('finances.index');
+        
         // Reports
         Route::get('/reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
+        
+        // Exports
+        Route::post('/exports/{type}', [\App\Http\Controllers\Admin\ExportController::class, 'export'])
+            ->name('exports.export');
+        Route::get('/exports/{export}/status', [\App\Http\Controllers\Admin\ExportController::class, 'status'])
+            ->name('exports.status');
+        Route::get('/exports/{export}/download', [\App\Http\Controllers\Admin\ExportController::class, 'download'])
+            ->name('exports.download');
         
         // CMS Management (for frontend content)
         Route::prefix('cms')->name('cms.')->group(function () {

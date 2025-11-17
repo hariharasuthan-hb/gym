@@ -11,6 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Check if invoices table already exists
+        if (Schema::hasTable('invoices')) {
+            // Skip if table already exists
+            return;
+        }
+        
         Schema::create('invoices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('payment_id')->constrained()->onDelete('cascade');

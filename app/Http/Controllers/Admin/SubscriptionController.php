@@ -26,6 +26,8 @@ class SubscriptionController extends Controller
         return view('admin.subscriptions.index', [
             'dataTable' => $dataTable,
             'filters' => request()->only(['status', 'gateway', 'search']),
+            'statusOptions' => \App\Models\Subscription::getStatusOptions(),
+            'gatewayOptions' => \App\Models\Subscription::getGatewayOptions(),
         ]);
     }
 

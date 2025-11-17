@@ -144,6 +144,11 @@ class SubscriptionDataTable extends BaseDataTable
         return 'subscriptions-table';
     }
 
+    protected function getFilterFormId(): string
+    {
+        return 'filter-form';
+    }
+
     /**
      * Get columns definition
      */

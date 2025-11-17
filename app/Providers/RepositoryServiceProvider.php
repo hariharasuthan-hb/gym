@@ -4,18 +4,27 @@ namespace App\Providers;
 
 use App\Models\CmsContent;
 use App\Models\CmsPage;
+use App\Models\Expense;
+use App\Models\Income;
+use App\Models\Payment;
 use App\Models\PaymentSetting;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Models\WorkoutVideo;
 use App\Repositories\Eloquent\CmsContentRepository;
 use App\Repositories\Eloquent\CmsPageRepository;
+use App\Repositories\Eloquent\ExpenseRepository;
+use App\Repositories\Eloquent\IncomeRepository;
+use App\Repositories\Eloquent\PaymentRepository;
 use App\Repositories\Eloquent\PaymentSettingRepository;
 use App\Repositories\Eloquent\SubscriptionPlanRepository;
 use App\Repositories\Eloquent\UserRepository;
 use App\Repositories\Eloquent\WorkoutVideoRepository;
 use App\Repositories\Interfaces\CmsContentRepositoryInterface;
 use App\Repositories\Interfaces\CmsPageRepositoryInterface;
+use App\Repositories\Interfaces\ExpenseRepositoryInterface;
+use App\Repositories\Interfaces\IncomeRepositoryInterface;
+use App\Repositories\Interfaces\PaymentRepositoryInterface;
 use App\Repositories\Interfaces\PaymentSettingRepositoryInterface;
 use App\Repositories\Interfaces\SubscriptionPlanRepositoryInterface;
 use App\Repositories\Interfaces\UserRepositoryInterface;
@@ -66,6 +75,30 @@ class RepositoryServiceProvider extends ServiceProvider
             PaymentSettingRepositoryInterface::class,
             function ($app) {
                 return new PaymentSettingRepository(new PaymentSetting());
+            }
+        );
+
+        // Bind Payment Repository
+        $this->app->bind(
+            PaymentRepositoryInterface::class,
+            function ($app) {
+                return new PaymentRepository(new Payment());
+            }
+        );
+
+        // Bind Expense Repository
+        $this->app->bind(
+            ExpenseRepositoryInterface::class,
+            function ($app) {
+                return new ExpenseRepository(new Expense());
+            }
+        );
+
+        // Bind Income Repository
+        $this->app->bind(
+            IncomeRepositoryInterface::class,
+            function ($app) {
+                return new IncomeRepository(new Income());
             }
         );
 

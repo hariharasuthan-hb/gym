@@ -66,6 +66,21 @@ class RolePermissionSeeder extends Seeder
             'create invoices',
             'edit invoices',
             'delete invoices',
+
+            // Expenses
+            'view expenses',
+            'create expenses',
+            'edit expenses',
+            'delete expenses',
+
+            // Incomes
+            'view incomes',
+            'create incomes',
+            'edit incomes',
+            'delete incomes',
+
+            // Finances
+            'view finances',
             
             // Reports
             'view reports',
@@ -123,7 +138,12 @@ class RolePermissionSeeder extends Seeder
             'create diet plans',
             'edit diet plans',
             'delete diet plans',
+            // Reports - trainers can view reports for their assigned members
             'view reports',
+            'view payments',      // Payments for assigned members
+            'view invoices',      // Invoices for assigned members
+            // Note: view subscriptions already included above
+            // Note: Expenses, Incomes, and Finances are business-level and not included for trainers
             'view cms pages',
             'view cms content',
             'view landing page',

@@ -30,6 +30,9 @@ trait AutoFormatsDates
             'scheduled_at',
             'check_in_time',
             'check_out_time',
+            'spent_at',
+            'received_at',
+            'paid_at',
         ];
     }
 
@@ -38,10 +41,13 @@ trait AutoFormatsDates
      * Call this method in your dataTable() method after eloquent()
      * 
      * Only formats columns that exist in the model and haven't been manually formatted
+     * 
+     * @param mixed $dataTable
+     * @param array|null $columns Optional array of specific columns to format. If null, uses getDateColumns()
      */
-    protected function autoFormatDates($dataTable)
+    protected function autoFormatDates($dataTable, ?array $columns = null)
     {
-        $dateColumns = $this->getDateColumns();
+        $dateColumns = $columns ?? $this->getDateColumns();
         
         foreach ($dateColumns as $column) {
             // Only format if column exists and hasn't been manually edited

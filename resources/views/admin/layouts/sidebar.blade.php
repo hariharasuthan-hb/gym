@@ -192,7 +192,7 @@
             @endcanany
 
             {{-- Financial Group --}}
-            @canany(['view payments', 'view invoices'])
+            @canany(['view payments', 'view invoices', 'view expenses', 'view incomes', 'view finances'])
             <div class="pt-1">
                 <button @click="toggleGroup('financial')" 
                         class="w-full flex items-center justify-between px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
@@ -238,6 +238,45 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                         <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Invoices</span>
+                    </a>
+                    @endcan
+                    @can('view expenses')
+                    <a href="{{ route('admin.expenses.index') }}" 
+                       class="admin-sidebar-item {{ request()->routeIs('admin.expenses.*') ? 'active' : '' }}"
+                       :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                       :title="$root.sidebarCollapsed ? 'Expenses' : ''">
+                        <svg class="w-4 h-4 transition-all duration-300" 
+                             :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M5 11h14M7 15h10m2 4H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Expenses</span>
+                    </a>
+                    @endcan
+                    @can('view incomes')
+                    <a href="{{ route('admin.incomes.index') }}" 
+                       class="admin-sidebar-item {{ request()->routeIs('admin.incomes.*') ? 'active' : '' }}"
+                       :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                       :title="$root.sidebarCollapsed ? 'Incomes' : ''">
+                        <svg class="w-4 h-4 transition-all duration-300" 
+                             :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Incomes</span>
+                    </a>
+                    @endcan
+                    @can('view finances')
+                    <a href="{{ route('admin.finances.index') }}" 
+                       class="admin-sidebar-item {{ request()->routeIs('admin.finances.*') ? 'active' : '' }}"
+                       :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                       :title="$root.sidebarCollapsed ? 'Finances' : ''">
+                        <svg class="w-4 h-4 transition-all duration-300" 
+                             :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                        </svg>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Finances</span>
                     </a>
                     @endcan
                 </div>
@@ -367,20 +406,123 @@
             </div>
             @endcanany
 
-            {{-- Reports --}}
-            @can('view reports')
-            <a href="{{ route('admin.reports.index') }}" 
-               class="admin-sidebar-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}"
-               :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
-               :title="$root.sidebarCollapsed ? 'Reports' : ''">
-                <svg class="w-5 h-5 transition-all duration-300" 
-                     :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
-                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
-                <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Reports</span>
-            </a>
-            @endcan
+            {{-- Reports Group --}}
+            @canany(['view reports', 'view payments', 'view invoices', 'view expenses', 'view incomes', 'view subscriptions', 'view activities', 'view finances'])
+            <div class="pt-1">
+                <button @click="toggleGroup('reports')" 
+                        class="w-full flex items-center justify-between px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                        :title="$root.sidebarCollapsed ? 'Reports' : ''">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 transition-all duration-300" 
+                             :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="text-sm font-semibold transition-all duration-300">Reports</span>
+                    </div>
+                    <svg :class="{ 'lg:hidden': $root.sidebarCollapsed }" 
+                         class="w-4 h-4 transition-transform transition-all duration-300" 
+                         :class="{ 'rotate-90': openGroups.reports }" 
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+                <div x-show="openGroups.reports" x-collapse class="ml-4 mt-0.5 space-y-0.5">
+                    @can('view payments')
+                    <a href="{{ route('admin.payments.index') }}" 
+                       class="admin-sidebar-item {{ request()->routeIs('admin.payments.*') ? 'active' : '' }}"
+                       :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                       :title="$root.sidebarCollapsed ? 'Payments' : ''">
+                        <svg class="w-4 h-4 transition-all duration-300" 
+                             :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Payments</span>
+                    </a>
+                    @endcan
+                    @can('view invoices')
+                    <a href="{{ route('admin.invoices.index') }}" 
+                       class="admin-sidebar-item {{ request()->routeIs('admin.invoices.*') ? 'active' : '' }}"
+                       :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                       :title="$root.sidebarCollapsed ? 'Invoices' : ''">
+                        <svg class="w-4 h-4 transition-all duration-300" 
+                             :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Invoices</span>
+                    </a>
+                    @endcan
+                    @can('view expenses')
+                    <a href="{{ route('admin.expenses.index') }}" 
+                       class="admin-sidebar-item {{ request()->routeIs('admin.expenses.*') ? 'active' : '' }}"
+                       :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                       :title="$root.sidebarCollapsed ? 'Expenses' : ''">
+                        <svg class="w-4 h-4 transition-all duration-300" 
+                             :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M5 11h14M7 15h10m2 4H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Expenses</span>
+                    </a>
+                    @endcan
+                    @can('view incomes')
+                    <a href="{{ route('admin.incomes.index') }}" 
+                       class="admin-sidebar-item {{ request()->routeIs('admin.incomes.*') ? 'active' : '' }}"
+                       :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                       :title="$root.sidebarCollapsed ? 'Incomes' : ''">
+                        <svg class="w-4 h-4 transition-all duration-300" 
+                             :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Incomes</span>
+                    </a>
+                    @endcan
+                    @can('view subscriptions')
+                    <a href="{{ route('admin.subscriptions.index') }}" 
+                       class="admin-sidebar-item {{ request()->routeIs('admin.subscriptions.*') ? 'active' : '' }}"
+                       :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                       :title="$root.sidebarCollapsed ? 'Subscriptions' : ''">
+                        <svg class="w-4 h-4 transition-all duration-300" 
+                             :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Subscriptions</span>
+                    </a>
+                    @endcan
+                    @can('view activities')
+                    <a href="{{ route('admin.activities.index') }}" 
+                       class="admin-sidebar-item {{ request()->routeIs('admin.activities.*') ? 'active' : '' }}"
+                       :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                       :title="$root.sidebarCollapsed ? 'Activity Logs' : ''">
+                        <svg class="w-4 h-4 transition-all duration-300" 
+                             :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                        </svg>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Activity Logs</span>
+                    </a>
+                    @endcan
+                    @can('view finances')
+                    <a href="{{ route('admin.finances.index') }}" 
+                       class="admin-sidebar-item {{ request()->routeIs('admin.finances.*') ? 'active' : '' }}"
+                       :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                       :title="$root.sidebarCollapsed ? 'Finances Overview' : ''">
+                        <svg class="w-4 h-4 transition-all duration-300" 
+                             :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                        </svg>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Finances Overview</span>
+                    </a>
+                    @endcan
+                </div>
+            </div>
+            @endcanany
         </nav>
     </div>
 
@@ -414,8 +556,9 @@ function sidebarMenu() {
             users: {{ request()->routeIs('admin.users.*') ? 'true' : 'false' }},
             subscriptions: {{ request()->routeIs('admin.subscription-plans.*') || request()->routeIs('admin.subscriptions.*') ? 'true' : 'false' }},
             plans: {{ request()->routeIs('admin.workout-plans.*') || request()->routeIs('admin.diet-plans.*') ? 'true' : 'false' }},
-            financial: {{ request()->routeIs('admin.payments.*') || request()->routeIs('admin.invoices.*') ? 'true' : 'false' }},
+            financial: {{ request()->routeIs('admin.payments.*') || request()->routeIs('admin.invoices.*') || request()->routeIs('admin.finances.*') || request()->routeIs('admin.expenses.*') || request()->routeIs('admin.incomes.*') ? 'true' : 'false' }},
             cms: {{ request()->routeIs('admin.cms.*') || request()->routeIs('admin.landing-page.*') || request()->routeIs('admin.site-settings.*') || request()->routeIs('admin.payment-settings.*') || request()->routeIs('admin.banners.*') ? 'true' : 'false' }},
+            reports: {{ request()->routeIs('admin.payments.*') || request()->routeIs('admin.invoices.*') || request()->routeIs('admin.expenses.*') || request()->routeIs('admin.incomes.*') || request()->routeIs('admin.subscriptions.*') || request()->routeIs('admin.activities.*') || request()->routeIs('admin.finances.*') || request()->routeIs('admin.reports.*') ? 'true' : 'false' }},
         },
         toggleGroup(group) {
             // Don't toggle if sidebar is collapsed

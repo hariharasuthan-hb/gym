@@ -13,16 +13,29 @@ return new class extends Migration
     {
         Schema::create('subscription_plans', function (Blueprint $table) {
             $table->id();
+
+            // Basic plan info
             $table->string('plan_name');
             $table->text('description')->nullable();
+
+            // Duration settings
             $table->enum('duration_type', ['trial', 'daily', 'weekly', 'monthly', 'yearly']);
-            $table->integer('duration'); // Number of days/weeks/months/years
+            $table->integer('duration');  // Number of units based on duration_type
+
+            // Pricing
             $table->decimal('price', 10, 2);
-            $table->integer('trial_days')->default(0)->after('price');
-            $table->string('stripe_price_id')->nullable()->after('trial_days');
-            $table->string('razorpay_plan_id')->nullable()->after('stripe_price_id');
+            $table->integer('trial_days')->default(0);
+
+            // Gateway identifiers
+            $table->string('stripe_price_id')->nullable();
+            $table->string('razorpay_plan_id')->nullable();
+
+            // Status
             $table->boolean('is_active')->default(true);
-            $table->text('features')->nullable(); // JSON or text field for plan features
+
+            // Plan features (JSON or text)
+            $table->text('features')->nullable();
+
             $table->timestamps();
         });
     }

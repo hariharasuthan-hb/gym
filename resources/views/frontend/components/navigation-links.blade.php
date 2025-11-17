@@ -3,6 +3,7 @@
     $menus = \App\Models\Menu::getActiveMenus();
     $linkClass = $class ?? 'text-gray-700 hover:text-blue-600 transition';
     $isMemberDashboard = request()->routeIs('member.dashboard');
+    $isMemberProfile = request()->routeIs('member.profile');
 @endphp
 
 @if($isMemberDashboard && auth()->check() && auth()->user()->hasRole('member'))
@@ -23,6 +24,9 @@
             @continue
         @elseif($menu->title === 'Dashboard')
             {{-- Skip Dashboard from menu - we show it separately for authenticated users --}}
+            @continue
+        @elseif($isMemberProfile && in_array($menu->title, ['About', 'Services']))
+            {{-- Skip About and Services on member profile page --}}
             @continue
         @else
             {{-- Regular Menu Item --}}

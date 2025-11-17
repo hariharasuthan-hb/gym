@@ -17,21 +17,21 @@ return new class extends Migration
             $table->foreignId('subscription_plan_id')->constrained()->onDelete('cascade');
             
             // Payment gateway fields (for new installations)
-            $table->string('gateway')->nullable()->after('subscription_plan_id'); // 'stripe' or 'razorpay'
-            $table->string('gateway_customer_id')->nullable()->after('gateway');
-            $table->string('gateway_subscription_id')->nullable()->after('gateway_customer_id');
+            $table->string('gateway')->nullable(); // 'stripe' or 'razorpay'
+            $table->string('gateway_customer_id')->nullable();
+            $table->string('gateway_subscription_id')->nullable();
             
             // Updated status enum
-            $table->enum('status', ['trialing', 'active', 'canceled', 'past_due', 'expired', 'pending'])->default('pending')->after('gateway_subscription_id');
+            $table->enum('status', ['trialing', 'active', 'canceled', 'past_due', 'expired', 'pending'])->default('pending');
             
             // Subscription lifecycle dates
-            $table->timestamp('trial_end_at')->nullable()->after('status');
-            $table->timestamp('next_billing_at')->nullable()->after('trial_end_at');
-            $table->timestamp('started_at')->nullable()->after('next_billing_at');
-            $table->timestamp('canceled_at')->nullable()->after('started_at');
+            $table->timestamp('trial_end_at')->nullable();
+            $table->timestamp('next_billing_at')->nullable();
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('canceled_at')->nullable();
             
             // Metadata for storing additional gateway information
-            $table->json('metadata')->nullable()->after('canceled_at');
+            $table->json('metadata')->nullable();
             
             $table->timestamps();
         });

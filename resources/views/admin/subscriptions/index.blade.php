@@ -158,14 +158,13 @@
                 // Reload table when filters change
                 window.$('#filter-form').on('submit', function(e) {
                     e.preventDefault();
-                    const formData = window.$(this).serialize();
-                    table.ajax.url('{{ route('admin.subscriptions.index') }}?' + formData).load();
+                    // Reload table - filters will be automatically included via ajax.data
+                    table.ajax.reload(null, false);
                 });
 
-                // Auto-reload on select change
-                window.$('#status, #gateway').on('change', function() {
-                    const formData = window.$('#filter-form').serialize();
-                    table.ajax.url('{{ route('admin.subscriptions.index') }}?' + formData).load();
+                // Auto-reload on filter change
+                window.$('#search, #status, #gateway').on('change input', function() {
+                    table.ajax.reload(null, false);
                 });
             }
             
