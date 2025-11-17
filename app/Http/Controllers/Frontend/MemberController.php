@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use App\Models\SubscriptionPlan;
 use App\Repositories\Interfaces\UserRepositoryInterface;
+use App\Repositories\Interfaces\WorkoutVideoRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -15,7 +16,8 @@ use Spatie\Permission\Models\Role;
 class MemberController extends Controller
 {
     public function __construct(
-        private readonly UserRepositoryInterface $userRepository
+        private readonly UserRepositoryInterface $userRepository,
+        private readonly WorkoutVideoRepositoryInterface $workoutVideoRepository
     ) {
     }
 
@@ -90,6 +92,7 @@ class MemberController extends Controller
             ->latest('start_date')
             ->limit(3)
             ->get();
+        $todayRecordingProgress = null;
         
         // Get active diet plans for the member
         $activeDietPlans = $user->dietPlans()
@@ -103,6 +106,29 @@ class MemberController extends Controller
         $totalWorkoutPlans = $user->workoutPlans()->where('status', 'active')->count();
         $totalDietPlans = $user->dietPlans()->where('status', 'active')->count();
         $totalActivities = \App\Models\ActivityLog::where('user_id', $user->id)->count();
+
+        // Build today's recording progress summary using first active workout plan
+        if ($activeWorkoutPlans->count() > 0) {
+            $primaryPlan = $activeWorkoutPlans->first();
+            $planExercises = is_array($primaryPlan->exercises) ? $primaryPlan->exercises : [];
+            $totalExercises = count($planExercises);
+            $today = now()->toDateString();
+            $todayVideos = $this->workoutVideoRepository->getVideosUploadedOnDate($primaryPlan, $user, $today);
+            $todayRecordedExercises = $todayVideos->pluck('exercise_name')->unique()->toArray();
+            $recordedCount = count($todayRecordedExercises);
+            $percent = $totalExercises > 0 ? round(($recordedCount / $totalExercises) * 100, 1) : 0;
+            $attendanceMarked = \App\Models\ActivityLog::where('user_id', $user->id)
+                ->where('date', $today)
+                ->whereNotNull('check_in_time')
+                ->exists();
+            $todayRecordingProgress = [
+                'plan' => $primaryPlan,
+                'recorded_count' => $recordedCount,
+                'total_exercises' => $totalExercises,
+                'percent' => $percent,
+                'attendance_marked' => $attendanceMarked,
+            ];
+        }
         
         return view('frontend.member.dashboard', compact(
             'activeSubscription', 
@@ -111,7 +137,8 @@ class MemberController extends Controller
             'activeDietPlans',
             'totalWorkoutPlans',
             'totalDietPlans',
-            'totalActivities'
+            'totalActivities',
+            'todayRecordingProgress'
         ));
     }
 
@@ -253,6 +280,17 @@ class MemberController extends Controller
                 return \Carbon\Carbon::parse($date)->format('Y-m-d');
             })->toArray();
         }
+
+        // Today's recording progress
+        $today = now()->toDateString();
+        $todayVideos = $this->workoutVideoRepository->getVideosUploadedOnDate($workoutPlan, $user, $today);
+        $todayRecordedExercises = $todayVideos->pluck('exercise_name')->unique()->toArray();
+        $recordedTodayCount = count($todayRecordedExercises);
+        $todayRecordingPercent = $exerciseCount > 0 ? round(($recordedTodayCount / $exerciseCount) * 100, 1) : 0;
+        $attendanceMarkedToday = \App\Models\ActivityLog::where('user_id', $user->id)
+            ->where('date', $today)
+            ->whereNotNull('check_in_time')
+            ->exists();
         
         return view('frontend.member.workout-plans.show', compact(
             'workoutPlan', 
@@ -260,7 +298,11 @@ class MemberController extends Controller
             'difficultyColor', 
             'durationMinutes', 
             'exerciseCount',
-            'attendedDates'
+            'attendedDates',
+            'todayRecordedExercises',
+            'recordedTodayCount',
+            'todayRecordingPercent',
+            'attendanceMarkedToday'
         ));
     }
 
@@ -296,6 +338,9 @@ class MemberController extends Controller
             $request->file('video'),
             $request->input('duration_seconds', 60)
         );
+        
+        // Check if all videos are uploaded and mark attendance
+        $this->checkAndMarkAttendance($workoutPlan, $user);
         
         return response()->json([
             'success' => true,
@@ -387,6 +432,9 @@ class MemberController extends Controller
             // Clean up temporary files
             \Illuminate\Support\Facades\File::deleteDirectory($tempDir);
             
+            // Check if all videos are uploaded and mark attendance
+            $this->checkAndMarkAttendance($workoutPlan, $user);
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Video uploaded successfully. Waiting for trainer approval.',
@@ -403,10 +451,97 @@ class MemberController extends Controller
     }
 
     /**
+     * Mark attendance if all videos are uploaded for today.
+     */
+    public function markAttendance(
+        Request $request,
+        \App\Models\WorkoutPlan $workoutPlan
+    ): \Illuminate\Http\JsonResponse {
+        $user = auth()->user();
+        
+        // Ensure the plan belongs to the authenticated member
+        if ($workoutPlan->member_id !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to this workout plan.',
+            ], 403);
+        }
+        
+        $attendanceMarked = $this->checkAndMarkAttendance($workoutPlan, $user);
+        
+        return response()->json([
+            'success' => true,
+            'attendance_marked' => $attendanceMarked,
+            'message' => $attendanceMarked 
+                ? 'Attendance marked successfully for today!' 
+                : 'Not all videos uploaded yet.',
+        ]);
+    }
+
+    /**
+     * Check if all videos are uploaded and mark attendance.
+     */
+    protected function checkAndMarkAttendance(\App\Models\WorkoutPlan $workoutPlan, \App\Models\User $user): bool
+    {
+        // Use repository to check if all exercises have videos uploaded for today
+        $allUploaded = $this->workoutVideoRepository->checkAllExercisesUploadedToday($workoutPlan, $user);
+        
+        if (!$allUploaded) {
+            return false;
+        }
+        
+        // If all videos are uploaded, mark attendance
+        $today = now()->toDateString();
+        $exercises = is_array($workoutPlan->exercises) ? $workoutPlan->exercises : [];
+        
+        // Check if attendance already marked for today
+        $existingAttendance = \App\Models\ActivityLog::where('user_id', $user->id)
+            ->where('date', $today)
+            ->whereNotNull('check_in_time')
+            ->first();
+        
+        if (!$existingAttendance) {
+            \App\Models\ActivityLog::create([
+                'user_id' => $user->id,
+                'date' => $today,
+                'check_in_time' => now(),
+                'check_in_method' => 'manual',
+                'workout_summary' => 'Completed workout plan: ' . $workoutPlan->plan_name,
+                'exercises_done' => $exercises,
+                'duration_minutes' => count($exercises) * 5, // Estimate 5 min per exercise
+            ]);
+            
+            return true;
+        }
+        
+        return true; // Already marked
+    }
+
+    /**
      * Show member diet plans.
      */
-    public function dietPlans(): View
+    public function dietPlans(Request $request): View
     {
-        return view('frontend.member.diet-plans');
+        $user = auth()->user();
+
+        $query = $user->dietPlans()
+            ->with('trainer')
+            ->latest('start_date');
+
+        if ($request->has('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        $dietPlans = $query->paginate(12)->withQueryString();
+
+        $statusCounts = [
+            'all' => $user->dietPlans()->count(),
+            'active' => $user->dietPlans()->where('status', 'active')->count(),
+            'completed' => $user->dietPlans()->where('status', 'completed')->count(),
+            'paused' => $user->dietPlans()->where('status', 'paused')->count(),
+            'cancelled' => $user->dietPlans()->where('status', 'cancelled')->count(),
+        ];
+
+        return view('frontend.member.diet-plans', compact('dietPlans', 'statusCounts'));
     }
 }

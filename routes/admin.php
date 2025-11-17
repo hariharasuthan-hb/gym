@@ -74,6 +74,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/activities', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])
             ->middleware('permission:view activities')
             ->name('activities.index');
+
+        // Workout video reviews
+        Route::get('/trainer/workout-videos', [\App\Http\Controllers\Admin\WorkoutVideoReviewController::class, 'index'])
+            ->name('trainer.workout-videos.index');
+        Route::post('/trainer/workout-videos/{workoutVideo}/review', [\App\Http\Controllers\Admin\WorkoutVideoReviewController::class, 'review'])
+            ->name('trainer.workout-videos.review');
         
         // Workout Plans - Full CRUD with permission checks
         Route::get('/workout-plans', [\App\Http\Controllers\Admin\WorkoutPlanController::class, 'index'])

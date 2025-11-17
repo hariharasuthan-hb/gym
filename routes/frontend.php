@@ -41,6 +41,7 @@ Route::prefix('member')->name('member.')->middleware(['auth', 'role:member'])->g
     Route::get('/workout-plans/{workoutPlan}', [\App\Http\Controllers\Frontend\MemberController::class, 'showWorkoutPlan'])->name('workout-plans.show');
     Route::post('/workout-plans/{workoutPlan}/upload-video', [\App\Http\Controllers\Frontend\MemberController::class, 'uploadWorkoutVideo'])->name('workout-plans.upload-video');
     Route::post('/workout-plans/{workoutPlan}/upload-video-chunk', [\App\Http\Controllers\Frontend\MemberController::class, 'uploadWorkoutVideoChunk'])->name('workout-plans.upload-video-chunk');
+    Route::post('/workout-plans/{workoutPlan}/mark-attendance', [\App\Http\Controllers\Frontend\MemberController::class, 'markAttendance'])->name('workout-plans.mark-attendance');
     Route::get('/diet-plans', [\App\Http\Controllers\Frontend\MemberController::class, 'dietPlans'])->name('diet-plans');
     
     // Subscription routes

@@ -71,7 +71,7 @@
         <div class="admin-card">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-semibold text-gray-900">Recent Activities</h2>
-                <a href="{{ route('admin.trainer.activity-logs.index') }}" class="text-sm text-blue-600 hover:text-blue-800">
+                <a href="{{ route('admin.trainer.workout-videos.index') }}" class="text-sm text-blue-600 hover:text-blue-800">
                     View All
                 </a>
             </div>

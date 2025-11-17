@@ -13,6 +13,7 @@
 
     <!-- Scripts -->
     @vite(['resources/css/frontend/app.css', 'resources/js/frontend/app.js'])
+    @stack('styles')
 </head>
 <body class="font-sans antialiased">
     {{-- Header --}}
@@ -25,6 +26,8 @@
     
     {{-- Footer --}}
     @include('frontend.components.footer')
+    
+    @stack('scripts')
 </body>
 </html>
 

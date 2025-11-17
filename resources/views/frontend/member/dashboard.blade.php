@@ -87,6 +87,46 @@
             </div>
         </div>
 
+        @if(!empty($todayRecordingProgress))
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wide">Today's Workout Progress</p>
+                    <h2 class="text-2xl font-bold text-gray-900">{{ $todayRecordingProgress['plan']->plan_name ?? 'Workout Plan' }}</h2>
+                </div>
+                <div class="text-right">
+                    <p class="text-3xl font-bold text-gray-900">{{ $todayRecordingProgress['percent'] }}%</p>
+                    <p class="text-xs text-gray-500">{{ $todayRecordingProgress['recorded_count'] }} / {{ $todayRecordingProgress['total_exercises'] }} exercises recorded</p>
+                </div>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3 mb-4 overflow-hidden">
+                <div class="bg-green-500 h-3 rounded-full transition-all duration-500" style="width: {{ $todayRecordingProgress['percent'] }}%"></div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between text-sm text-gray-600">
+                <div class="flex items-center space-x-4">
+                    <span class="inline-flex items-center">
+                        <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                        Recorded today
+                    </span>
+                    <span class="inline-flex items-center">
+                        <span class="w-3 h-3 bg-gray-300 rounded-full mr-2"></span>
+                        Pending
+                    </span>
+                </div>
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-2 {{ $todayRecordingProgress['attendance_marked'] ? 'text-green-600' : 'text-yellow-500' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    @if($todayRecordingProgress['attendance_marked'])
+                        <span class="font-semibold text-green-700">Attendance marked for today</span>
+                    @else
+                        <span class="font-semibold text-yellow-700">Complete recordings to auto-mark attendance</span>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
         {{-- Subscription Plans Section (Show if user has no active subscription) --}}
         @if(!$activeSubscription && $subscriptionPlans && $subscriptionPlans->count() > 0)
         <div class="bg-white rounded-lg shadow mb-8 p-6">

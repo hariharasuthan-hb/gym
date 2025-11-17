@@ -47,8 +47,17 @@ class WorkoutVideoService
             config('video.conversion', [])
         );
         
-        // Use converted path or fallback to original
+        // Use converted path or fallback to original storage
         $videoPath = $convertedPath ?? $this->storeOriginalFile($videoFile, $uniqueFileName);
+
+        // Final safeguard: ensure we always have a stored file path
+        if (!$videoPath) {
+            $videoPath = $videoFile->store('workout-videos', 'public');
+        }
+
+        if (!$videoPath) {
+            throw new \RuntimeException('Unable to store workout video file.');
+        }
         
         // Get actual duration if not provided
         if ($durationSeconds === null) {

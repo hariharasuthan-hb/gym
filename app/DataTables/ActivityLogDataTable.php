@@ -60,7 +60,13 @@ class ActivityLogDataTable extends BaseDataTable
                 $color = $methodColors[$log->check_in_method] ?? 'bg-gray-100 text-gray-800';
                 return '<span class="px-2 py-1 text-xs font-semibold rounded-full ' . $color . '">' . ucfirst(str_replace('_', ' ', $log->check_in_method)) . '</span>';
             })
-            ->rawColumns(['check_in_method_badge']);
+            ->addColumn('actions', function ($log) {
+                return view('admin.activities.partials.actions', [
+                    'log' => $log,
+                    'canReviewVideos' => auth()->user()->hasAnyRole(['admin', 'trainer'])
+                ])->render();
+            })
+            ->rawColumns(['check_in_method_badge', 'actions']);
     }
 
     /**
@@ -101,6 +107,13 @@ class ActivityLogDataTable extends BaseDataTable
             Column::make('calories_formatted')->title('Calories')->width('10%')->orderable(false)->searchable(false),
             Column::make('check_in_method_badge')->title('Method')->width('12%')->orderable(false)->searchable(false),
             Column::make('created_at')->title('Created At')->width('16%'),
+            Column::computed('actions')
+                ->title('Actions')
+                ->orderable(false)
+                ->searchable(false)
+                ->exportable(false)
+                ->printable(false)
+                ->width('12%'),
         ];
     }
 }
