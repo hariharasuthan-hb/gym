@@ -14,28 +14,68 @@ abstract class BaseDataTable
      */
     public function html(): Builder
     {
+        $url = request()->url();
+        $formId = $this->getFilterFormId();
+        
         return $this->builder()
             ->setTableId($this->getTableId())
             ->columns($this->getColumns())
-            ->minifiedAjax()
+            ->ajax([
+                'url' => $url,
+                'data' => "function(d) {
+                    // Get filter form values and merge with DataTables parameters
+                    var form = document.getElementById('{$formId}');
+                    if (form) {
+                        // Get all form inputs
+                        var inputs = form.querySelectorAll('input, select, textarea');
+                        for (var i = 0; i < inputs.length; i++) {
+                            var input = inputs[i];
+                            var name = input.name;
+                            var value = input.value;
+                            
+                            // Skip if no name
+                            if (!name) {
+                                continue;
+                            }
+                            
+                            // For date inputs, always include (even if empty) to clear filters
+                            // For other inputs, skip empty values
+                            if (input.type === 'date') {
+                                d[name] = value || '';
+                            } else if (value && value.toString().trim() !== '') {
+                                d[name] = value;
+                            }
+                        }
+                    }
+                    return d;
+                }"
+            ])
             ->orderBy(0, 'asc')
             ->buttons($this->getButtons())
             ->parameters([
-                'layout' => [
-                    'topStart' => ['pageLength'],
-                    'topEnd' => ['buttons', 'search'],
-                    'bottomStart' => ['info'],
-                    'bottomEnd' => ['paging'],
-                ],
+                'dom' => "<'dt-toolbar flex flex-col md:flex-row md:items-center md:justify-between gap-4'<'dt-toolbar-left flex items-center gap-3'lB><'dt-toolbar-right'f>>" .
+                    "<'dt-table'rt>" .
+                    "<'dt-footer flex flex-col md:flex-row md:items-center md:justify-between gap-4'<'dt-info'i><'dt-pagination'p>>",
                 'language' => [
                     'search' => '',
                     'searchPlaceholder' => 'Search...',
+                    'lengthMenu' => '_MENU_',
                 ],
                 'responsive' => true,
                 'autoWidth' => false,
-                'pageLength' => 25,
-                'lengthMenu' => [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                'pageLength' => 5,
+                'lengthMenu' => [[5, 10, 25, 50, 100, -1], [5, 10, 25, 50, 100, "All"]],
             ]);
+    }
+
+    /**
+     * Get filter form ID for this DataTable.
+     * Override in child classes if needed.
+     */
+    protected function getFilterFormId(): string
+    {
+        // Default pattern: {table-id}-filter-form
+        return str_replace('_', '-', $this->getTableId()) . '-filter-form';
     }
 
     /**
@@ -71,7 +111,6 @@ abstract class BaseDataTable
     {
         return [
             'excel',
-            'csv',
             'pdf',
             'reload',
         ];

@@ -9,6 +9,14 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
+/**
+ * Controller for managing payment gateway settings in the admin panel.
+ * 
+ * Handles viewing and updating payment gateway configurations including
+ * Stripe, Razorpay, and GPay settings. Payment settings control which
+ * payment methods are available for subscription purchases. Requires
+ * 'view payment settings' permission.
+ */
 class PaymentSettingController extends Controller
 {
     public function __construct(

@@ -114,6 +114,15 @@ class SubscriptionController extends Controller
         // Refresh subscription to get updated status
         if ($subscription) {
             $subscription->refresh();
+            
+            // After verification, check if payment record exists and create if missing
+            if ($subscription->gateway === 'stripe' && ($subscription->status === 'active' || $subscription->status === 'trialing')) {
+                $hasPayment = Payment::where('subscription_id', $subscription->id)->exists();
+                if (!$hasPayment) {
+                    // Try to create payment from subscription's latest invoice or payment intent
+                    $this->createPaymentFromSubscriptionVerification($subscription, $paymentIntentId);
+                }
+            }
         }
 
         return view('frontend.member.subscription.success', [
@@ -138,6 +147,7 @@ class SubscriptionController extends Controller
                     $status = $this->mapStripeStatus($stripeSubscription->status);
                     
                     // Also check the latest invoice to see if payment succeeded
+                    $invoice = null;
                     if (isset($stripeSubscription->latest_invoice)) {
                         $invoice = is_string($stripeSubscription->latest_invoice)
                             ? $stripe->invoices->retrieve($stripeSubscription->latest_invoice)
@@ -158,9 +168,21 @@ class SubscriptionController extends Controller
                         'started_at' => $stripeSubscription->start_date ? date('Y-m-d H:i:s', $stripeSubscription->start_date) : now(),
                     ]);
 
-                    // Create payment record if subscription was activated and invoice is paid
-                    if ($oldStatus === 'pending' && ($status === 'active' || $status === 'trialing') && isset($invoice) && $invoice->paid) {
+                    // Create payment record if subscription is active/trialing and invoice is paid
+                    // Check if payment already exists for this subscription
+                    $hasPayment = Payment::where('subscription_id', $subscription->id)->exists();
+                    
+                    // Create payment if:
+                    // 1. Subscription is active/trialing AND invoice is paid AND no payment exists yet
+                    // 2. OR status changed from pending to active/trialing AND invoice is paid
+                    if (($status === 'active' || $status === 'trialing') && isset($invoice) && $invoice->paid && !$hasPayment) {
                         $this->createPaymentFromStripeInvoice($subscription, $invoice);
+                    } elseif ($oldStatus === 'pending' && ($status === 'active' || $status === 'trialing') && isset($invoice) && $invoice->paid) {
+                        // Also create if status changed from pending to active/trialing
+                        $this->createPaymentFromStripeInvoice($subscription, $invoice);
+                    } elseif (($status === 'active' || $status === 'trialing') && !$hasPayment && !isset($invoice)) {
+                        // If subscription is active but no invoice available, create payment from subscription data
+                        $this->createPaymentFromSubscription($subscription);
                     }
 
                     Log::info('Stripe subscription status verified', [
@@ -199,8 +221,14 @@ class SubscriptionController extends Controller
                         'started_at' => now(),
                     ]);
 
-                    // Create payment record if subscription was activated
-                    if ($oldStatus === 'pending' && ($status === 'active' || $status === 'trialing')) {
+                    // Create payment record if subscription is active/trialing
+                    // Check if payment already exists for this subscription
+                    $hasPayment = Payment::where('subscription_id', $subscription->id)->exists();
+                    
+                    if (($status === 'active' || $status === 'trialing') && !$hasPayment) {
+                        $this->createPaymentFromStripeIntent($subscription, $intent, $intentType);
+                    } elseif ($oldStatus === 'pending' && ($status === 'active' || $status === 'trialing')) {
+                        // Also create if status changed from pending to active/trialing
                         $this->createPaymentFromStripeIntent($subscription, $intent, $intentType);
                     }
 
@@ -240,8 +268,14 @@ class SubscriptionController extends Controller
                     'started_at' => now(),
                 ]);
 
-                // Create payment record if subscription was activated
-                if ($oldStatus === 'pending' && ($status === 'active' || $status === 'trialing')) {
+                // Create payment record if subscription is active/trialing
+                // Check if payment already exists for this subscription
+                $hasPayment = Payment::where('subscription_id', $subscription->id)->exists();
+                
+                if (($status === 'active' || $status === 'trialing') && !$hasPayment) {
+                    $this->createPaymentFromRazorpay($subscription, $payment);
+                } elseif ($oldStatus === 'pending' && ($status === 'active' || $status === 'trialing')) {
+                    // Also create if status changed from pending to active/trialing
                     $this->createPaymentFromRazorpay($subscription, $payment);
                 }
 
@@ -282,6 +316,14 @@ class SubscriptionController extends Controller
             }
 
             $subscription->refresh();
+
+            // If subscription is active/trialing but has no payment record, create one
+            if (($subscription->status === 'active' || $subscription->status === 'trialing')) {
+                $hasPayment = Payment::where('subscription_id', $subscription->id)->exists();
+                if (!$hasPayment) {
+                    $this->createPaymentFromSubscription($subscription);
+                }
+            }
 
             if ($subscription->status !== 'pending') {
                 return redirect()->route('member.subscription.index')
@@ -524,6 +566,197 @@ class SubscriptionController extends Controller
             'wallet' => 'other',
             default => 'other',
         };
+    }
+
+    /**
+     * Create payment record from subscription data (for existing active subscriptions without payments).
+     */
+    protected function createPaymentFromSubscription(Subscription $subscription): void
+    {
+        try {
+            $plan = $subscription->subscriptionPlan;
+            if (!$plan) {
+                return;
+            }
+
+            // Check if payment already exists
+            $existingPayment = Payment::where('subscription_id', $subscription->id)->first();
+            if ($existingPayment) {
+                return;
+            }
+
+            // Use subscription started_at or created_at as paid_at
+            $paidAt = $subscription->started_at ?? $subscription->created_at;
+
+            Payment::create([
+                'user_id' => $subscription->user_id,
+                'subscription_id' => $subscription->id,
+                'amount' => $plan->price,
+                'payment_method' => $subscription->gateway === 'stripe' ? 'credit_card' : ($subscription->gateway === 'razorpay' ? 'other' : 'other'),
+                'transaction_id' => $subscription->gateway_subscription_id ?? 'sub_' . $subscription->id,
+                'status' => ($subscription->status === 'active' || $subscription->status === 'trialing') ? 'completed' : 'pending',
+                'payment_details' => [
+                    'subscription_id' => $subscription->gateway_subscription_id,
+                    'gateway' => $subscription->gateway,
+                    'created_from' => 'subscription_backfill',
+                ],
+                'discount_amount' => 0,
+                'final_amount' => $plan->price,
+                'paid_at' => $paidAt,
+            ]);
+
+            Log::info('Payment record created from subscription data', [
+                'subscription_id' => $subscription->id,
+                'amount' => $plan->price,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to create payment from subscription', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Create payment record from subscription verification (when payment succeeded but record missing).
+     */
+    protected function createPaymentFromSubscriptionVerification(Subscription $subscription, ?string $paymentIntentId = null): void
+    {
+        try {
+            $plan = $subscription->subscriptionPlan;
+            if (!$plan) {
+                return;
+            }
+
+            // Check if payment already exists
+            $existingPayment = Payment::where('subscription_id', $subscription->id)->first();
+            if ($existingPayment) {
+                return;
+            }
+
+            $paymentSettings = \App\Models\PaymentSetting::getSettings();
+            $stripe = new \Stripe\StripeClient($paymentSettings->stripe_secret_key);
+
+            // Try to get payment intent from Stripe
+            $paymentIntent = null;
+            $amount = $plan->price;
+            $paidAt = $subscription->started_at ?? $subscription->created_at;
+
+            if ($paymentIntentId) {
+                // Use provided payment intent ID
+                try {
+                    $paymentIntent = $stripe->paymentIntents->retrieve($paymentIntentId);
+                    if ($paymentIntent->status === 'succeeded') {
+                        $amount = $paymentIntent->amount / 100;
+                        $paidAt = date('Y-m-d H:i:s', $paymentIntent->created);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Failed to retrieve payment intent', ['payment_intent_id' => $paymentIntentId]);
+                }
+            }
+
+            // If no payment intent, try to get from subscription's latest invoice
+            if (!$paymentIntent && $subscription->gateway_subscription_id) {
+                try {
+                    $stripeSubscription = $stripe->subscriptions->retrieve($subscription->gateway_subscription_id);
+                    if (isset($stripeSubscription->latest_invoice)) {
+                        $invoice = is_string($stripeSubscription->latest_invoice)
+                            ? $stripe->invoices->retrieve($stripeSubscription->latest_invoice)
+                            : $stripeSubscription->latest_invoice;
+                        
+                        if ($invoice->paid && isset($invoice->payment_intent)) {
+                            $paymentIntent = $stripe->paymentIntents->retrieve($invoice->payment_intent);
+                            $amount = $invoice->amount_paid / 100;
+                            $paidAt = date('Y-m-d H:i:s', $invoice->created);
+                            $paymentIntentId = $invoice->payment_intent;
+                        } elseif ($invoice->paid) {
+                            $amount = $invoice->amount_paid / 100;
+                            $paidAt = date('Y-m-d H:i:s', $invoice->created);
+                            $paymentIntentId = $invoice->id;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Failed to retrieve subscription invoice', [
+                        'subscription_id' => $subscription->gateway_subscription_id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            // Build payment data array
+            $paymentData = [
+                'user_id' => $subscription->user_id,
+                'subscription_id' => $subscription->id,
+                'amount' => $amount,
+                'payment_details' => [
+                    'payment_intent_id' => $paymentIntentId,
+                    'gateway' => 'stripe',
+                    'created_from' => 'subscription_verification',
+                ],
+                'discount_amount' => 0,
+                'paid_at' => $paidAt,
+            ];
+
+            // Add accounting system required columns if they exist
+            if (\Illuminate\Support\Facades\Schema::hasColumn('payments', 'date')) {
+                $paymentData['date'] = date('Y-m-d', strtotime($paidAt));
+            }
+            
+            if (\Illuminate\Support\Facades\Schema::hasColumn('payments', 'is_credit')) {
+                $paymentData['is_credit'] = 0;
+            }
+            
+            if (\Illuminate\Support\Facades\Schema::hasColumn('payments', 'currency_code')) {
+                $paymentData['currency_code'] = 'USD';
+            }
+            
+            if (\Illuminate\Support\Facades\Schema::hasColumn('payments', 'exchange_rate')) {
+                $paymentData['exchange_rate'] = 1.000000;
+            }
+            
+            if (\Illuminate\Support\Facades\Schema::hasColumn('payments', 'inverse')) {
+                $paymentData['inverse'] = 0;
+            }
+
+            // Only add columns if they exist
+            if (Payment::hasTransactionIdColumn() && $paymentIntentId) {
+                $paymentData['transaction_id'] = $paymentIntentId;
+            }
+            
+            if (Payment::hasPaymentMethodColumn()) {
+                $paymentMethod = 'credit_card'; // Default for Stripe
+                if ($paymentIntent && isset($paymentIntent->payment_method_types)) {
+                    $method = $paymentIntent->payment_method_types[0] ?? 'card';
+                    $paymentMethod = match($method) {
+                        'card' => 'credit_card',
+                        'upi' => 'upi',
+                        default => 'other',
+                    };
+                }
+                $paymentData['payment_method'] = $paymentMethod;
+            }
+            
+            if (Payment::hasStatusColumn()) {
+                $paymentData['status'] = 'completed';
+            }
+            
+            if (\Illuminate\Support\Facades\Schema::hasColumn('payments', 'final_amount')) {
+                $paymentData['final_amount'] = $amount;
+            }
+
+            Payment::create($paymentData);
+
+            Log::info('Payment record created from subscription verification', [
+                'subscription_id' => $subscription->id,
+                'payment_intent_id' => $paymentIntentId,
+                'amount' => $amount,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to create payment from subscription verification', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }
 

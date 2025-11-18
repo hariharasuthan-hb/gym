@@ -12,6 +12,13 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Controller for managing subscriptions in the admin panel.
+ * 
+ * Handles viewing, updating, and canceling user subscriptions. Subscriptions
+ * represent active membership plans for gym members. Includes functionality
+ * to cancel subscriptions through payment gateways.
+ */
 class SubscriptionController extends Controller
 {
     /**
@@ -26,6 +33,8 @@ class SubscriptionController extends Controller
         return view('admin.subscriptions.index', [
             'dataTable' => $dataTable,
             'filters' => request()->only(['status', 'gateway', 'search']),
+            'statusOptions' => \App\Models\Subscription::getStatusOptions(),
+            'gatewayOptions' => \App\Models\Subscription::getGatewayOptions(),
         ]);
     }
 

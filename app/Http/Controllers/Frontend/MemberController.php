@@ -66,6 +66,7 @@ class MemberController extends Controller
     public function dashboard(): View
     {
         $user = auth()->user();
+        \App\Models\DietPlan::autoCompleteExpired();
         
         // Check if user has an active subscription
         $activeSubscription = $user->subscriptions()
@@ -107,6 +108,13 @@ class MemberController extends Controller
         $totalDietPlans = $user->dietPlans()->where('status', 'active')->count();
         $totalActivities = \App\Models\ActivityLog::where('user_id', $user->id)->count();
 
+        // Check if user has checked in today
+        $today = now()->toDateString();
+        $checkedInToday = \App\Models\ActivityLog::where('user_id', $user->id)
+            ->where('date', $today)
+            ->whereNotNull('check_in_time')
+            ->exists();
+
         // Build today's recording progress summary using first active workout plan
         if ($activeWorkoutPlans->count() > 0) {
             $primaryPlan = $activeWorkoutPlans->first();
@@ -138,7 +146,8 @@ class MemberController extends Controller
             'totalWorkoutPlans',
             'totalDietPlans',
             'totalActivities',
-            'todayRecordingProgress'
+            'todayRecordingProgress',
+            'checkedInToday'
         ));
     }
 
@@ -284,6 +293,9 @@ class MemberController extends Controller
         // Today's recording progress
         $today = now()->toDateString();
         $todayVideos = $this->workoutVideoRepository->getVideosUploadedOnDate($workoutPlan, $user, $today);
+        $todayVideosByExercise = $todayVideos
+            ->groupBy('exercise_name')
+            ->map(fn($videos) => $videos->sortByDesc('created_at')->first());
         $todayRecordedExercises = $todayVideos->pluck('exercise_name')->unique()->toArray();
         $recordedTodayCount = count($todayRecordedExercises);
         $todayRecordingPercent = $exerciseCount > 0 ? round(($recordedTodayCount / $exerciseCount) * 100, 1) : 0;
@@ -300,6 +312,7 @@ class MemberController extends Controller
             'exerciseCount',
             'attendedDates',
             'todayRecordedExercises',
+            'todayVideosByExercise',
             'recordedTodayCount',
             'todayRecordingPercent',
             'attendanceMarkedToday'
@@ -518,11 +531,51 @@ class MemberController extends Controller
     }
 
     /**
+     * Manual check-in for member.
+     */
+    public function checkIn(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $user = auth()->user();
+        $today = now()->toDateString();
+        
+        // Check if already checked in today
+        $existingCheckIn = \App\Models\ActivityLog::where('user_id', $user->id)
+            ->where('date', $today)
+            ->whereNotNull('check_in_time')
+            ->first();
+        
+        if ($existingCheckIn) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have already checked in today.',
+                'checked_in' => true,
+            ], 400);
+        }
+        
+        // Create check-in record
+        \App\Models\ActivityLog::create([
+            'user_id' => $user->id,
+            'date' => $today,
+            'check_in_time' => now(),
+            'check_in_method' => 'manual',
+            'workout_summary' => 'Manual check-in',
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Check-in successful!',
+            'checked_in' => true,
+        ]);
+    }
+
+    /**
      * Show member diet plans.
      */
     public function dietPlans(Request $request): View
     {
         $user = auth()->user();
+
+        \App\Models\DietPlan::autoCompleteExpired();
 
         $query = $user->dietPlans()
             ->with('trainer')
@@ -532,7 +585,7 @@ class MemberController extends Controller
             $query->where('status', $request->status);
         }
 
-        $dietPlans = $query->paginate(12)->withQueryString();
+        $dietPlans = $query->paginate(12);
 
         $statusCounts = [
             'all' => $user->dietPlans()->count(),

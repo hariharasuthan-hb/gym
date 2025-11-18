@@ -74,5 +74,26 @@ class DietPlan extends Model
     {
         return $query->where('trainer_id', $trainerId);
     }
+
+    /**
+     * Determine if the plan has reached its end date.
+     */
+    public function hasEnded(): bool
+    {
+        return $this->end_date && now()->startOfDay()->gt($this->end_date->copy()->endOfDay());
+    }
+
+    /**
+     * Automatically mark expired plans as completed.
+     */
+    public static function autoCompleteExpired(): void
+    {
+        $today = now()->startOfDay();
+
+        static::where('status', 'active')
+            ->whereNotNull('end_date')
+            ->where('end_date', '<', $today)
+            ->update(['status' => 'completed']);
+    }
 }
 

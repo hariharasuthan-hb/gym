@@ -10,15 +10,31 @@ use App\Models\DietPlan;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use App\Services\EntityIntegrityService;
 
+/**
+ * Controller for managing diet plans in the admin panel.
+ * 
+ * Handles CRUD operations for diet plans including creation, updating,
+ * deletion, and viewing. Diet plans are assigned to members by trainers
+ * or admins and include meal plans and nutritional information. Accessible
+ * by both admin and trainer roles with appropriate permissions.
+ */
 class DietPlanController extends Controller
 {
+    public function __construct(
+        private readonly EntityIntegrityService $entityIntegrityService
+    ) {
+    }
+
     /**
      * Display a listing of diet plans.
      * Accessible by both admin and trainer (filtered by permission).
      */
     public function index(DietPlanDataTable $dataTable)
     {
+        DietPlan::autoCompleteExpired();
+
         if (request()->ajax() || request()->wantsJson()) {
             return $dataTable->dataTable($dataTable->query(new DietPlan))->toJson();
         }
@@ -101,6 +117,8 @@ class DietPlanController extends Controller
      */
     public function show(DietPlan $dietPlan): View
     {
+        DietPlan::autoCompleteExpired();
+
         // Check if trainer can view this plan
         if (auth()->user()->hasRole('trainer') && $dietPlan->trainer_id !== auth()->id()) {
             abort(403, 'Unauthorized');
@@ -181,7 +199,12 @@ class DietPlanController extends Controller
         if (auth()->user()->hasRole('trainer') && $dietPlan->trainer_id !== auth()->id()) {
             abort(403, 'Unauthorized');
         }
-        
+
+        if ($reason = $this->entityIntegrityService->firstDietPlanDeletionBlocker($dietPlan)) {
+            return redirect()->route('admin.diet-plans.index')
+                ->with('error', $reason);
+        }
+
         $dietPlan->delete();
 
         return redirect()->route('admin.diet-plans.index')

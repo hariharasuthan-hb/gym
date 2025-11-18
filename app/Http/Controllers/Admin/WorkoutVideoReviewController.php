@@ -6,6 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\WorkoutVideo;
 use Illuminate\Http\Request;
 
+/**
+ * Controller for reviewing workout videos submitted by members.
+ * 
+ * Handles viewing and reviewing workout videos uploaded by members as part
+ * of their workout plans. Trainers can approve or reject videos with
+ * feedback. Accessible by both admin and trainer roles, with trainers
+ * only seeing videos from their assigned members.
+ */
 class WorkoutVideoReviewController extends Controller
 {
     /**

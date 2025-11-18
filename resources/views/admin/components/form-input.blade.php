@@ -1,3 +1,18 @@
+{{--
+ | Form Input Component
+ |
+ | Reusable form input field component with label, validation, and help text.
+ |
+ | @param string $name - Input name attribute
+ | @param string $label - Input label text
+ | @param string $type - Input type (text, email, password, number, date, etc.)
+ | @param mixed $value - Input value
+ | @param bool $required - Whether field is required
+ | @param string|null $placeholder - Placeholder text
+ | @param string|null $help - Help text to display below input
+ | @param int $colspan - Grid column span (1-12)
+ | @param array $attributes - Additional HTML attributes
+--}}
 @php
     $name = $name ?? '';
     $label = $label ?? '';

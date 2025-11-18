@@ -1,3 +1,19 @@
+{{--
+ | User Activity Overview Index View
+ |
+ | Displays a summary of member activities including total check-ins, today's check-ins,
+ | and last activity date. Provides an overview of member engagement.
+ | For trainers: shows only their assigned members.
+ |
+ | @var \App\Models\User[] $members - Collection of members with activity summary
+ |
+ | Features:
+ | - Activity summary for each member
+ | - Total check-ins count
+ | - Today's check-ins count
+ | - Last activity date
+ | - Role-based filtering (trainers see only their members)
+--}}
 @extends('admin.layouts.app')
 
 @section('page-title', 'Member Activity Overview')

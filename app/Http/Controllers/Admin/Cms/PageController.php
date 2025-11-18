@@ -12,6 +12,13 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
+/**
+ * Controller for managing CMS pages in the admin panel.
+ * 
+ * Handles CRUD operations for CMS pages including creation, updating,
+ * deletion, and viewing. CMS pages are used for creating custom content
+ * pages on the frontend website.
+ */
 class PageController extends Controller
 {
     protected CmsPageRepositoryInterface $repository;

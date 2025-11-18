@@ -110,7 +110,6 @@ class StripeAdapter
             'payment_behavior' => 'default_incomplete',
             'payment_settings' => [
                 'payment_method_types' => ['card'],
-                'save_default_payment_method' => null, // Don't save payment method - always show card entry
             ],
             'expand' => ['latest_invoice.payment_intent', 'pending_setup_intent'],
             'metadata' => [
@@ -281,7 +280,6 @@ class StripeAdapter
             'payment_behavior' => 'default_incomplete',
             'payment_settings' => [
                 'payment_method_types' => ['card'],
-                'save_default_payment_method' => null, // Don't save payment method - always show card entry
             ],
             'expand' => ['latest_invoice.payment_intent'],
             'metadata' => [
@@ -657,23 +655,92 @@ class StripeAdapter
                 ->first();
         }
 
-        if ($subscription && $subscription->status === 'pending') {
-            $plan = $subscription->subscriptionPlan;
-            $status = ($plan && $plan->hasTrial()) ? 'trialing' : 'active';
+        if ($subscription) {
+            // Check if payment already exists
+            $hasPayment = false;
+            if (Payment::hasTransactionIdColumn()) {
+                $hasPayment = Payment::where('subscription_id', $subscription->id)
+                    ->where('transaction_id', $paymentIntentId)
+                    ->exists();
+            } else {
+                // Fallback: check by subscription_id and amount
+                $amount = ($data['amount'] ?? $data['amount_received'] ?? 0) / 100;
+                $hasPayment = Payment::where('subscription_id', $subscription->id)
+                    ->where('amount', $amount)
+                    ->exists();
+            }
             
-            $subscription->update([
-                'status' => $status,
-                'started_at' => now(),
-            ]);
-            
-            // Create payment record
-            $this->createPaymentFromPaymentIntent($subscription, $data);
-            
-            Log::info('Subscription activated via payment_intent.succeeded webhook', [
-                'subscription_id' => $subscription->id,
-                'payment_intent_id' => $paymentIntentId,
-                'status' => $status,
-            ]);
+            if ($subscription->status === 'pending') {
+                $plan = $subscription->subscriptionPlan;
+                $status = ($plan && $plan->hasTrial()) ? 'trialing' : 'active';
+                
+                $subscription->update([
+                    'status' => $status,
+                    'started_at' => now(),
+                ]);
+                
+                // Create payment record if it doesn't exist
+                if (!$hasPayment) {
+                    $this->createPaymentFromPaymentIntent($subscription, $data);
+                }
+                
+                Log::info('Subscription activated via payment_intent.succeeded webhook', [
+                    'subscription_id' => $subscription->id,
+                    'payment_intent_id' => $paymentIntentId,
+                    'status' => $status,
+                ]);
+            } elseif (($subscription->status === 'active' || $subscription->status === 'trialing') && !$hasPayment) {
+                // Create payment record for active subscriptions that don't have payments
+                $this->createPaymentFromPaymentIntent($subscription, $data);
+                
+                Log::info('Payment record created for active subscription via payment_intent.succeeded webhook', [
+                    'subscription_id' => $subscription->id,
+                    'payment_intent_id' => $paymentIntentId,
+                ]);
+            }
+        } else {
+            // If subscription not found, try to find by payment intent in invoices
+            // This handles cases where payment succeeded but subscription wasn't linked
+            try {
+                $paymentSettings = PaymentSetting::getSettings();
+                $stripe = new \Stripe\StripeClient($paymentSettings->stripe_secret_key);
+                $paymentIntent = $stripe->paymentIntents->retrieve($paymentIntentId);
+                
+                if (isset($paymentIntent->invoice)) {
+                    $invoice = $stripe->invoices->retrieve($paymentIntent->invoice);
+                    if (isset($invoice->subscription)) {
+                        $subscription = Subscription::where('gateway_subscription_id', $invoice->subscription)->first();
+                        if ($subscription) {
+                            $hasPayment = false;
+                            if (Payment::hasTransactionIdColumn()) {
+                                $hasPayment = Payment::where('subscription_id', $subscription->id)
+                                    ->where('transaction_id', $paymentIntentId)
+                                    ->exists();
+                            } else {
+                                // Fallback: check by subscription_id and amount
+                                $amount = ($data['amount'] ?? $data['amount_received'] ?? 0) / 100;
+                                $hasPayment = Payment::where('subscription_id', $subscription->id)
+                                    ->where('amount', $amount)
+                                    ->exists();
+                            }
+                            
+                            if (!$hasPayment) {
+                                $this->createPaymentFromPaymentIntent($subscription, $data);
+                                
+                                Log::info('Payment record created from invoice lookup via payment_intent.succeeded webhook', [
+                                    'subscription_id' => $subscription->id,
+                                    'payment_intent_id' => $paymentIntentId,
+                                ]);
+                            }
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to lookup subscription from payment intent invoice', [
+                    'payment_intent_id' => $paymentIntentId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 
@@ -788,9 +855,18 @@ class StripeAdapter
             $transactionId = $paymentIntentId ?? $invoiceId;
 
             // Check if payment already exists
-            $existingPayment = Payment::where('subscription_id', $subscription->id)
-                ->where('transaction_id', $transactionId)
-                ->first();
+            $existingPayment = null;
+            if (Payment::hasTransactionIdColumn()) {
+                $existingPayment = Payment::where('subscription_id', $subscription->id)
+                    ->where('transaction_id', $transactionId)
+                    ->first();
+            } else {
+                // Fallback: check by subscription_id and amount
+                $amount = ($data['amount_paid'] ?? $data['amount_due'] ?? 0) / 100;
+                $existingPayment = Payment::where('subscription_id', $subscription->id)
+                    ->where('amount', $amount)
+                    ->first();
+            }
 
             if ($existingPayment) {
                 return;
@@ -798,14 +874,14 @@ class StripeAdapter
 
             $amount = ($data['amount_paid'] ?? $data['amount_due'] ?? 0) / 100; // Convert from cents
             $paymentMethod = $this->mapStripePaymentMethodToEnum($data['payment_method_types'] ?? ['card']);
+            $isPaid = $data['paid'] ?? false;
+            $paidAt = $isPaid ? (isset($data['created']) ? date('Y-m-d H:i:s', $data['created']) : now()) : null;
 
-            Payment::create([
+            // Build payment data array
+            $paymentData = [
                 'user_id' => $subscription->user_id,
                 'subscription_id' => $subscription->id,
                 'amount' => $amount,
-                'payment_method' => $paymentMethod,
-                'transaction_id' => $transactionId,
-                'status' => ($data['paid'] ?? false) ? 'completed' : 'pending',
                 'payment_details' => [
                     'invoice_id' => $invoiceId,
                     'payment_intent_id' => $paymentIntentId,
@@ -813,9 +889,48 @@ class StripeAdapter
                     'gateway' => 'stripe',
                 ],
                 'discount_amount' => 0,
-                'final_amount' => $amount,
-                'paid_at' => ($data['paid'] ?? false) ? now() : null,
-            ]);
+                'paid_at' => $paidAt,
+            ];
+
+            // Add accounting system required columns if they exist
+            if (\Illuminate\Support\Facades\Schema::hasColumn('payments', 'date')) {
+                $paymentData['date'] = isset($data['created']) ? date('Y-m-d', $data['created']) : date('Y-m-d');
+            }
+            
+            if (\Illuminate\Support\Facades\Schema::hasColumn('payments', 'is_credit')) {
+                $paymentData['is_credit'] = 0; // Payment is a debit (money coming in)
+            }
+            
+            if (\Illuminate\Support\Facades\Schema::hasColumn('payments', 'currency_code')) {
+                $paymentData['currency_code'] = strtoupper($data['currency'] ?? 'USD');
+            }
+            
+            if (\Illuminate\Support\Facades\Schema::hasColumn('payments', 'exchange_rate')) {
+                $paymentData['exchange_rate'] = 1.000000;
+            }
+            
+            if (\Illuminate\Support\Facades\Schema::hasColumn('payments', 'inverse')) {
+                $paymentData['inverse'] = 0;
+            }
+
+            // Only add columns if they exist
+            if (Payment::hasTransactionIdColumn()) {
+                $paymentData['transaction_id'] = $transactionId;
+            }
+            
+            if (Payment::hasPaymentMethodColumn()) {
+                $paymentData['payment_method'] = $paymentMethod;
+            }
+            
+            if (Payment::hasStatusColumn()) {
+                $paymentData['status'] = $isPaid ? 'completed' : 'pending';
+            }
+            
+            if (\Illuminate\Support\Facades\Schema::hasColumn('payments', 'final_amount')) {
+                $paymentData['final_amount'] = $amount;
+            }
+
+            Payment::create($paymentData);
 
             Log::info('Payment record created from invoice webhook', [
                 'subscription_id' => $subscription->id,
@@ -846,9 +961,18 @@ class StripeAdapter
             }
 
             // Check if payment already exists
-            $existingPayment = Payment::where('subscription_id', $subscription->id)
-                ->where('transaction_id', $paymentIntentId)
-                ->first();
+            $existingPayment = null;
+            if (Payment::hasTransactionIdColumn()) {
+                $existingPayment = Payment::where('subscription_id', $subscription->id)
+                    ->where('transaction_id', $paymentIntentId)
+                    ->first();
+            } else {
+                // Fallback: check by subscription_id and amount
+                $amount = ($data['amount'] ?? $data['amount_received'] ?? 0) / 100;
+                $existingPayment = Payment::where('subscription_id', $subscription->id)
+                    ->where('amount', $amount)
+                    ->first();
+            }
 
             if ($existingPayment) {
                 return;
@@ -856,23 +980,62 @@ class StripeAdapter
 
             $amount = ($data['amount'] ?? $data['amount_received'] ?? 0) / 100; // Convert from cents
             $paymentMethod = $this->mapStripePaymentMethodToEnum($data['payment_method_types'] ?? ['card']);
+            $isSucceeded = ($data['status'] ?? '') === 'succeeded';
+            $paidAt = $isSucceeded ? (isset($data['created']) ? date('Y-m-d H:i:s', $data['created']) : now()) : null;
 
-            Payment::create([
+            // Build payment data array
+            $paymentData = [
                 'user_id' => $subscription->user_id,
                 'subscription_id' => $subscription->id,
                 'amount' => $amount,
-                'payment_method' => $paymentMethod,
-                'transaction_id' => $paymentIntentId,
-                'status' => ($data['status'] === 'succeeded') ? 'completed' : 'pending',
                 'payment_details' => [
                     'payment_intent_id' => $paymentIntentId,
                     'currency' => $data['currency'] ?? 'usd',
                     'gateway' => 'stripe',
                 ],
                 'discount_amount' => 0,
-                'final_amount' => $amount,
-                'paid_at' => ($data['status'] === 'succeeded') ? now() : null,
-            ]);
+                'paid_at' => $paidAt,
+            ];
+
+            // Add accounting system required columns if they exist
+            if (\Illuminate\Support\Facades\Schema::hasColumn('payments', 'date')) {
+                $paymentData['date'] = isset($data['created']) ? date('Y-m-d', $data['created']) : date('Y-m-d');
+            }
+            
+            if (\Illuminate\Support\Facades\Schema::hasColumn('payments', 'is_credit')) {
+                $paymentData['is_credit'] = 0; // Payment is a debit (money coming in)
+            }
+            
+            if (\Illuminate\Support\Facades\Schema::hasColumn('payments', 'currency_code')) {
+                $paymentData['currency_code'] = strtoupper($data['currency'] ?? 'USD');
+            }
+            
+            if (\Illuminate\Support\Facades\Schema::hasColumn('payments', 'exchange_rate')) {
+                $paymentData['exchange_rate'] = 1.000000;
+            }
+            
+            if (\Illuminate\Support\Facades\Schema::hasColumn('payments', 'inverse')) {
+                $paymentData['inverse'] = 0;
+            }
+
+            // Only add columns if they exist
+            if (Payment::hasTransactionIdColumn()) {
+                $paymentData['transaction_id'] = $paymentIntentId;
+            }
+            
+            if (Payment::hasPaymentMethodColumn()) {
+                $paymentData['payment_method'] = $paymentMethod;
+            }
+            
+            if (Payment::hasStatusColumn()) {
+                $paymentData['status'] = $isSucceeded ? 'completed' : 'pending';
+            }
+            
+            if (\Illuminate\Support\Facades\Schema::hasColumn('payments', 'final_amount')) {
+                $paymentData['final_amount'] = $amount;
+            }
+
+            Payment::create($paymentData);
 
             Log::info('Payment record created from payment intent webhook', [
                 'subscription_id' => $subscription->id,

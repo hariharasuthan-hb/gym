@@ -67,6 +67,7 @@ x-init="$watch('sidebarCollapsed', value => {
         </div>
     </div>
     
+    @include('admin.components.confirm-modal')
     @stack('scripts')
 </body>
 </html>

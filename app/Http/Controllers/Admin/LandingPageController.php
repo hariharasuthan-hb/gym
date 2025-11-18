@@ -9,6 +9,14 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
+/**
+ * Controller for managing landing page content in the admin panel.
+ * 
+ * Handles viewing and updating the landing page content including welcome
+ * sections, about sections, services, and images. The landing page is the
+ * main frontend page displayed to visitors. Requires 'view landing page' and
+ * 'edit landing page' permissions.
+ */
 class LandingPageController extends Controller
 {
     public function __construct()

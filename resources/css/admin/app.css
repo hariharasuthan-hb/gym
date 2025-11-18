@@ -320,7 +320,7 @@
     
     /* ===== Page Header ===== */
     .page-header {
-        @apply mb-4;
+        @apply mb-0;
     }
     
     .page-title {

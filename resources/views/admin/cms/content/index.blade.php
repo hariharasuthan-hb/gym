@@ -1,3 +1,16 @@
+{{--
+ | CMS Content Index View
+ |
+ | Displays a list of all CMS content items with management capabilities.
+ | CMS content is used for managing reusable content blocks (hero, features, testimonials).
+ |
+ | @var \App\DataTables\CmsContentDataTable $dataTable
+ |
+ | Features:
+ | - Create new CMS content button
+ | - DataTable with server-side processing
+ | - View, edit, and delete content actions
+--}}
 @extends('admin.layouts.app')
 
 @section('page-title', 'CMS Content')

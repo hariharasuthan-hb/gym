@@ -37,6 +37,20 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         // Invoices
         Route::resource('invoices', \App\Http\Controllers\Admin\InvoiceController::class);
         
+        // Announcements & Notifications
+        Route::resource('announcements', \App\Http\Controllers\Admin\AnnouncementController::class)->except(['show']);
+        Route::resource('notifications', \App\Http\Controllers\Admin\InAppNotificationController::class)->except(['show']);
+
+        // Expenses
+        Route::resource('expenses', \App\Http\Controllers\Admin\ExpenseController::class);
+        
+        // Incomes
+        Route::resource('incomes', \App\Http\Controllers\Admin\IncomeController::class);
+
+        // Finances Overview
+        Route::get('/finances', [\App\Http\Controllers\Admin\FinanceController::class, 'index'])
+            ->name('finances.index');
+        
         // Reports
         Route::get('/reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
         
@@ -150,6 +164,25 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             ->middleware('permission:view activities')
             ->name('user-activity.index');
     });
-    
+
+    Route::middleware(['role:admin,trainer,member', 'permission:view announcements|view notifications'])->group(function () {
+        Route::get('/notification-center', [\App\Http\Controllers\Admin\NotificationCenterController::class, 'index'])
+            ->name('notification-center.index');
+    });
+
+    Route::middleware(['role:admin,trainer,member', 'permission:mark notifications read'])->group(function () {
+        Route::post('/notification-center/{notification}/read', [\App\Http\Controllers\Admin\NotificationCenterController::class, 'markAsRead'])
+            ->name('notification-center.read');
+    });
+
+    Route::middleware(['role:admin,trainer', 'permission:view reports|export reports'])->group(function () {
+        Route::post('/exports/{type}', [\App\Http\Controllers\Admin\ExportController::class, 'export'])
+            ->name('exports.export');
+        Route::get('/exports/{export}/status', [\App\Http\Controllers\Admin\ExportController::class, 'status'])
+            ->name('exports.status');
+        Route::get('/exports/{export}/download', [\App\Http\Controllers\Admin\ExportController::class, 'download'])
+            ->name('exports.download');
+    });
+
 });
 

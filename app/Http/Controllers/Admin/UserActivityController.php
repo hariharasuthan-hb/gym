@@ -6,6 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\View\View;
 
+/**
+ * Controller for viewing user activity summaries in the admin panel.
+ * 
+ * Handles displaying a summary of member activities including total check-ins,
+ * today's check-ins, and last activity date. For trainers, only shows their
+ * assigned members. For admins, shows all members. Accessible by both admin
+ * and trainer roles with 'view activities' permission.
+ */
 class UserActivityController extends Controller
 {
     /**

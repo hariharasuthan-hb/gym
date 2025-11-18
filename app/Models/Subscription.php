@@ -10,6 +10,48 @@ class Subscription extends Model
     use HasFactory;
 
     /**
+     * Subscription status constants
+     */
+    public const STATUS_TRIALING = 'trialing';
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_CANCELED = 'canceled';
+    public const STATUS_PAST_DUE = 'past_due';
+    public const STATUS_EXPIRED = 'expired';
+    public const STATUS_PENDING = 'pending';
+
+    /**
+     * Payment gateway constants
+     */
+    public const GATEWAY_STRIPE = 'stripe';
+    public const GATEWAY_RAZORPAY = 'razorpay';
+
+    /**
+     * Get all available status options
+     */
+    public static function getStatusOptions(): array
+    {
+        return [
+            self::STATUS_TRIALING,
+            self::STATUS_ACTIVE,
+            self::STATUS_CANCELED,
+            self::STATUS_PAST_DUE,
+            self::STATUS_EXPIRED,
+            self::STATUS_PENDING,
+        ];
+    }
+
+    /**
+     * Get all available gateway options
+     */
+    public static function getGatewayOptions(): array
+    {
+        return [
+            self::GATEWAY_STRIPE,
+            self::GATEWAY_RAZORPAY,
+        ];
+    }
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>

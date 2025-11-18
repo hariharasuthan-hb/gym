@@ -1,3 +1,18 @@
+{{--
+ | DataTable Actions Component
+ |
+ | Reusable action buttons component for DataTable rows.
+ | Displays view, edit, and delete actions based on provided URLs.
+ |
+ | @param string|null $showUrl - URL for view action
+ | @param string|null $editUrl - URL for edit action
+ | @param string|null $deleteUrl - URL for delete action
+ |
+ | Features:
+ | - Conditional rendering based on URL availability
+ | - Confirmation dialog for delete action
+ | - Icon-based action buttons
+--}}
 <div class="flex justify-center space-x-2">
     @if(isset($showUrl))
         <a href="{{ $showUrl }}" 

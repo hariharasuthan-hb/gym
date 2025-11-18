@@ -9,6 +9,13 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
+/**
+ * Controller for managing site-wide settings in the admin panel.
+ * 
+ * Handles viewing and updating general site settings such as site name,
+ * contact information, and logo. Site settings affect the entire application
+ * and are displayed across the frontend. Requires appropriate permissions.
+ */
 class SiteSettingsController extends Controller
 {
     /**

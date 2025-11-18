@@ -111,4 +111,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\WorkoutVideo::class);
     }
+
+    /**
+     * Notifications assigned to the user.
+     */
+    public function receivedNotifications()
+    {
+        return $this->belongsToMany(InAppNotification::class, 'notification_user')
+            ->withPivot(['read_at', 'dismissed_at'])
+            ->withTimestamps();
+    }
 }

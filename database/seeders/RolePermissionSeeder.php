@@ -66,10 +66,36 @@ class RolePermissionSeeder extends Seeder
             'create invoices',
             'edit invoices',
             'delete invoices',
+
+            // Expenses
+            'view expenses',
+            'create expenses',
+            'edit expenses',
+            'delete expenses',
+
+            // Incomes
+            'view incomes',
+            'create incomes',
+            'edit incomes',
+            'delete incomes',
+
+            // Finances
+            'view finances',
             
             // Reports
             'view reports',
             'export reports',
+
+            // Communications
+            'view announcements',
+            'create announcements',
+            'edit announcements',
+            'delete announcements',
+            'view notifications',
+            'create notifications',
+            'edit notifications',
+            'delete notifications',
+            'mark notifications read',
             
             // CMS Management
             'view cms pages',
@@ -108,26 +134,14 @@ class RolePermissionSeeder extends Seeder
 
         $trainerRole = Role::firstOrCreate(['name' => 'trainer']);
         $trainerRole->syncPermissions([
-            'view users',
-            'view subscriptions',
             'view activities',
-            'create activities',
-            'edit activities',
-            'check in members',
-            'check out members',
             'view workout plans',
-            'create workout plans',
-            'edit workout plans',
-            'delete workout plans',
             'view diet plans',
-            'create diet plans',
-            'edit diet plans',
-            'delete diet plans',
             'view reports',
-            'view cms pages',
-            'view cms content',
-            'view landing page',
-            'edit landing page',
+            'export reports',
+            'view announcements',
+            'view notifications',
+            'mark notifications read',
         ]);
 
         $memberRole = Role::firstOrCreate(['name' => 'member']);
@@ -137,6 +151,9 @@ class RolePermissionSeeder extends Seeder
             'create activities',
             'view workout plans',
             'view diet plans',
+            'view announcements',
+            'view notifications',
+            'mark notifications read',
         ]);
     }
 }

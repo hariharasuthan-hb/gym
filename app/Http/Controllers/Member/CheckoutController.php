@@ -26,14 +26,19 @@ class CheckoutController extends Controller
     {
         $user = auth()->user();
 
-        // Check if user already has an active subscription
+
+        // Allow upgrade by auto-canceling current subscription
         $activeSubscription = $user->subscriptions()
             ->whereIn('status', ['active', 'trialing'])
             ->first();
 
         if ($activeSubscription) {
-            return redirect()->route('member.dashboard')
-                ->with('info', 'You already have an active subscription.');
+            if ($activeSubscription->subscription_plan_id === $plan->id) {
+                return redirect()->route('member.dashboard')
+                    ->with('info', 'You already have this subscription plan.');
+            }
+
+            $this->cancelForUpgrade($activeSubscription);
         }
 
         // Check if plan is active
@@ -103,8 +108,12 @@ class CheckoutController extends Controller
             ->first();
 
         if ($activeSubscription) {
-            return redirect()->route('member.dashboard')
-                ->with('info', 'You already have an active subscription.');
+            if ($activeSubscription->subscription_plan_id === $plan->id) {
+                return redirect()->route('member.dashboard')
+                    ->with('info', 'You already have this subscription plan.');
+            }
+
+            $this->cancelForUpgrade($activeSubscription);
         }
 
         try {
@@ -155,6 +164,9 @@ class CheckoutController extends Controller
                 'metadata' => $metadata,
             ]);
 
+            // Payment records will be created automatically via webhooks after payment confirmation
+            // No need to create them here - they will be created when payment_intent.succeeded or invoice.payment_succeeded webhooks are received
+
             session([
                 'subscription_data' => [
                     'plan_id' => $plan->id,
@@ -188,6 +200,32 @@ class CheckoutController extends Controller
 
             return redirect()->route('member.subscription.checkout', $plan->id)
                 ->with('error', $errorMessage);
+        }
+    }
+
+    /**
+     * Cancel current subscription when upgrading to a new plan.
+     */
+    protected function cancelForUpgrade(?Subscription $subscription): void
+    {
+        if (!$subscription) {
+            return;
+        }
+
+        try {
+            $canceled = $this->paymentGatewayService->cancelSubscription($subscription);
+
+            if ($canceled) {
+                $subscription->update([
+                    'status' => 'canceled',
+                    'canceled_at' => now(),
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Auto cancel for upgrade failed', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 }
