@@ -114,6 +114,19 @@
                     <p class="mt-1 text-sm text-gray-500">Max size: 5MB. Formats: JPEG, PNG, JPG, GIF, WEBP. Used as background for content sections.</p>
                 </div>
 
+                {{-- Video (Testimonials, etc.) --}}
+                <div>
+                    <label for="video" class="block text-sm font-medium text-gray-700 mb-2">
+                        Video (optional)
+                    </label>
+                    <input type="file" 
+                           name="video" 
+                           id="video" 
+                           accept="video/mp4,video/quicktime,video/x-msvideo,video/x-ms-wmv"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="mt-1 text-sm text-gray-500">Max size: 50MB. Formats: MP4, MOV, AVI, WMV.</p>
+                </div>
+
                 {{-- Link --}}
                 <div>
                     <label for="link" class="block text-sm font-medium text-gray-700 mb-2">

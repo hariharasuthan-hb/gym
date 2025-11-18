@@ -78,6 +78,14 @@ class ContentController extends Controller
             );
         }
 
+        // Handle video upload (e.g., testimonials)
+        if ($request->hasFile('video')) {
+            $data['video_path'] = $this->imageService->upload(
+                $request->file('video'),
+                'cms/videos'
+            );
+        }
+
         $data['created_by'] = auth()->id();
         $data['updated_by'] = auth()->id();
 
@@ -113,6 +121,30 @@ class ContentController extends Controller
         $content = $this->repository->findOrFail($id);
         $data = $request->validated();
 
+        // Remove image if requested
+        if ($request->boolean('remove_image')) {
+            if ($content->image) {
+                $this->imageService->delete($content->image);
+            }
+            $data['image'] = null;
+        }
+
+        // Remove background image if requested
+        if ($request->boolean('remove_background_image')) {
+            if ($content->background_image) {
+                $this->imageService->delete($content->background_image);
+            }
+            $data['background_image'] = null;
+        }
+
+        // Remove video if requested
+        if ($request->boolean('remove_video')) {
+            if ($content->video_path) {
+                $this->imageService->delete($content->video_path);
+            }
+            $data['video_path'] = null;
+        }
+
         // Handle image upload
         if ($request->hasFile('image')) {
             $data['image'] = $this->imageService->upload(
@@ -128,6 +160,15 @@ class ContentController extends Controller
                 $request->file('background_image'),
                 'cms/content',
                 $content->background_image
+            );
+        }
+
+        // Handle video upload
+        if ($request->hasFile('video')) {
+            $data['video_path'] = $this->imageService->upload(
+                $request->file('video'),
+                'cms/videos',
+                $content->video_path
             );
         }
 
@@ -152,6 +193,9 @@ class ContentController extends Controller
         }
         if ($content->background_image) {
             $this->imageService->delete($content->background_image);
+        }
+        if ($content->video_path) {
+            $this->imageService->delete($content->video_path);
         }
 
         $this->repository->delete($id);

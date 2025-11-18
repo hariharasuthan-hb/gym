@@ -26,3 +26,4 @@ Thumbs.db
 /tests
 !readme.md
 *.ps1
+*.sh
