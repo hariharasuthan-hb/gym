@@ -26,6 +26,7 @@ class Export extends Model
     public const TYPE_INCOMES = 'incomes';
     public const TYPE_SUBSCRIPTIONS = 'subscriptions';
     public const TYPE_ACTIVITY_LOGS = 'activity_logs';
+    public const TYPE_FINANCES = 'finances';
 
     /**
      * Format constants

@@ -21,73 +21,28 @@
 
 @section('content')
 <div class="space-y-6">
-    {{-- Header --}}
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-            <p class="text-sm text-gray-500 uppercase tracking-wide">Financial</p>
-            <h1 class="text-2xl font-bold text-gray-900">Incomes</h1>
-            <p class="text-sm text-gray-500 mt-1">
-                Record and review non-subscription income.
-            </p>
-        </div>
-        @can('create incomes')
-            <a href="{{ route('admin.incomes.create') }}" class="btn btn-primary">
-                Add Income
-            </a>
-        @endcan
-    </div>
-
-    {{-- Flash message --}}
-    @if(session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    {{-- Filters --}}
-    @include('admin.components.filter-section', [
-        'formId' => 'income-filter-form',
-        'clearRoute' => route('admin.incomes.index'),
+    @include('admin.components.report-section', [
+        'title' => 'Incomes',
+        'description' => 'Record and review non-subscription income.',
+        'exportType' => 'incomes',
         'filters' => $filters,
-        'fields' => [
-            [
-                'name' => 'category',
-                'label' => 'Category',
-                'type' => 'select',
-                'options' => collect($categoryOptions)->mapWithKeys(fn($c) => [$c => $c])->all()
-            ],
-            [
-                'name' => 'source',
-                'label' => 'Source',
-                'type' => 'text',
-                'placeholder' => 'Source name'
-            ],
-            [
-                'name' => 'date_from',
-                'label' => 'Date From',
-                'type' => 'date'
-            ],
-            [
-                'name' => 'date_to',
-                'label' => 'Date To',
-                'type' => 'date'
-            ]
+        'filterOptions' => [
+            'categoryOptions' => $categoryOptions,
+            'source' => true,
         ],
-        'localStorageKey' => 'income-filters-collapsed',
-        'tableId' => $dataTable->getTableIdPublic(),
-        'autoReloadSelectors' => ['category', 'source', 'date_from', 'date_to']
+        'dataTable' => $dataTable,
+        'indexRoute' => 'admin.incomes.index',
+        'showExportButton' => true,
+        'headerActions' => [
+            [
+                'label' => 'Add Income',
+                'url' => route('admin.incomes.create'),
+                'class' => 'btn btn-primary flex items-center gap-2',
+                'icon' => '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>',
+                'can' => 'create incomes',
+            ],
+        ],
     ])
-
-    {{-- DataTable --}}
-    <div class="admin-card">
-        <div class="admin-table-wrapper">
-            {!! $dataTable->html()->table(['class' => 'admin-table', 'id' => $dataTable->getTableIdPublic()]) !!}
-        </div>
-    </div>
 </div>
 @endsection
-
-@push('scripts')
-    {!! $dataTable->scripts() !!}
-@endpush
 

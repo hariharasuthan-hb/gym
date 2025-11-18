@@ -50,14 +50,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         // Reports
         Route::get('/reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
         
-        // Exports
-        Route::post('/exports/{type}', [\App\Http\Controllers\Admin\ExportController::class, 'export'])
-            ->name('exports.export');
-        Route::get('/exports/{export}/status', [\App\Http\Controllers\Admin\ExportController::class, 'status'])
-            ->name('exports.status');
-        Route::get('/exports/{export}/download', [\App\Http\Controllers\Admin\ExportController::class, 'download'])
-            ->name('exports.download');
-        
         // CMS Management (for frontend content)
         Route::prefix('cms')->name('cms.')->group(function () {
             Route::resource('pages', \App\Http\Controllers\Admin\Cms\PageController::class);
@@ -168,6 +160,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             ->middleware('permission:view activities')
             ->name('user-activity.index');
     });
-    
+
+    Route::middleware(['role:admin,trainer', 'permission:view reports|export reports'])->group(function () {
+        Route::post('/exports/{type}', [\App\Http\Controllers\Admin\ExportController::class, 'export'])
+            ->name('exports.export');
+        Route::get('/exports/{export}/status', [\App\Http\Controllers\Admin\ExportController::class, 'status'])
+            ->name('exports.status');
+        Route::get('/exports/{export}/download', [\App\Http\Controllers\Admin\ExportController::class, 'download'])
+            ->name('exports.download');
+    });
+
 });
 

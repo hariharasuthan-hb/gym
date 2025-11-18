@@ -45,15 +45,35 @@
                     @endforeach
                 </select>
             </form>
+            <div class="flex flex-wrap gap-3">
+                <button type="button" 
+                        id="finance-export-btn" 
+                        class="btn btn-secondary flex items-center gap-2"
+                        data-export-route="{{ route('admin.exports.export', ['type' => \App\Models\Export::TYPE_FINANCES]) }}"
+                        data-export-type="{{ \App\Models\Export::TYPE_FINANCES }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Export Data
+                </button>
             @can('create expenses')
-                <a href="{{ route('admin.expenses.create') }}" class="btn btn-primary">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <a href="{{ route('admin.expenses.create') }}" class="btn btn-primary flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                     </svg>
                     Add Expense
                 </a>
             @endcan
         </div>
+        </div>
+    </div>
+
+    {{-- Export Status Notification --}}
+    <div id="finance-export-status" class="hidden alert alert-info">
+        <svg class="w-5 h-5 flex-shrink-0 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        <span id="finance-export-status-message">Preparing export...</span>
     </div>
 
     {{-- KPI Cards --}}
@@ -130,5 +150,103 @@
 
 @push('scripts')
     {!! $monthlyDataTable->scripts() !!}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const exportBtn = document.getElementById('finance-export-btn');
+            const exportStatus = document.getElementById('finance-export-status');
+            const exportStatusMessage = document.getElementById('finance-export-status-message');
+            const rangeInput = document.getElementById('range');
+            const tableId = '{{ $monthlyDataTable->getTableIdPublic() }}';
+
+            if (!exportBtn) {
+                return;
+            }
+
+            exportBtn.addEventListener('click', function () {
+                const exportRoute = this.dataset.exportRoute;
+
+                const filters = {};
+                if (rangeInput && rangeInput.value) {
+                    filters.range = rangeInput.value;
+                }
+
+                if (tableId && typeof window.$ !== 'undefined') {
+                    try {
+                        const table = window.$('#' + tableId).DataTable();
+                        if (table) {
+                            const searchValue = table.search();
+                            if (searchValue && searchValue.trim() !== '') {
+                                filters['datatable_search'] = searchValue;
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Could not get DataTable search value:', e);
+                    }
+                }
+
+                exportBtn.disabled = true;
+                exportStatus.classList.remove('hidden', 'alert-danger', 'alert-success');
+                exportStatus.classList.add('alert-info');
+                exportStatusMessage.textContent = 'Preparing export... This may take a few moments for large datasets.';
+
+                fetch(exportRoute, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    },
+                    body: JSON.stringify({
+                        filters: filters,
+                        format: 'csv'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        exportStatusMessage.textContent = 'Export queued successfully! You will be notified when it\'s ready.';
+                        exportStatus.classList.remove('alert-info');
+                        exportStatus.classList.add('alert-success');
+                        checkFinanceExportStatus(data.export_id);
+                    } else {
+                        throw new Error(data.message || 'Export failed');
+                    }
+                })
+                .catch(error => {
+                    exportStatusMessage.textContent = 'Export failed: ' + error.message;
+                    exportStatus.classList.remove('alert-info');
+                    exportStatus.classList.add('alert-danger');
+                })
+                .finally(() => {
+                    exportBtn.disabled = false;
+                });
+            });
+
+            function checkFinanceExportStatus(exportId) {
+                const interval = setInterval(() => {
+                    fetch(`{{ route('admin.exports.status', ['export' => '__ID__']) }}`.replace('__ID__', exportId))
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.status === 'completed') {
+                                clearInterval(interval);
+                                exportStatusMessage.innerHTML = 'Export completed! <a href=\"' + data.download_url + '\" class=\"underline font-semibold\">Download File</a>';
+                                exportStatus.classList.remove('alert-info', 'alert-danger');
+                                exportStatus.classList.add('alert-success');
+                            } else if (data.success && data.status === 'failed') {
+                                clearInterval(interval);
+                                exportStatusMessage.textContent = 'Export failed: ' + (data.error || 'Unknown error');
+                                exportStatus.classList.remove('alert-info', 'alert-success');
+                                exportStatus.classList.add('alert-danger');
+                            }
+                        })
+                        .catch(error => {
+                            clearInterval(interval);
+                            exportStatusMessage.textContent = 'Export status check failed: ' + error.message;
+                            exportStatus.classList.remove('alert-info', 'alert-success');
+                            exportStatus.classList.add('alert-danger');
+                        });
+                }, 5000);
+            }
+        });
+    </script>
 @endpush
 

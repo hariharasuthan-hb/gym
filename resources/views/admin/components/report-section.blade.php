@@ -9,6 +9,7 @@
      * @param array $filterOptions - Available filter options (statusOptions, methodOptions, etc.)
      * @param string $indexRoute - Route name for index (e.g., 'admin.payments.index')
      * @param bool $showExportButton - Whether to show export button (default: true)
+     * @param array $headerActions - Additional action buttons to display next to export
      * @param object $dataTable - DataTable instance for displaying data
      * 
      * Note: Export functionality uses queue jobs and includes:
@@ -17,20 +18,51 @@
      */
     $showExportButton = $showExportButton ?? true;
     $indexRoute = $indexRoute ?? 'admin.' . $exportType . '.index';
+    $headerActions = collect($headerActions ?? []);
+    $categoryLabel = $categoryLabel ?? 'Financial';
 @endphp
 
 <div class="space-y-6">
     {{-- Header --}}
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-            <p class="text-sm text-gray-500 uppercase tracking-wide">Financial</p>
+            <p class="text-sm text-gray-500 uppercase tracking-wide">{{ $categoryLabel }}</p>
             <h1 class="text-2xl font-bold text-gray-900">{{ $title }}</h1>
             <p class="text-sm text-gray-500 mt-1">
                 {{ $description }}
             </p>
         </div>
+        @if($showExportButton || $headerActions->isNotEmpty())
+            <div class="flex items-center gap-3 flex-wrap justify-start md:justify-end">
+                @foreach($headerActions as $action)
+                    @php
+                        $can = $action['can'] ?? null;
+                        $shouldShow = !$can || auth()->user()->can($can);
+                    @endphp
+                    @if($shouldShow)
+                        @if(($action['as'] ?? 'link') === 'button')
+                            <button type="button"
+                                    class="{{ $action['class'] ?? 'btn btn-secondary' }}"
+                                    @if(isset($action['onclick'])) onclick="{{ $action['onclick'] }}" @endif>
+                                @if(!empty($action['icon']))
+                                    {!! $action['icon'] !!}
+                                @endif
+                                {{ $action['label'] ?? 'Action' }}
+                            </button>
+                        @else
+                            <a href="{{ $action['url'] ?? '#' }}"
+                               class="{{ $action['class'] ?? 'btn btn-primary' }}"
+                               @if(isset($action['target'])) target="{{ $action['target'] }}" @endif>
+                                @if(!empty($action['icon']))
+                                    {!! $action['icon'] !!}
+                                @endif
+                                {{ $action['label'] ?? 'Action' }}
+                            </a>
+                        @endif
+                    @endif
+                @endforeach
+
         @if($showExportButton && $exportType)
-            <div class="flex items-center gap-3">
                 <button type="button" 
                         id="export-btn" 
                         class="btn btn-secondary"
@@ -41,6 +73,7 @@
                     </svg>
                     Export Data
                 </button>
+                @endif
             </div>
         @endif
     </div>
@@ -93,7 +126,31 @@
     {{-- Filters Section --}}
     @if(isset($filters) && isset($filterOptions))
         <div class="admin-card">
-            <form method="GET" id="{{ $exportType }}-filter-form" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">                
+            <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Filters</h3>
+                <button type="button" 
+                        id="filters-toggle-btn-{{ $exportType }}" 
+                        class="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                    <span id="filters-toggle-text-{{ $exportType }}">Hide Filters</span>
+                    <svg id="filters-toggle-icon-{{ $exportType }}" class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="filters-content-{{ $exportType }}">
+            <form method="GET" id="{{ $exportType }}-filter-form" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                @if(isset($filterOptions['search']) && $filterOptions['search'] === true)
+                    <div>
+                        <label class="form-label" for="search">Search</label>
+                        <input type="text"
+                               name="search"
+                               id="search"
+                               value="{{ $filters['search'] ?? '' }}"
+                               class="form-input w-full"
+                               placeholder="{{ $filterOptions['searchPlaceholder'] ?? 'Search...' }}">
+                    </div>
+                @endif
+                
                 @if(isset($filterOptions['statusOptions']))
                     <div>
                         <label class="form-label" for="status">Status</label>
@@ -109,12 +166,16 @@
                 @endif
 
                 @if(isset($filterOptions['methodOptions']))
+                    @php
+                        $methodFieldName = $filterOptions['methodFieldName'] ?? 'method';
+                        $methodLabel = $filterOptions['methodLabel'] ?? 'Payment Method';
+                    @endphp
                     <div>
-                        <label class="form-label" for="method">Payment Method</label>
-                        <select name="method" id="method" class="form-select w-full">
+                        <label class="form-label" for="{{ $methodFieldName }}">{{ $methodLabel }}</label>
+                        <select name="{{ $methodFieldName }}" id="{{ $methodFieldName }}" class="form-select w-full">
                             <option value="">All methods</option>
                             @foreach($filterOptions['methodOptions'] as $method)
-                                <option value="{{ $method }}" {{ ($filters['method'] ?? '') === $method ? 'selected' : '' }}>
+                                <option value="{{ $method }}" {{ ($filters[$methodFieldName] ?? '') === $method ? 'selected' : '' }}>
                                     {{ ucwords(str_replace('_', ' ', $method)) }}
                                 </option>
                             @endforeach
@@ -201,6 +262,7 @@
                     </a>
                 </div>
             </form>
+            </div>
         </div>
     @endif
 
@@ -217,6 +279,49 @@
 @push('scripts')
     @if(isset($dataTable))
         {!! $dataTable->scripts() !!}
+    @endif
+
+    @if(isset($filters) && isset($filterOptions))
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // Initialize filter toggle
+                function initFilterToggle() {
+                    const exportType = '{{ $exportType }}';
+                    const localStorageKey = exportType + '-filters-collapsed';
+                    const toggleBtn = document.getElementById('filters-toggle-btn-' + exportType);
+                    const toggleIcon = document.getElementById('filters-toggle-icon-' + exportType);
+                    const toggleText = document.getElementById('filters-toggle-text-' + exportType);
+                    const filtersContent = document.getElementById('filters-content-' + exportType);
+                    
+                    if (!toggleBtn || !filtersContent) return;
+                    
+                    const isCollapsed = localStorage.getItem(localStorageKey) === 'true';
+                    
+                    function toggleFilters(collapsed) {
+                        if (collapsed) {
+                            filtersContent.style.display = 'none';
+                            toggleIcon.style.transform = 'rotate(180deg)';
+                            toggleText.textContent = 'Show Filters';
+                            localStorage.setItem(localStorageKey, 'true');
+                        } else {
+                            filtersContent.style.display = 'block';
+                            toggleIcon.style.transform = 'rotate(0deg)';
+                            toggleText.textContent = 'Hide Filters';
+                            localStorage.setItem(localStorageKey, 'false');
+                        }
+                    }
+                    
+                    toggleFilters(isCollapsed);
+                    
+                    toggleBtn.addEventListener('click', function() {
+                        const isCurrentlyCollapsed = filtersContent.style.display === 'none';
+                        toggleFilters(!isCurrentlyCollapsed);
+                    });
+                }
+                
+                initFilterToggle();
+            });
+        </script>
     @endif
 
     @if($showExportButton && $exportType)
@@ -269,6 +374,7 @@
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
+                                'Accept': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                             },
                             body: JSON.stringify({
@@ -276,18 +382,28 @@
                                 format: 'csv'
                             })
                         })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                exportStatusMessage.textContent = 'Export queued successfully! You will be notified when it\'s ready.';
-                                exportStatus.classList.remove('alert-info');
-                                exportStatus.classList.add('alert-success');
-                                
-                                // Check export status periodically
-                                checkExportStatus(data.export_id);
-                            } else {
+                        .then(async response => {
+                            const rawBody = await response.text();
+                            let data = {};
+                            try {
+                                data = rawBody ? JSON.parse(rawBody) : {};
+                            } catch (parseError) {
+                                throw new Error('Unexpected response. Please try again.');
+                            }
+
+                            if (!response.ok || !data.success) {
                                 throw new Error(data.message || 'Export failed');
                             }
+
+                            return data;
+                        })
+                        .then(data => {
+                            exportStatusMessage.textContent = 'Export queued successfully! You will be notified when it\'s ready.';
+                            exportStatus.classList.remove('alert-info');
+                            exportStatus.classList.add('alert-success');
+                            
+                            // Check export status periodically
+                            checkExportStatus(data.export_id);
                         })
                         .catch(error => {
                             exportStatusMessage.textContent = 'Export failed: ' + error.message;
@@ -304,7 +420,21 @@
                     // Poll export status every 5 seconds
                     const interval = setInterval(() => {
                         fetch(`{{ route('admin.exports.status', ['export' => '__ID__']) }}`.replace('__ID__', exportId))
-                            .then(response => response.json())
+                            .then(async response => {
+                                const body = await response.text();
+                                let data = {};
+                                try {
+                                    data = body ? JSON.parse(body) : {};
+                                } catch {
+                                    throw new Error('Invalid status response');
+                                }
+
+                                if (!response.ok) {
+                                    throw new Error(data.message || 'Export status check failed');
+                                }
+
+                                return data;
+                            })
                             .then(data => {
                                 if (data.success && data.status === 'completed') {
                                     clearInterval(interval);
@@ -330,23 +460,45 @@
                 }
 
                 // Initialize filter form if exists
-                if (filterForm && typeof window.$ !== 'undefined') {
-                    const table = window.$('#{{ $dataTable->getTableIdPublic() ?? '' }}').DataTable();
-                    
-                    filterForm.addEventListener('submit', function (event) {
-                        event.preventDefault();
-                        const formData = new FormData(this);
-                        const params = new URLSearchParams(formData);
-                        table.ajax.url('{{ route($indexRoute) }}?' + params.toString()).load();
-                    });
+                if (filterForm && typeof window.$ !== 'undefined' && tableId) {
+                    function waitForDataTableAndInit() {
+                        const $table = window.$('#' + tableId);
+                        
+                        if ($table.length && window.$.fn.DataTable.isDataTable('#' + tableId)) {
+                            const table = $table.DataTable();
+                            
+                            filterForm.addEventListener('submit', function (event) {
+                                event.preventDefault();
+                                const formData = new FormData(this);
+                                const params = new URLSearchParams(formData);
+                                table.ajax.url('{{ route($indexRoute) }}?' + params.toString()).load();
+                            });
 
-                    // Auto-submit on filter change
-                    const filterInputs = filterForm.querySelectorAll('select, input[type="date"]');
-                    filterInputs.forEach(input => {
-                        input.addEventListener('change', () => {
-                            filterForm.dispatchEvent(new Event('submit'));
-                        });
-                    });
+                            // Auto-submit on filter change for selects and dates
+                            const filterSelects = filterForm.querySelectorAll('select, input[type="date"]');
+                            filterSelects.forEach(input => {
+                                input.addEventListener('change', () => {
+                                    filterForm.dispatchEvent(new Event('submit'));
+                                });
+                            });
+                            
+                            // Auto-submit on input for text fields (with debounce)
+                            const filterTextInputs = filterForm.querySelectorAll('input[type="text"]');
+                            let searchTimeout;
+                            filterTextInputs.forEach(input => {
+                                input.addEventListener('input', () => {
+                                    clearTimeout(searchTimeout);
+                                    searchTimeout = setTimeout(() => {
+                                        filterForm.dispatchEvent(new Event('submit'));
+                                    }, 500);
+                                });
+                            });
+                        } else {
+                            setTimeout(waitForDataTableAndInit, 100);
+                        }
+                    }
+                    
+                    waitForDataTableAndInit();
                 }
             });
         </script>

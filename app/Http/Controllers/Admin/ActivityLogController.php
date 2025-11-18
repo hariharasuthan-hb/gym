@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\DataTables\ActivityLogDataTable;
+use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use Illuminate\View\View;
 
 /**
@@ -23,11 +24,31 @@ class ActivityLogController extends Controller
     public function index(ActivityLogDataTable $dataTable)
     {
         if (request()->ajax() || request()->wantsJson()) {
-            return $dataTable->dataTable($dataTable->query(new \App\Models\ActivityLog))->toJson();
+            return $dataTable->dataTable($dataTable->query(new ActivityLog()))->toJson();
         }
-        
+
+        $filters = request()->only(['search', 'check_in_method', 'date_from', 'date_to']);
+
+        $methodOptions = ActivityLog::query()
+            ->select('check_in_method')
+            ->whereNotNull('check_in_method')
+            ->distinct()
+            ->orderBy('check_in_method')
+            ->pluck('check_in_method')
+            ->filter()
+            ->values()
+            ->all();
+
         return view('admin.activities.index', [
-            'dataTable' => $dataTable
+            'dataTable' => $dataTable,
+            'filters' => $filters,
+            'filterOptions' => [
+                'search' => true,
+                'searchPlaceholder' => 'Search by member name or email',
+                'methodOptions' => $methodOptions,
+                'methodLabel' => 'Check-in Method',
+                'methodFieldName' => 'check_in_method',
+            ],
         ]);
     }
 }

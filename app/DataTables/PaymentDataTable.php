@@ -80,12 +80,17 @@ class PaymentDataTable extends BaseDataTable
         if (!empty($customSearch) && !is_array($customSearch) && trim($customSearch) !== '') {
             $searchValue = trim($customSearch);
             $query->where(function ($q) use ($searchValue) {
-                $q->where('transaction_id', 'like', "%{$searchValue}%")
-                    ->orWhere('id', 'like', "%{$searchValue}%")
-                    ->orWhereHas('user', function ($userQuery) use ($searchValue) {
-                        $userQuery->where('name', 'like', "%{$searchValue}%")
-                            ->orWhere('email', 'like', "%{$searchValue}%");
-                    });
+                // Only search transaction_id if column exists
+                if (Payment::hasTransactionIdColumn()) {
+                    $q->where('transaction_id', 'like', "%{$searchValue}%")
+                        ->orWhere('id', 'like', "%{$searchValue}%");
+                } else {
+                    $q->where('id', 'like', "%{$searchValue}%");
+                }
+                $q->orWhereHas('user', function ($userQuery) use ($searchValue) {
+                    $userQuery->where('name', 'like', "%{$searchValue}%")
+                        ->orWhere('email', 'like', "%{$searchValue}%");
+                });
             });
         }
 
@@ -94,16 +99,22 @@ class PaymentDataTable extends BaseDataTable
         if (!empty($datatableSearch) && trim($datatableSearch) !== '') {
             $searchValue = trim($datatableSearch);
             $query->where(function ($q) use ($searchValue) {
-                $q->where('transaction_id', 'like', "%{$searchValue}%")
-                    ->orWhere('id', 'like', "%{$searchValue}%")
-                    ->orWhere('amount', 'like', "%{$searchValue}%")
-                    ->orWhereHas('user', function ($userQuery) use ($searchValue) {
-                        $userQuery->where('name', 'like', "%{$searchValue}%")
-                            ->orWhere('email', 'like', "%{$searchValue}%");
-                    })
-                    ->orWhereHas('subscription.subscriptionPlan', function ($planQuery) use ($searchValue) {
-                        $planQuery->where('plan_name', 'like', "%{$searchValue}%");
-                    });
+                // Only search transaction_id if column exists
+                if (Payment::hasTransactionIdColumn()) {
+                    $q->where('transaction_id', 'like', "%{$searchValue}%")
+                        ->orWhere('id', 'like', "%{$searchValue}%")
+                        ->orWhere('amount', 'like', "%{$searchValue}%");
+                } else {
+                    $q->where('id', 'like', "%{$searchValue}%")
+                        ->orWhere('amount', 'like', "%{$searchValue}%");
+                }
+                $q->orWhereHas('user', function ($userQuery) use ($searchValue) {
+                    $userQuery->where('name', 'like', "%{$searchValue}%")
+                        ->orWhere('email', 'like', "%{$searchValue}%");
+                })
+                ->orWhereHas('subscription.subscriptionPlan', function ($planQuery) use ($searchValue) {
+                    $planQuery->where('plan_name', 'like', "%{$searchValue}%");
+                });
             });
         }
 

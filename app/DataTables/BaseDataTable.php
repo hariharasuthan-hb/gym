@@ -62,11 +62,12 @@ abstract class BaseDataTable
                 'language' => [
                     'search' => '',
                     'searchPlaceholder' => 'Search...',
+                    'lengthMenu' => '',
                 ],
                 'responsive' => true,
                 'autoWidth' => false,
-                'pageLength' => 25,
-                'lengthMenu' => [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                'pageLength' => 5,
+                'lengthMenu' => [[5, 10, 25, 50, 100, -1], [5, 10, 25, 50, 100, "All"]],
             ]);
     }
 

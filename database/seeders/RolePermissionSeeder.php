@@ -123,31 +123,11 @@ class RolePermissionSeeder extends Seeder
 
         $trainerRole = Role::firstOrCreate(['name' => 'trainer']);
         $trainerRole->syncPermissions([
-            'view users',
-            'view subscriptions',
             'view activities',
-            'create activities',
-            'edit activities',
-            'check in members',
-            'check out members',
             'view workout plans',
-            'create workout plans',
-            'edit workout plans',
-            'delete workout plans',
             'view diet plans',
-            'create diet plans',
-            'edit diet plans',
-            'delete diet plans',
-            // Reports - trainers can view reports for their assigned members
             'view reports',
-            'view payments',      // Payments for assigned members
-            'view invoices',      // Invoices for assigned members
-            // Note: view subscriptions already included above
-            // Note: Expenses, Incomes, and Finances are business-level and not included for trainers
-            'view cms pages',
-            'view cms content',
-            'view landing page',
-            'edit landing page',
+            'export reports',
         ]);
 
         $memberRole = Role::firstOrCreate(['name' => 'member']);

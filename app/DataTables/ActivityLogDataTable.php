@@ -80,8 +80,51 @@ class ActivityLogDataTable extends BaseDataTable
         if (auth()->user()->hasRole('trainer')) {
             $query->forTrainerMembers(auth()->id());
         }
+
+        if ($method = request('check_in_method')) {
+            $query->where('check_in_method', $method);
+        }
+
+        if ($dateFrom = request('date_from')) {
+            $query->whereDate('date', '>=', $dateFrom);
+        }
+
+        if ($dateTo = request('date_to')) {
+            $query->whereDate('date', '<=', $dateTo);
+        }
+
+        $customSearch = request()->input('search');
+        if (!empty($customSearch) && !is_array($customSearch) && trim($customSearch) !== '') {
+            $searchValue = trim($customSearch);
+            $query->where(function ($q) use ($searchValue) {
+                $q->whereHas('user', function ($userQuery) use ($searchValue) {
+                    $userQuery->where('name', 'like', "%{$searchValue}%")
+                        ->orWhere('email', 'like', "%{$searchValue}%");
+                })
+                ->orWhere('workout_summary', 'like', "%{$searchValue}%");
+            });
+        }
+
+        $datatableSearch = request()->input('search.value');
+        if (!empty($datatableSearch) && trim($datatableSearch) !== '') {
+            $searchValue = trim($datatableSearch);
+            $query->where(function ($q) use ($searchValue) {
+                $q->where('id', 'like', "%{$searchValue}%")
+                    ->orWhere('check_in_method', 'like', "%{$searchValue}%")
+                    ->orWhere('duration_minutes', 'like', "%{$searchValue}%")
+                    ->orWhereHas('user', function ($userQuery) use ($searchValue) {
+                        $userQuery->where('name', 'like', "%{$searchValue}%")
+                            ->orWhere('email', 'like', "%{$searchValue}%");
+                    });
+            });
+        }
         
         return $query;
+    }
+
+    protected function getFilterFormId(): string
+    {
+        return 'activity_logs-filter-form';
     }
 
     /**

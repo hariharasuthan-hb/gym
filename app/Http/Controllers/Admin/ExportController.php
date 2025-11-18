@@ -9,12 +9,13 @@ use App\Jobs\ExportIncomesJob;
 use App\Jobs\ExportInvoicesJob;
 use App\Jobs\ExportPaymentsJob;
 use App\Jobs\ExportSubscriptionsJob;
+use App\Jobs\ExportFinancesJob;
 use App\Models\Export;
 use App\Services\TrainerFilterService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Controller for managing data exports in the admin panel.
@@ -101,7 +102,7 @@ class ExportController extends Controller
     /**
      * Download export file.
      */
-    public function download(Export $export): StreamedResponse
+    public function download(Export $export): BinaryFileResponse
     {
         // Ensure user can only download their own exports
         if ($export->user_id !== auth()->id()) {
@@ -133,6 +134,7 @@ class ExportController extends Controller
             Export::TYPE_INCOMES => ExportIncomesJob::class,
             Export::TYPE_SUBSCRIPTIONS => ExportSubscriptionsJob::class,
             Export::TYPE_ACTIVITY_LOGS => ExportActivityLogsJob::class,
+            Export::TYPE_FINANCES => ExportFinancesJob::class,
             default => null,
         };
     }
