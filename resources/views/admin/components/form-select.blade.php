@@ -1,3 +1,18 @@
+{{--
+ | Form Select Component
+ |
+ | Reusable form select dropdown component with label, validation, and help text.
+ |
+ | @param string $name - Select name attribute
+ | @param string $label - Select label text
+ | @param array $options - Select options (key => value pairs)
+ | @param mixed $value - Selected value
+ | @param bool $required - Whether field is required
+ | @param string $placeholder - Placeholder text for select
+ | @param string|null $help - Help text to display below select
+ | @param int $colspan - Grid column span (1-12)
+ | @param array $attributes - Additional HTML attributes
+--}}
 @php
     $name = $name ?? '';
     $label = $label ?? '';

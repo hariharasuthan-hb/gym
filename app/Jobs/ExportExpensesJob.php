@@ -38,12 +38,13 @@ class ExportExpensesJob extends BaseExportJob
             $query->whereDate('spent_at', '<=', $this->filters['date_to']);
         }
 
-        if (!empty($this->filters['search'])) {
-            $search = $this->filters['search'];
-            $query->where(function ($q) use ($search) {
-                $q->where('category', 'like', "%{$search}%")
-                    ->orWhere('vendor', 'like', "%{$search}%")
-                    ->orWhere('notes', 'like', "%{$search}%");
+        // Handle search filters (both filter form search and DataTables search)
+        $searchValue = $this->filters['datatable_search'] ?? $this->filters['search'] ?? null;
+        if (!empty($searchValue)) {
+            $query->where(function ($q) use ($searchValue) {
+                $q->where('category', 'like', "%{$searchValue}%")
+                    ->orWhere('vendor', 'like', "%{$searchValue}%")
+                    ->orWhere('notes', 'like', "%{$searchValue}%");
             });
         }
 

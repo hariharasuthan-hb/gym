@@ -12,6 +12,14 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
+/**
+ * Controller for managing workout plans in the admin panel.
+ * 
+ * Handles CRUD operations for workout plans including creation, updating,
+ * deletion, and viewing. Workout plans are assigned to members by trainers
+ * or admins and include exercise routines and demo videos. Accessible by
+ * both admin and trainer roles with appropriate permissions.
+ */
 class WorkoutPlanController extends Controller
 {
     /**

@@ -1,3 +1,19 @@
+{{--
+ | Payments Index View
+ |
+ | Displays a list of all payment transactions with filtering capabilities.
+ | Payments represent completed transactions from subscription purchases.
+ |
+ | @var \App\DataTables\PaymentDataTable $dataTable
+ | @var array $filters - Current filter values (status, method, search, date_from, date_to)
+ | @var array $statusOptions - Available payment status options
+ | @var array $methodOptions - Available payment method options
+ |
+ | Features:
+ | - Filter by status, payment method, and date range
+ | - DataTable with server-side processing
+ | - Auto-reload on filter changes
+--}}
 @extends('admin.layouts.app')
 
 @section('page-title', 'Payments')
@@ -16,65 +32,38 @@
     </div>
 
     {{-- Filters --}}
-    <div class="admin-card">
-        <form method="GET" id="payments-filter-form" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-            <div>
-                <label class="form-label" for="search">Search</label>
-                <input type="text"
-                       name="search"
-                       id="search"
-                       value="{{ $filters['search'] ?? '' }}"
-                       class="form-input w-full"
-                       placeholder="Transaction ID, user name, email">
-            </div>
-            <div>
-                <label class="form-label" for="status">Status</label>
-                <select name="status" id="status" class="form-select w-full">
-                    <option value="">All statuses</option>
-                    @foreach($statusOptions as $status)
-                        <option value="{{ $status }}" {{ ($filters['status'] ?? '') === $status ? 'selected' : '' }}>
-                            {{ ucfirst(str_replace('_', ' ', $status)) }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label class="form-label" for="method">Payment Method</label>
-                <select name="method" id="method" class="form-select w-full">
-                    <option value="">All methods</option>
-                    @foreach($methodOptions as $method)
-                        <option value="{{ $method }}" {{ ($filters['method'] ?? '') === $method ? 'selected' : '' }}>
-                            {{ ucfirst($method) }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label class="form-label" for="date_from">Date From</label>
-                <input type="date"
-                       name="date_from"
-                       id="date_from"
-                       value="{{ $filters['date_from'] ?? '' }}"
-                       class="form-input w-full">
-            </div>
-            <div>
-                <label class="form-label" for="date_to">Date To</label>
-                <input type="date"
-                       name="date_to"
-                       id="date_to"
-                       value="{{ $filters['date_to'] ?? '' }}"
-                       class="form-input w-full">
-            </div>
-            <div class="md:col-span-2 xl:col-span-4 flex gap-2 items-end">
-                <button type="submit" class="btn btn-primary">
-                    Apply Filters
-                </button>
-                <a href="{{ route('admin.payments.index') }}" class="btn btn-secondary">
-                    Clear
-                </a>
-            </div>
-        </form>
-    </div>
+    @include('admin.components.filter-section', [
+        'formId' => 'payments-filter-form',
+        'clearRoute' => route('admin.payments.index'),
+        'filters' => $filters,
+        'fields' => [
+            [
+                'name' => 'status',
+                'label' => 'Status',
+                'type' => 'select',
+                'options' => collect($statusOptions)->mapWithKeys(fn($s) => [$s => ucfirst(str_replace('_', ' ', $s))])->all()
+            ],
+            [
+                'name' => 'method',
+                'label' => 'Payment Method',
+                'type' => 'select',
+                'options' => collect($methodOptions)->mapWithKeys(fn($m) => [$m => ucfirst($m)])->all()
+            ],
+            [
+                'name' => 'date_from',
+                'label' => 'Date From',
+                'type' => 'date'
+            ],
+            [
+                'name' => 'date_to',
+                'label' => 'Date To',
+                'type' => 'date'
+            ]
+        ],
+        'localStorageKey' => 'payments-filters-collapsed',
+        'tableId' => $dataTable->getTableIdPublic(),
+        'autoReloadSelectors' => ['status', 'method', 'date_from', 'date_to']
+    ])
 
     {{-- Table --}}
     <div class="admin-card">
@@ -87,40 +76,5 @@
 
 @push('scripts')
     {!! $dataTable->scripts() !!}
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            function initPaymentFilters() {
-                if (typeof window.$ === 'undefined') {
-                    return setTimeout(initPaymentFilters, 100);
-                }
-
-                const $form = window.$('#payments-filter-form');
-                const table = window.$('#{{ $dataTable->getTableIdPublic() }}').DataTable();
-
-                $form.on('submit', function (event) {
-                    event.preventDefault();
-                    // Reload table - filters will be automatically included via ajax.data
-                    table.ajax.reload(null, false);
-                });
-
-                // Auto-reload on filter change
-                // Use debounce for search input to avoid too many requests
-                let searchTimeout;
-                window.$('#search').on('input', function () {
-                    clearTimeout(searchTimeout);
-                    searchTimeout = setTimeout(function() {
-                        table.ajax.reload(null, false);
-                    }, 500); // Wait 500ms after user stops typing
-                });
-                
-                // Immediate reload for other filters
-                window.$('#status, #method, #date_from, #date_to').on('change', function () {
-                    table.ajax.reload(null, false);
-                });
-            }
-
-            initPaymentFilters();
-        });
-    </script>
 @endpush
 

@@ -1,3 +1,16 @@
+{{--
+ | CMS Pages Index View
+ |
+ | Displays a list of all CMS pages with management capabilities.
+ | CMS pages are used for creating custom content pages on the frontend website.
+ |
+ | @var \App\DataTables\CmsPageDataTable $dataTable
+ |
+ | Features:
+ | - Create new CMS page button
+ | - DataTable with server-side processing
+ | - View, edit, and delete page actions
+--}}
 @extends('admin.layouts.app')
 
 @section('page-title', 'CMS Pages')

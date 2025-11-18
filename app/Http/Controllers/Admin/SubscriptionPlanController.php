@@ -12,6 +12,13 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
+/**
+ * Controller for managing subscription plans in the admin panel.
+ * 
+ * Handles CRUD operations for subscription plans including creation, updating,
+ * deletion, and viewing. Subscription plans define the membership packages
+ * available for purchase by gym members.
+ */
 class SubscriptionPlanController extends Controller
 {
     public function __construct(

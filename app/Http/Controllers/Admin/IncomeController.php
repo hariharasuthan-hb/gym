@@ -11,6 +11,13 @@ use App\Repositories\Interfaces\IncomeRepositoryInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 
+/**
+ * Controller for managing income records in the admin panel.
+ * 
+ * Handles CRUD operations for income records including creation, updating,
+ * deletion, and viewing. Income represents incoming financial transactions
+ * for the gym business. Requires appropriate permissions for each operation.
+ */
 class IncomeController extends Controller
 {
     public function __construct(

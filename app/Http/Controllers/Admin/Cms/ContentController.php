@@ -12,6 +12,14 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
+/**
+ * Controller for managing CMS content in the admin panel.
+ * 
+ * Handles CRUD operations for CMS content items including creation, updating,
+ * deletion, and viewing. CMS content is used for managing reusable content
+ * blocks displayed on the frontend website (e.g., hero sections, features,
+ * testimonials).
+ */
 class ContentController extends Controller
 {
     protected CmsContentRepositoryInterface $repository;

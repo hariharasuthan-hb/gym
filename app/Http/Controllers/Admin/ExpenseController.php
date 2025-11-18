@@ -11,6 +11,13 @@ use App\Repositories\Interfaces\ExpenseRepositoryInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 
+/**
+ * Controller for managing expenses in the admin panel.
+ * 
+ * Handles CRUD operations for expense records including creation, updating,
+ * deletion, and viewing. Expenses represent outgoing financial transactions
+ * for the gym business. Requires appropriate permissions for each operation.
+ */
 class ExpenseController extends Controller
 {
     public function __construct(

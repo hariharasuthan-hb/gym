@@ -1,3 +1,16 @@
+{{--
+ | Subscription Plans Index View
+ |
+ | Displays a list of all subscription plans with management capabilities.
+ | Subscription plans define the membership packages available for purchase.
+ |
+ | @var \App\DataTables\SubscriptionPlanDataTable $dataTable
+ |
+ | Features:
+ | - Create new subscription plan button
+ | - DataTable with server-side processing
+ | - View, edit, and delete plan actions
+--}}
 @extends('admin.layouts.app')
 
 @section('page-title', 'Subscription Plans Management')

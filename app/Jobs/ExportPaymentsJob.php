@@ -43,14 +43,15 @@ class ExportPaymentsJob extends BaseExportJob
             $query->whereDate($dateColumn, '<=', $this->filters['date_to']);
         }
 
-        if (!empty($this->filters['search'])) {
-            $search = $this->filters['search'];
-            $query->where(function ($q) use ($search) {
-                $q->where('transaction_id', 'like', "%{$search}%")
-                    ->orWhere('id', 'like', "%{$search}%")
-                    ->orWhereHas('user', function ($userQuery) use ($search) {
-                        $userQuery->where('name', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%");
+        // Handle search filters (both filter form search and DataTables search)
+        $searchValue = $this->filters['datatable_search'] ?? $this->filters['search'] ?? null;
+        if (!empty($searchValue)) {
+            $query->where(function ($q) use ($searchValue) {
+                $q->where('transaction_id', 'like', "%{$searchValue}%")
+                    ->orWhere('id', 'like', "%{$searchValue}%")
+                    ->orWhereHas('user', function ($userQuery) use ($searchValue) {
+                        $userQuery->where('name', 'like', "%{$searchValue}%")
+                            ->orWhere('email', 'like', "%{$searchValue}%");
                     });
             });
         }

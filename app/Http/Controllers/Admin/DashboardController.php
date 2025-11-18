@@ -8,6 +8,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
+/**
+ * Controller for displaying the admin and trainer dashboards.
+ * 
+ * Handles the main dashboard view which displays different content based on
+ * user role. Admins see overall system statistics while trainers see
+ * statistics specific to their assigned members. Accessible by both admin
+ * and trainer roles.
+ */
 class DashboardController extends Controller
 {
     /**

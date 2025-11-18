@@ -1,3 +1,18 @@
+{{--
+ | Diet Plans Index View
+ |
+ | Displays a list of all diet plans with management capabilities.
+ | Diet plans are assigned to members by trainers or admins and include meal plans.
+ | For trainers: shows only their assigned members' plans.
+ |
+ | @var \App\DataTables\DietPlanDataTable $dataTable
+ |
+ | Features:
+ | - Create new diet plan button (if user has permission)
+ | - DataTable with server-side processing
+ | - View, edit, and delete plan actions
+ | - Role-based filtering (trainers see only their plans)
+--}}
 @extends('admin.layouts.app')
 
 @section('page-title', 'Diet Plans')

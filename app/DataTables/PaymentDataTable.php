@@ -115,6 +115,11 @@ class PaymentDataTable extends BaseDataTable
         return 'payments-table';
     }
 
+    protected function getFilterFormId(): string
+    {
+        return 'payments-filter-form';
+    }
+
     protected function getColumns(): array
     {
         return [

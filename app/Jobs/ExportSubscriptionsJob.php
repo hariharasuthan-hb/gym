@@ -29,15 +29,16 @@ class ExportSubscriptionsJob extends BaseExportJob
             $query->where('gateway', $this->filters['gateway']);
         }
 
-        if (!empty($this->filters['search'])) {
-            $search = $this->filters['search'];
-            $query->where(function ($q) use ($search) {
-                $q->whereHas('user', function ($userQuery) use ($search) {
-                    $userQuery->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
+        // Handle search filters (both filter form search and DataTables search)
+        $searchValue = $this->filters['datatable_search'] ?? $this->filters['search'] ?? null;
+        if (!empty($searchValue)) {
+            $query->where(function ($q) use ($searchValue) {
+                $q->whereHas('user', function ($userQuery) use ($searchValue) {
+                    $userQuery->where('name', 'like', "%{$searchValue}%")
+                        ->orWhere('email', 'like', "%{$searchValue}%");
                 })
-                ->orWhereHas('subscriptionPlan', function ($planQuery) use ($search) {
-                    $planQuery->where('plan_name', 'like', "%{$search}%");
+                ->orWhereHas('subscriptionPlan', function ($planQuery) use ($searchValue) {
+                    $planQuery->where('plan_name', 'like', "%{$searchValue}%");
                 });
             });
         }

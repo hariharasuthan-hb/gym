@@ -4,15 +4,18 @@
      * 
      * @param string $title - Report title
      * @param string $description - Report description
-     * @param string $exportType - Export type (payments, invoices, expenses, incomes, subscriptions)
+     * @param string $exportType - Export type (payments, invoices, expenses, incomes, subscriptions, activity_logs)
      * @param array $filters - Current filter values
      * @param array $filterOptions - Available filter options (statusOptions, methodOptions, etc.)
-     * @param string $exportRoute - Route name for export (e.g., 'admin.payments.export')
      * @param string $indexRoute - Route name for index (e.g., 'admin.payments.index')
      * @param bool $showExportButton - Whether to show export button (default: true)
+     * @param object $dataTable - DataTable instance for displaying data
+     * 
+     * Note: Export functionality uses queue jobs and includes:
+     * - All filter form values (status, method, category, date_from, date_to, etc.)
+     * - DataTables search value (from the search box)
      */
     $showExportButton = $showExportButton ?? true;
-    $exportRoute = $exportRoute ?? null;
     $indexRoute = $indexRoute ?? 'admin.' . $exportType . '.index';
 @endphp
 
@@ -26,13 +29,13 @@
                 {{ $description }}
             </p>
         </div>
-        @if($showExportButton && $exportRoute)
+        @if($showExportButton && $exportType)
             <div class="flex items-center gap-3">
                 <button type="button" 
                         id="export-btn" 
                         class="btn btn-secondary"
                         data-export-type="{{ $exportType }}"
-                        data-export-route="{{ route($exportRoute) }}">
+                        data-export-route="{{ route('admin.exports.export', ['type' => $exportType]) }}">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
@@ -90,19 +93,7 @@
     {{-- Filters Section --}}
     @if(isset($filters) && isset($filterOptions))
         <div class="admin-card">
-            <form method="GET" id="{{ $exportType }}-filter-form" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                @if(isset($filterOptions['search']))
-                    <div>
-                        <label class="form-label" for="search">Search</label>
-                        <input type="text"
-                               name="search"
-                               id="search"
-                               value="{{ $filters['search'] ?? '' }}"
-                               class="form-input w-full"
-                               placeholder="{{ $filterOptions['search_placeholder'] ?? 'Search...' }}">
-                    </div>
-                @endif
-
+            <form method="GET" id="{{ $exportType }}-filter-form" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">                
                 @if(isset($filterOptions['statusOptions']))
                     <div>
                         <label class="form-label" for="status">Status</label>
@@ -228,25 +219,43 @@
         {!! $dataTable->scripts() !!}
     @endif
 
-    @if($showExportButton && $exportRoute)
+    @if($showExportButton && $exportType)
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 const exportBtn = document.getElementById('export-btn');
                 const exportStatus = document.getElementById('export-status');
                 const exportStatusMessage = document.getElementById('export-status-message');
                 const filterForm = document.getElementById('{{ $exportType }}-filter-form');
+                const tableId = '{{ $dataTable->getTableIdPublic() ?? '' }}';
 
                 if (exportBtn) {
                     exportBtn.addEventListener('click', function () {
                         const exportType = this.dataset.exportType;
                         const exportRoute = this.dataset.exportRoute;
                         
-                        // Get current filter values
-                        const formData = new FormData(filterForm || document.createElement('form'));
+                        // Get current filter values from form
                         const filters = {};
-                        for (let [key, value] of formData.entries()) {
-                            if (value) {
-                                filters[key] = value;
+                        if (filterForm) {
+                            const formData = new FormData(filterForm);
+                            for (let [key, value] of formData.entries()) {
+                                if (value && value.toString().trim() !== '') {
+                                    filters[key] = value;
+                                }
+                            }
+                        }
+                        
+                        // Get DataTables search value if table exists
+                        if (tableId && typeof window.$ !== 'undefined') {
+                            try {
+                                const table = window.$('#' + tableId).DataTable();
+                                if (table) {
+                                    const searchValue = table.search();
+                                    if (searchValue && searchValue.trim() !== '') {
+                                        filters['datatable_search'] = searchValue;
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn('Could not get DataTable search value:', e);
                             }
                         }
 
@@ -297,16 +306,18 @@
                         fetch(`{{ route('admin.exports.status', ['export' => '__ID__']) }}`.replace('__ID__', exportId))
                             .then(response => response.json())
                             .then(data => {
-                                if (data.status === 'completed') {
+                                if (data.success && data.status === 'completed') {
                                     clearInterval(interval);
-                                    exportStatusMessage.textContent = 'Export completed! <a href="' + data.download_url + '" class="underline">Download</a>';
-                                    exportStatus.classList.remove('alert-info', 'alert-success');
+                                    exportStatusMessage.innerHTML = 'Export completed! <a href="' + data.download_url + '" class="underline font-semibold">Download File</a>';
+                                    exportStatus.classList.remove('alert-info', 'alert-danger');
                                     exportStatus.classList.add('alert-success');
-                                } else if (data.status === 'failed') {
+                                } else if (data.success && data.status === 'failed') {
                                     clearInterval(interval);
                                     exportStatusMessage.textContent = 'Export failed: ' + (data.error || 'Unknown error');
                                     exportStatus.classList.remove('alert-info', 'alert-success');
                                     exportStatus.classList.add('alert-danger');
+                                } else if (data.success && data.status === 'processing') {
+                                    exportStatusMessage.textContent = 'Export in progress... Please wait.';
                                 }
                             })
                             .catch(() => {

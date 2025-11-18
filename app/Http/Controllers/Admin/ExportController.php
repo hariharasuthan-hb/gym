@@ -16,6 +16,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
+/**
+ * Controller for managing data exports in the admin panel.
+ * 
+ * Handles asynchronous export generation for various data types including
+ * payments, invoices, expenses, incomes, subscriptions, and activity logs.
+ * Exports are processed in the background via queue jobs and can be
+ * downloaded once ready. Supports CSV and XLSX formats.
+ */
 class ExportController extends Controller
 {
     /**

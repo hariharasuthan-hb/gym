@@ -1,3 +1,18 @@
+{{--
+ | Workout Plans Index View
+ |
+ | Displays a list of all workout plans with management capabilities.
+ | Workout plans are assigned to members by trainers or admins and include exercises.
+ | For trainers: shows only their assigned members' plans.
+ |
+ | @var \App\DataTables\WorkoutPlanDataTable $dataTable
+ |
+ | Features:
+ | - Create new workout plan button (if user has permission)
+ | - DataTable with server-side processing
+ | - View, edit, and delete plan actions
+ | - Role-based filtering (trainers see only their plans)
+--}}
 @extends('admin.layouts.app')
 
 @section('page-title', 'Workout Plans')

@@ -7,6 +7,13 @@ use App\Http\Controllers\Controller;
 use App\Services\FinancialReportService;
 use Illuminate\Http\Request;
 
+/**
+ * Controller for displaying financial overview and reports.
+ * 
+ * Handles the finances overview page showing monthly breakdowns of income,
+ * expenses, and net profit. Provides financial analytics with configurable
+ * time ranges (3, 6, or 12 months). Requires 'view finances' permission.
+ */
 class FinanceController extends Controller
 {
     public function __construct()

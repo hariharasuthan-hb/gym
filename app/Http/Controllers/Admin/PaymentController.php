@@ -8,6 +8,13 @@ use App\Models\Payment;
 use App\Repositories\Interfaces\PaymentRepositoryInterface;
 use Illuminate\Contracts\View\View;
 
+/**
+ * Controller for managing payments in the admin panel.
+ * 
+ * Handles viewing and displaying payment records with filtering capabilities.
+ * Payments represent completed transactions from subscription purchases.
+ * Requires 'view payments' permission.
+ */
 class PaymentController extends Controller
 {
     public function __construct(

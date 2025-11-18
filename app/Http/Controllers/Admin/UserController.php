@@ -12,6 +12,12 @@ use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 
+/**
+ * Controller for managing users in the admin panel.
+ * 
+ * Handles CRUD operations for users including creation, updating, deletion,
+ * and role assignment. Accessible only to admin users.
+ */
 class UserController extends Controller
 {
     public function __construct(

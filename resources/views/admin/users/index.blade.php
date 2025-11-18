@@ -1,3 +1,16 @@
+{{--
+ | Users Index View
+ |
+ | Displays a list of all users in the system with management capabilities.
+ | Users can have different roles (admin, trainer, member).
+ |
+ | @var \App\DataTables\UserDataTable $dataTable
+ |
+ | Features:
+ | - Create new user button
+ | - DataTable with server-side processing
+ | - User management actions (view, edit, delete)
+--}}
 @extends('admin.layouts.app')
 
 @section('page-title', 'Users Management')

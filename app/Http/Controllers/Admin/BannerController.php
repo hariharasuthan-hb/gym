@@ -11,6 +11,12 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
+/**
+ * Controller for managing banners in the admin panel.
+ * 
+ * Handles CRUD operations for banner images displayed on the frontend.
+ * Banners can be activated/deactivated and ordered for display purposes.
+ */
 class BannerController extends Controller
 {
     /**

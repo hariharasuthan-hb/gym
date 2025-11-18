@@ -113,7 +113,6 @@ abstract class BaseDataTable
     {
         return [
             'excel',
-            'csv',
             'pdf',
             'reload',
         ];

@@ -11,6 +11,14 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
+/**
+ * Controller for managing diet plans in the admin panel.
+ * 
+ * Handles CRUD operations for diet plans including creation, updating,
+ * deletion, and viewing. Diet plans are assigned to members by trainers
+ * or admins and include meal plans and nutritional information. Accessible
+ * by both admin and trainer roles with appropriate permissions.
+ */
 class DietPlanController extends Controller
 {
     /**

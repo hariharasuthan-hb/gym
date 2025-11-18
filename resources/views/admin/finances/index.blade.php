@@ -1,3 +1,22 @@
+{{--
+ | Finances Overview Index View
+ |
+ | Displays financial overview with monthly breakdowns of income, expenses, and net profit.
+ | Provides financial analytics with configurable time ranges (3, 6, or 12 months).
+ |
+ | @var int $range - Selected time range in months (3, 6, or 12)
+ | @var array $rangeOptions - Available range options [3, 6, 12]
+ | @var array $monthlyOverview - Monthly financial data
+ | @var array $currentMonth - Current month's financial summary
+ | @var array $trailingTotals - Totals for the selected range
+ | @var \App\DataTables\MonthlyBreakdownDataTable $monthlyDataTable
+ |
+ | Features:
+ | - Monthly revenue, expenses, and margin breakdown
+ | - Configurable time range selector
+ | - DataTable with monthly breakdown
+ | - Quick access to create expenses
+--}}
 @extends('admin.layouts.app')
 
 @section('page-title', 'Finances Overview')

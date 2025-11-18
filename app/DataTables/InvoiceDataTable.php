@@ -96,6 +96,11 @@ class InvoiceDataTable extends BaseDataTable
         return 'invoices-table';
     }
 
+    protected function getFilterFormId(): string
+    {
+        return 'invoices-filter-form';
+    }
+
     protected function getColumns(): array
     {
         return [

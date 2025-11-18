@@ -1,3 +1,16 @@
+{{--
+ | Banners Index View
+ |
+ | Displays a list of all banner images with management capabilities.
+ | Banners are displayed on the frontend website and can be activated/deactivated.
+ |
+ | @var \App\DataTables\BannerDataTable $dataTable
+ |
+ | Features:
+ | - Create new banner button
+ | - DataTable with server-side processing
+ | - View, edit, and delete banner actions
+--}}
 @extends('admin.layouts.app')
 
 @section('page-title', 'Banners Management')

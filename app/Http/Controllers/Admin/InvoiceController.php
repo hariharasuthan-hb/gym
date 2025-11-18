@@ -8,6 +8,13 @@ use App\Models\Payment;
 use App\Repositories\Interfaces\PaymentRepositoryInterface;
 use Illuminate\Contracts\View\View;
 
+/**
+ * Controller for managing invoices in the admin panel.
+ * 
+ * Handles viewing and displaying invoice records. Invoices are backed by
+ * payment records and represent billing documents for subscriptions.
+ * Requires 'view invoices' permission.
+ */
 class InvoiceController extends Controller
 {
     public function __construct(
