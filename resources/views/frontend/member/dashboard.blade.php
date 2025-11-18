@@ -7,8 +7,27 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {{-- Page Header --}}
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Member Dashboard</h1>
-            <p class="mt-2 text-gray-600">Welcome back! Here's your overview.</p>
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Member Dashboard</h1>
+                    <p class="mt-2 text-gray-600">Welcome back! Here's your overview.</p>
+                </div>
+                @if(!($checkedInToday ?? false))
+                <button id="check-in-btn" onclick="checkIn()" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center shadow-md">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Check In
+                </button>
+                @else
+                <div class="px-6 py-3 bg-green-100 text-green-700 rounded-lg font-semibold flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Checked In Today
+                </div>
+                @endif
+            </div>
         </div>
 
         {{-- Dashboard Stats --}}
@@ -291,5 +310,75 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+async function checkIn() {
+    const btn = document.getElementById('check-in-btn');
+    if (!btn) return;
+    
+    // Disable button
+    btn.disabled = true;
+    btn.innerHTML = `
+        <svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Checking In...
+    `;
+    
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const response = await fetch('{{ route("member.check-in") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+            },
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Show success message with SweetAlert
+            await SwalHelper.success(
+                'Check-in Successful!',
+                'You have been checked in for today.'
+            );
+            // Reload page to update UI
+            window.location.reload();
+        } else {
+            await SwalHelper.warning(
+                'Check-in Failed',
+                data.message || 'Check-in failed. Please try again.'
+            );
+            // Re-enable button
+            btn.disabled = false;
+            btn.innerHTML = `
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Check In
+            `;
+        }
+    } catch (error) {
+        console.error('Check-in error:', error);
+        await SwalHelper.error(
+            'Error',
+            'An error occurred. Please try again.'
+        );
+        // Re-enable button
+        btn.disabled = false;
+        btn.innerHTML = `
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Check In
+        `;
+    }
+}
+</script>
+@endpush
 @endsection
 

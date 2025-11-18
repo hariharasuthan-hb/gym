@@ -108,6 +108,13 @@ class MemberController extends Controller
         $totalDietPlans = $user->dietPlans()->where('status', 'active')->count();
         $totalActivities = \App\Models\ActivityLog::where('user_id', $user->id)->count();
 
+        // Check if user has checked in today
+        $today = now()->toDateString();
+        $checkedInToday = \App\Models\ActivityLog::where('user_id', $user->id)
+            ->where('date', $today)
+            ->whereNotNull('check_in_time')
+            ->exists();
+
         // Build today's recording progress summary using first active workout plan
         if ($activeWorkoutPlans->count() > 0) {
             $primaryPlan = $activeWorkoutPlans->first();
@@ -139,7 +146,8 @@ class MemberController extends Controller
             'totalWorkoutPlans',
             'totalDietPlans',
             'totalActivities',
-            'todayRecordingProgress'
+            'todayRecordingProgress',
+            'checkedInToday'
         ));
     }
 
@@ -520,6 +528,44 @@ class MemberController extends Controller
         }
         
         return true; // Already marked
+    }
+
+    /**
+     * Manual check-in for member.
+     */
+    public function checkIn(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $user = auth()->user();
+        $today = now()->toDateString();
+        
+        // Check if already checked in today
+        $existingCheckIn = \App\Models\ActivityLog::where('user_id', $user->id)
+            ->where('date', $today)
+            ->whereNotNull('check_in_time')
+            ->first();
+        
+        if ($existingCheckIn) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have already checked in today.',
+                'checked_in' => true,
+            ], 400);
+        }
+        
+        // Create check-in record
+        \App\Models\ActivityLog::create([
+            'user_id' => $user->id,
+            'date' => $today,
+            'check_in_time' => now(),
+            'check_in_method' => 'manual',
+            'workout_summary' => 'Manual check-in',
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Check-in successful!',
+            'checked_in' => true,
+        ]);
     }
 
     /**
