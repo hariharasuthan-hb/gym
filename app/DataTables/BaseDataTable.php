@@ -53,16 +53,13 @@ abstract class BaseDataTable
             ->orderBy(0, 'asc')
             ->buttons($this->getButtons())
             ->parameters([
-                'layout' => [
-                    'topStart' => ['pageLength'],
-                    'topEnd' => ['buttons', 'search'],
-                    'bottomStart' => ['info'],
-                    'bottomEnd' => ['paging'],
-                ],
+                'dom' => "<'dt-toolbar flex flex-col md:flex-row md:items-center md:justify-between gap-4'<'dt-toolbar-left flex items-center gap-3'lB><'dt-toolbar-right'f>>" .
+                    "<'dt-table'rt>" .
+                    "<'dt-footer flex flex-col md:flex-row md:items-center md:justify-between gap-4'<'dt-info'i><'dt-pagination'p>>",
                 'language' => [
                     'search' => '',
                     'searchPlaceholder' => 'Search...',
-                    'lengthMenu' => '',
+                    'lengthMenu' => '_MENU_',
                 ],
                 'responsive' => true,
                 'autoWidth' => false,

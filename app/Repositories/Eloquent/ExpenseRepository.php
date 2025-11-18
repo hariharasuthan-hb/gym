@@ -91,11 +91,15 @@ class ExpenseRepository extends BaseRepository implements ExpenseRepositoryInter
     /**
      * Enable searching by category, vendor, and notes.
      */
-    protected function applySearch($query, ?string $search)
+    protected function applySearch($query, mixed $search)
     {
-        if (!$search) {
+        $search = is_array($search) ? ($search['value'] ?? null) : $search;
+
+        if (!is_string($search) || trim($search) === '') {
             return $query;
         }
+
+        $search = trim($search);
 
         return $query->where(function ($q) use ($search) {
             $q->where('category', 'like', "%{$search}%")

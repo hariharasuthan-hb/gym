@@ -138,6 +138,70 @@
             </div>
             @endcanany
 
+            {{-- Communications --}}
+            @canany(['view announcements', 'view notifications'])
+            <div class="pt-1">
+                <button @click="toggleGroup('communications')" 
+                        class="w-full flex items-center justify-between px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                        :title="$root.sidebarCollapsed ? 'Communications' : ''">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 transition-all duration-300" 
+                             :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="text-sm font-semibold transition-all duration-300">Communications</span>
+                    </div>
+                    <svg :class="{ 'lg:hidden': $root.sidebarCollapsed }" 
+                         class="w-4 h-4 transition-transform transition-all duration-300" 
+                         :class="{ 'rotate-90': openGroups.communications }" 
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+                <div x-show="openGroups.communications" x-collapse class="ml-4 mt-0.5 space-y-0.5">
+                    <a href="{{ route('admin.notification-center.index') }}" 
+                       class="admin-sidebar-item {{ request()->routeIs('admin.notification-center.*') ? 'active' : '' }}"
+                       :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                       :title="$root.sidebarCollapsed ? 'Notification Center' : ''">
+                        <svg class="w-4 h-4 transition-all duration-300" 
+                             :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-5-5.917V4a2 2 0 10-4 0v1.083A6 6 0 004 11v3.159c0 .538-.214 1.055-.595 1.436L2 17h5m8 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                        </svg>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Notification Center</span>
+                    </a>
+                    @can('view announcements')
+                    <a href="{{ route('admin.announcements.index') }}" 
+                       class="admin-sidebar-item {{ request()->routeIs('admin.announcements.*') ? 'active' : '' }}"
+                       :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                       :title="$root.sidebarCollapsed ? 'Announcements' : ''">
+                        <svg class="w-4 h-4 transition-all duration-300" 
+                             :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v5h3l3 3v-3h1a2 2 0 002-2V7a2 2 0 00-2-2z"></path>
+                        </svg>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Announcements</span>
+                    </a>
+                    @endcan
+                    @can('view notifications')
+                    <a href="{{ route('admin.notifications.index') }}" 
+                       class="admin-sidebar-item {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}"
+                       :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                       :title="$root.sidebarCollapsed ? 'Notifications' : ''">
+                        <svg class="w-4 h-4 transition-all duration-300" 
+                             :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-3-3H7a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2l-3 3z"></path>
+                        </svg>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Notifications</span>
+                    </a>
+                    @endcan
+                </div>
+            </div>
+            @endcanany
+
             {{-- Plans Management Group --}}
             @canany(['view workout plans', 'view diet plans'])
             <div class="pt-1">
@@ -556,6 +620,7 @@ function sidebarMenu() {
             users: {{ request()->routeIs('admin.users.*') ? 'true' : 'false' }},
             subscriptions: {{ request()->routeIs('admin.subscription-plans.*') || request()->routeIs('admin.subscriptions.*') ? 'true' : 'false' }},
             plans: {{ request()->routeIs('admin.workout-plans.*') || request()->routeIs('admin.diet-plans.*') ? 'true' : 'false' }},
+            communications: {{ request()->routeIs('admin.notification-center.*') || request()->routeIs('admin.announcements.*') || request()->routeIs('admin.notifications.*') ? 'true' : 'false' }},
             financial: {{ request()->routeIs('admin.payments.*') || request()->routeIs('admin.invoices.*') || request()->routeIs('admin.finances.*') || request()->routeIs('admin.expenses.*') || request()->routeIs('admin.incomes.*') ? 'true' : 'false' }},
             cms: {{ request()->routeIs('admin.cms.*') || request()->routeIs('admin.landing-page.*') || request()->routeIs('admin.site-settings.*') || request()->routeIs('admin.payment-settings.*') || request()->routeIs('admin.banners.*') ? 'true' : 'false' }},
             reports: {{ request()->routeIs('admin.payments.*') || request()->routeIs('admin.invoices.*') || request()->routeIs('admin.expenses.*') || request()->routeIs('admin.incomes.*') || request()->routeIs('admin.subscriptions.*') || request()->routeIs('admin.activities.*') || request()->routeIs('admin.finances.*') || request()->routeIs('admin.reports.*') ? 'true' : 'false' }},

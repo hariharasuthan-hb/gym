@@ -37,6 +37,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         // Invoices
         Route::resource('invoices', \App\Http\Controllers\Admin\InvoiceController::class);
         
+        // Announcements & Notifications
+        Route::resource('announcements', \App\Http\Controllers\Admin\AnnouncementController::class)->except(['show']);
+        Route::resource('notifications', \App\Http\Controllers\Admin\InAppNotificationController::class)->except(['show']);
+
         // Expenses
         Route::resource('expenses', \App\Http\Controllers\Admin\ExpenseController::class);
         
@@ -159,6 +163,16 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/user-activity', [\App\Http\Controllers\Admin\UserActivityController::class, 'index'])
             ->middleware('permission:view activities')
             ->name('user-activity.index');
+    });
+
+    Route::middleware(['role:admin,trainer,member', 'permission:view announcements|view notifications'])->group(function () {
+        Route::get('/notification-center', [\App\Http\Controllers\Admin\NotificationCenterController::class, 'index'])
+            ->name('notification-center.index');
+    });
+
+    Route::middleware(['role:admin,trainer,member', 'permission:mark notifications read'])->group(function () {
+        Route::post('/notification-center/{notification}/read', [\App\Http\Controllers\Admin\NotificationCenterController::class, 'markAsRead'])
+            ->name('notification-center.read');
     });
 
     Route::middleware(['role:admin,trainer', 'permission:view reports|export reports'])->group(function () {

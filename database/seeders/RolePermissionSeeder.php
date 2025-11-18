@@ -85,6 +85,17 @@ class RolePermissionSeeder extends Seeder
             // Reports
             'view reports',
             'export reports',
+
+            // Communications
+            'view announcements',
+            'create announcements',
+            'edit announcements',
+            'delete announcements',
+            'view notifications',
+            'create notifications',
+            'edit notifications',
+            'delete notifications',
+            'mark notifications read',
             
             // CMS Management
             'view cms pages',
@@ -128,6 +139,9 @@ class RolePermissionSeeder extends Seeder
             'view diet plans',
             'view reports',
             'export reports',
+            'view announcements',
+            'view notifications',
+            'mark notifications read',
         ]);
 
         $memberRole = Role::firstOrCreate(['name' => 'member']);
@@ -137,6 +151,9 @@ class RolePermissionSeeder extends Seeder
             'create activities',
             'view workout plans',
             'view diet plans',
+            'view announcements',
+            'view notifications',
+            'mark notifications read',
         ]);
     }
 }

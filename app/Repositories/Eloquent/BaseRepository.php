@@ -144,11 +144,17 @@ abstract class BaseRepository implements BaseRepositoryInterface
     /**
      * Apply search to query
      */
-    protected function applySearch($query, ?string $search)
+    protected function applySearch($query, mixed $search)
     {
-        if (!$search) {
+        if (is_array($search)) {
+            $search = $search['value'] ?? null;
+        }
+
+        if (!is_string($search) || trim($search) === '') {
             return $query;
         }
+
+        $search = trim($search);
 
         // Override in child classes to specify searchable columns
         return $query;
