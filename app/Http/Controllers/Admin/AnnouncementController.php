@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\StoreAnnouncementRequest;
 use App\Http\Requests\Admin\UpdateAnnouncementRequest;
 use App\Models\Announcement;
 use App\Repositories\Interfaces\AnnouncementRepositoryInterface;
+use App\Services\EntityIntegrityService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +19,8 @@ use Illuminate\Support\Facades\Auth;
 class AnnouncementController extends Controller
 {
     public function __construct(
-        private readonly AnnouncementRepositoryInterface $announcementRepository
+        private readonly AnnouncementRepositoryInterface $announcementRepository,
+        private readonly EntityIntegrityService $entityIntegrityService
     ) {
         $this->middleware('permission:view announcements')->only(['index']);
         $this->middleware('permission:create announcements')->only(['create', 'store']);
@@ -77,6 +79,12 @@ class AnnouncementController extends Controller
 
     public function destroy(Announcement $announcement): RedirectResponse
     {
+        if ($reason = $this->entityIntegrityService->firstAnnouncementDeletionBlocker($announcement)) {
+            return redirect()
+                ->route('admin.announcements.index')
+                ->with('error', $reason);
+        }
+
         $this->announcementRepository->deleteAnnouncement($announcement);
 
         return redirect()

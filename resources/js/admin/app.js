@@ -1,6 +1,7 @@
 import '../bootstrap';
 import { initYajraDataTable } from './datatables';
 import { initAllRichTextEditors } from './rich-text-editor';
+import { initConfirmDialogs } from './confirm-dialog';
 
 // Import jQuery and DataTables locally
 import $ from 'jquery';
@@ -26,5 +27,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize all rich text editors on the page
     initAllRichTextEditors();
+    initConfirmDialogs();
 });
 

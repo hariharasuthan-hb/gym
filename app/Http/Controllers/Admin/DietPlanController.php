@@ -10,6 +10,7 @@ use App\Models\DietPlan;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use App\Services\EntityIntegrityService;
 
 /**
  * Controller for managing diet plans in the admin panel.
@@ -21,6 +22,11 @@ use Illuminate\View\View;
  */
 class DietPlanController extends Controller
 {
+    public function __construct(
+        private readonly EntityIntegrityService $entityIntegrityService
+    ) {
+    }
+
     /**
      * Display a listing of diet plans.
      * Accessible by both admin and trainer (filtered by permission).
@@ -193,7 +199,12 @@ class DietPlanController extends Controller
         if (auth()->user()->hasRole('trainer') && $dietPlan->trainer_id !== auth()->id()) {
             abort(403, 'Unauthorized');
         }
-        
+
+        if ($reason = $this->entityIntegrityService->firstDietPlanDeletionBlocker($dietPlan)) {
+            return redirect()->route('admin.diet-plans.index')
+                ->with('error', $reason);
+        }
+
         $dietPlan->delete();
 
         return redirect()->route('admin.diet-plans.index')

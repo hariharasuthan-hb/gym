@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\StoreIncomeRequest;
 use App\Http\Requests\Admin\UpdateIncomeRequest;
 use App\Models\Income;
 use App\Repositories\Interfaces\IncomeRepositoryInterface;
+use App\Services\EntityIntegrityService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 
@@ -21,7 +22,8 @@ use Illuminate\Http\RedirectResponse;
 class IncomeController extends Controller
 {
     public function __construct(
-        private readonly IncomeRepositoryInterface $incomeRepository
+        private readonly IncomeRepositoryInterface $incomeRepository,
+        private readonly EntityIntegrityService $integrityService
     ) {
         $this->middleware('permission:view incomes')->only(['index', 'show']);
         $this->middleware('permission:create incomes')->only(['create', 'store']);
@@ -99,6 +101,14 @@ class IncomeController extends Controller
      */
     public function destroy(Income $income): RedirectResponse
     {
+        $blocker = $this->integrityService->firstIncomeDeletionBlocker($income);
+
+        if ($blocker) {
+            return redirect()
+                ->route('admin.incomes.index')
+                ->with('error', $blocker);
+        }
+
         $this->incomeRepository->deleteIncome($income);
 
         return redirect()

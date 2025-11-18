@@ -91,11 +91,17 @@ class IncomeRepository extends BaseRepository implements IncomeRepositoryInterfa
     /**
      * Enable searching by category, source, and notes.
      */
-    protected function applySearch($query, ?string $search)
+    protected function applySearch($query, mixed $search)
     {
-        if (!$search) {
+        if (is_array($search)) {
+            $search = $search['value'] ?? null;
+        }
+
+        if (!is_string($search) || trim($search) === '') {
             return $query;
         }
+
+        $search = trim($search);
 
         return $query->where(function ($q) use ($search) {
             $q->where('category', 'like', "%{$search}%")

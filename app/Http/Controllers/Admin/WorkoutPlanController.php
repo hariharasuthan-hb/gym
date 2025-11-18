@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use App\Services\EntityIntegrityService;
 
 /**
  * Controller for managing workout plans in the admin panel.
@@ -22,6 +23,11 @@ use Illuminate\View\View;
  */
 class WorkoutPlanController extends Controller
 {
+    public function __construct(
+        private readonly EntityIntegrityService $entityIntegrityService
+    ) {
+    }
+
     /**
      * Display a listing of workout plans.
      * Accessible by both admin and trainer (filtered by permission).
@@ -518,7 +524,12 @@ class WorkoutPlanController extends Controller
         if (auth()->user()->hasRole('trainer') && $workoutPlan->trainer_id !== auth()->id()) {
             abort(403, 'Unauthorized');
         }
-        
+
+        if ($reason = $this->entityIntegrityService->firstWorkoutPlanDeletionBlocker($workoutPlan)) {
+            return redirect()->route('admin.workout-plans.index')
+                ->with('error', $reason);
+        }
+
         $workoutPlan->delete();
 
         return redirect()->route('admin.workout-plans.index')

@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\StoreSubscriptionPlanRequest;
 use App\Http\Requests\Admin\UpdateSubscriptionPlanRequest;
 use App\Models\SubscriptionPlan;
 use App\Repositories\Interfaces\SubscriptionPlanRepositoryInterface;
+use App\Services\EntityIntegrityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -22,7 +23,8 @@ use Illuminate\View\View;
 class SubscriptionPlanController extends Controller
 {
     public function __construct(
-        private readonly SubscriptionPlanRepositoryInterface $subscriptionPlanRepository
+        private readonly SubscriptionPlanRepositoryInterface $subscriptionPlanRepository,
+        private readonly EntityIntegrityService $entityIntegrityService
     ) {
     }
 
@@ -124,6 +126,11 @@ class SubscriptionPlanController extends Controller
      */
     public function destroy(SubscriptionPlan $subscriptionPlan): RedirectResponse
     {
+        if ($reason = $this->entityIntegrityService->firstSubscriptionPlanDeletionBlocker($subscriptionPlan)) {
+            return redirect()->route('admin.subscription-plans.index')
+                ->with('error', $reason);
+        }
+
         // Delete image if exists
         if ($subscriptionPlan->image && Storage::disk('public')->exists($subscriptionPlan->image)) {
             Storage::disk('public')->delete($subscriptionPlan->image);

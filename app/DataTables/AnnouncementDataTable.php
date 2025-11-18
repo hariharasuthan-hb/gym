@@ -32,7 +32,7 @@ class AnnouncementDataTable extends BaseDataTable
                     $html .= '<a href="' . $editUrl . '" class="btn btn-xs btn-secondary">Edit</a>';
                 }
                 if (auth()->user()->can('delete announcements')) {
-                    $html .= '<form action="' . $deleteUrl . '" method="POST" onsubmit="return confirm(\'Delete this announcement?\');">';
+                    $html .= '<form action="' . $deleteUrl . '" method="POST" data-confirm="true" data-confirm-title="Delete Announcement" data-confirm-message="Deleting this announcement removes it from everyone\'s feed. Continue?" data-confirm-button="Delete Announcement" data-confirm-tone="danger">';
                     $html .= csrf_field();
                     $html .= method_field('DELETE');
                     $html .= '<button type="submit" class="btn btn-xs btn-danger">Delete</button>';

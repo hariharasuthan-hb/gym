@@ -57,7 +57,7 @@ class WorkoutPlanDataTable extends BaseDataTable
                 
                 if (auth()->user()->can('delete workout plans') && 
                     (!auth()->user()->hasRole('trainer') || $plan->trainer_id === auth()->id())) {
-                    $html .= '<form action="' . $deleteUrl . '" method="POST" class="inline" onsubmit="return confirm(\'Are you sure?\');">';
+                    $html .= '<form action="' . $deleteUrl . '" method="POST" class="inline" data-confirm="true" data-confirm-title="Delete Workout Plan" data-confirm-message="Deleting ' . e($plan->plan_name) . ' will remove it from the member history. Continue?" data-confirm-button="Delete Plan" data-confirm-tone="danger">';
                     $html .= '<input type="hidden" name="_token" value="' . csrf_token() . '">';
                     $html .= '<input type="hidden" name="_method" value="DELETE">';
                     $html .= '<button type="submit" class="text-red-600 hover:text-red-900" title="Delete">';

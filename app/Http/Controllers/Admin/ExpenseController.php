@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\StoreExpenseRequest;
 use App\Http\Requests\Admin\UpdateExpenseRequest;
 use App\Models\Expense;
 use App\Repositories\Interfaces\ExpenseRepositoryInterface;
+use App\Services\EntityIntegrityService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 
@@ -21,7 +22,8 @@ use Illuminate\Http\RedirectResponse;
 class ExpenseController extends Controller
 {
     public function __construct(
-        private readonly ExpenseRepositoryInterface $expenseRepository
+        private readonly ExpenseRepositoryInterface $expenseRepository,
+        private readonly EntityIntegrityService $integrityService
     ) {
         $this->middleware('permission:view expenses')->only(['index', 'show']);
         $this->middleware('permission:create expenses')->only(['create', 'store']);
@@ -99,6 +101,14 @@ class ExpenseController extends Controller
      */
     public function destroy(Expense $expense): RedirectResponse
     {
+        $blocker = $this->integrityService->firstExpenseDeletionBlocker($expense);
+
+        if ($blocker) {
+            return redirect()
+                ->route('admin.expenses.index')
+                ->with('error', $blocker);
+        }
+
         $this->expenseRepository->deleteExpense($expense);
 
         return redirect()
