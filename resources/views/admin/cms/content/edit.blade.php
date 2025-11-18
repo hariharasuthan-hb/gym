@@ -95,6 +95,10 @@
                         Current Image
                     </label>
                     <img src="{{ \Illuminate\Support\Facades\Storage::url($content->image) }}" alt="{{ $content->title }}" class="h-32 w-full object-cover rounded-lg border border-gray-300">
+                    <div class="mt-2 flex items-center">
+                        <input type="checkbox" name="remove_image" id="remove_image" value="1" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
+                        <label for="remove_image" class="ml-2 text-sm text-red-600 font-medium">Remove current image</label>
+                    </div>
                 </div>
                 @endif
 
@@ -109,6 +113,63 @@
                            accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <p class="mt-1 text-sm text-gray-500">Max size: 5MB. Formats: JPEG, PNG, JPG, GIF, WEBP</p>
+                </div>
+
+                {{-- Current Background Image --}}
+                @if($content->background_image)
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Current Background Image
+                    </label>
+                    <img src="{{ \Illuminate\Support\Facades\Storage::url($content->background_image) }}" alt="{{ $content->title }} Background" class="h-32 w-full object-cover rounded-lg border border-gray-300">
+                    <div class="mt-2 flex items-center">
+                        <input type="checkbox" name="remove_background_image" id="remove_background_image" value="1" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
+                        <label for="remove_background_image" class="ml-2 text-sm text-red-600 font-medium">Remove current background image</label>
+                    </div>
+                </div>
+                @endif
+
+                {{-- Background Image --}}
+                <div>
+                    <label for="background_image" class="block text-sm font-medium text-gray-700 mb-2">
+                        {{ $content->background_image ? 'Replace Background Image' : 'Background Image' }}
+                    </label>
+                    <input type="file" 
+                           name="background_image" 
+                           id="background_image" 
+                           accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="mt-1 text-sm text-gray-500">Max size: 5MB. Formats: JPEG, PNG, JPG, GIF, WEBP. Used as background for content sections.</p>
+                </div>
+
+                {{-- Current Video --}}
+                @if($content->video_path)
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Current Video
+                    </label>
+                    <video controls class="w-full rounded-lg border border-gray-300 mb-2">
+                        <source src="{{ \Illuminate\Support\Facades\Storage::url($content->video_path) }}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <div class="mt-2 flex items-center">
+                        <input type="checkbox" name="remove_video" id="remove_video" value="1" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
+                        <label for="remove_video" class="ml-2 text-sm text-red-600 font-medium">Remove current video</label>
+                    </div>
+                </div>
+                @endif
+
+                {{-- Video Upload --}}
+                <div>
+                    <label for="video" class="block text-sm font-medium text-gray-700 mb-2">
+                        {{ $content->video_path ? 'Replace Video' : 'Video (optional)' }}
+                    </label>
+                    <input type="file" 
+                           name="video" 
+                           id="video" 
+                           accept="video/mp4,video/quicktime,video/x-msvideo,video/x-ms-wmv"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="mt-1 text-sm text-gray-500">Max size: 50MB. Formats: MP4, MOV, AVI, WMV.</p>
                 </div>
 
                 {{-- Link --}}
@@ -168,14 +229,14 @@
 
                 {{-- Content --}}
                 <div>
-                    <label for="content" class="block text-sm font-medium text-gray-700 mb-2">
-                        Content
-                    </label>
-                    <textarea name="content" 
-                              id="content" 
-                              rows="12"
-                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ old('content', $content->content) }}</textarea>
-                    <p class="mt-1 text-sm text-gray-500">Main content text (supports HTML)</p>
+                    @include('admin.components.rich-text-editor', [
+                        'name' => 'content',
+                        'label' => 'Content',
+                        'value' => old('content', $content->content),
+                        'height' => 500,
+                        'toolbar' => 'full',
+                        'help' => 'Main content text (supports HTML formatting)',
+                    ])
                 </div>
             </div>
         </div>

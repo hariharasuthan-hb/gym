@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Http\Requests\Admin;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class UpdateWorkoutPlanRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        $workoutPlan = $this->route('workoutPlan');
+        
+        // Trainers can only edit their own plans
+        if ($this->user()->hasRole('trainer')) {
+            return $workoutPlan->trainer_id === $this->user()->id;
+        }
+        
+        return $this->user()->can('edit workout plans');
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     */
+    public function rules(): array
+    {
+        $rules = [
+            'plan_name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'member_id' => ['required', 'exists:users,id'],
+            'duration_weeks' => ['nullable', 'integer', 'min:1'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['nullable', 'date', 'after:start_date'],
+            'status' => ['required', 'in:active,completed,paused,cancelled'],
+            'notes' => ['nullable', 'string'],
+            'exercises' => ['nullable', 'array'],
+            'exercises.*' => ['nullable', 'string', 'max:255'],
+            'exercises_json' => ['nullable', 'string'],
+            'demo_video' => ['nullable', 'file', 'mimes:mp4,webm,mov', 'max:102400'], // Max 100MB
+        ];
+        
+        // Trainer ID can be updated by admins
+        if (!$this->user()->hasRole('trainer')) {
+            $rules['trainer_id'] = ['required', 'exists:users,id'];
+        }
+        
+        return $rules;
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     */
+    public function messages(): array
+    {
+        return [
+            'plan_name.required' => 'The plan name field is required.',
+            'member_id.required' => 'Please select a member.',
+            'member_id.exists' => 'The selected member does not exist.',
+            'start_date.required' => 'The start date field is required.',
+            'start_date.date' => 'The start date must be a valid date.',
+            'end_date.after' => 'The end date must be after the start date.',
+            'status.required' => 'The status field is required.',
+            'status.in' => 'The status must be one of: active, completed, paused, cancelled.',
+            'demo_video.file' => 'The demo video must be a valid file.',
+            'demo_video.mimes' => 'Demo video must be in mp4, webm, or mov format.',
+            'demo_video.max' => 'Demo video file size must not exceed 100MB.',
+        ];
+    }
+}
+

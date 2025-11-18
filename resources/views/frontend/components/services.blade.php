@@ -5,8 +5,30 @@
     $cmsServices = $cmsServices ?? collect();
     
     // Priority: CMS Content > Landing Page Content > Default
-    $servicesTitle = $cmsServicesSection->title ?? $landingPage->services_title ?? 'Our Services';
-    $servicesDescription = $cmsServicesSection->description ?? $cmsServicesSection->content ?? $landingPage->services_description ?? 'Choose from our range of fitness programs and services';
+    $servicesTitle = ($cmsServicesSection && $cmsServicesSection->title) 
+        ? $cmsServicesSection->title 
+        : ($landingPage->services_title ?? 'Our Services');
+    $servicesDescription = ($cmsServicesSection && ($cmsServicesSection->description ?? $cmsServicesSection->content)) 
+        ? ($cmsServicesSection->description ?? $cmsServicesSection->content) 
+        : ($landingPage->services_description ?? 'Choose from our range of fitness programs and services');
+    
+    // Check for background image: First check services-section, then check all services content
+    $servicesBackgroundImage = null;
+    if ($cmsServicesSection && $cmsServicesSection->background_image) {
+        $servicesBackgroundImage = \Illuminate\Support\Facades\Storage::url($cmsServicesSection->background_image);
+    } else {
+        // Check all services content (including the section if it's in the collection)
+        $cmsContentRepo = app(\App\Repositories\Interfaces\CmsContentRepositoryInterface::class);
+        $allServicesForBg = $cmsContentRepo->getFrontendContent('services');
+        
+        // Find first service with background_image
+        foreach ($allServicesForBg as $serviceItem) {
+            if ($serviceItem->background_image) {
+                $servicesBackgroundImage = \Illuminate\Support\Facades\Storage::url($serviceItem->background_image);
+                break;
+            }
+        }
+    }
     
     // Services: Use CMS services if available, otherwise use landing page services, otherwise default
     $services = [];
@@ -33,11 +55,19 @@
         ];
     }
 @endphp
-<section id="services" class="py-20">
-    <div class="container mx-auto px-4">
+@php
+    $servicesBgStyle = $servicesBackgroundImage 
+        ? "background-image: url('{$servicesBackgroundImage}'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;"
+        : '';
+@endphp
+<section id="services" class="py-20 {{ $servicesBackgroundImage ? 'relative min-h-[600px]' : '' }}" style="{{ $servicesBgStyle }}">
+    @if($servicesBackgroundImage)
+        <div class="absolute inset-0 bg-black bg-opacity-40 z-0"></div>
+    @endif
+    <div class="container mx-auto px-4 relative z-10">
         <div class="text-center mb-12">
-            <h2 class="text-4xl font-bold mb-4">{{ $servicesTitle }}</h2>
-            <p class="text-gray-600 max-w-2xl mx-auto">
+            <h2 class="text-4xl font-bold mb-4 {{ $servicesBackgroundImage ? 'text-white' : 'text-gray-900' }}">{{ $servicesTitle }}</h2>
+            <p class="{{ $servicesBackgroundImage ? 'text-white' : 'text-gray-600' }} max-w-2xl mx-auto">
                 {{ $servicesDescription }}
             </p>
         </div>

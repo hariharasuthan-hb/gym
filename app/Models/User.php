@@ -71,4 +71,54 @@ class User extends Authenticatable
             ->where('end_date', '>=', now())
             ->latest();
     }
+
+    /**
+     * Get the workout plans for the user (as member).
+     */
+    public function workoutPlans()
+    {
+        return $this->hasMany(\App\Models\WorkoutPlan::class, 'member_id');
+    }
+
+    /**
+     * Get the workout plans created by the user (as trainer).
+     */
+    public function trainerWorkoutPlans()
+    {
+        return $this->hasMany(\App\Models\WorkoutPlan::class, 'trainer_id');
+    }
+
+    /**
+     * Get the diet plans for the user (as member).
+     */
+    public function dietPlans()
+    {
+        return $this->hasMany(\App\Models\DietPlan::class, 'member_id');
+    }
+
+    /**
+     * Get the diet plans created by the user (as trainer).
+     */
+    public function trainerDietPlans()
+    {
+        return $this->hasMany(\App\Models\DietPlan::class, 'trainer_id');
+    }
+
+    /**
+     * Get the workout videos uploaded by the user.
+     */
+    public function workoutVideos()
+    {
+        return $this->hasMany(\App\Models\WorkoutVideo::class);
+    }
+
+    /**
+     * Notifications assigned to the user.
+     */
+    public function receivedNotifications()
+    {
+        return $this->belongsToMany(InAppNotification::class, 'notification_user')
+            ->withPivot(['read_at', 'dismissed_at'])
+            ->withTimestamps();
+    }
 }

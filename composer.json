@@ -9,7 +9,9 @@
         "php": "^8.2",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
+        "razorpay/razorpay": "*",
         "spatie/laravel-permission": "^6.23",
+        "stripe/stripe-php": "*",
         "yajra/laravel-datatables-html": "^12.6",
         "yajra/laravel-datatables-oracle": "^12.6"
     },
@@ -57,10 +59,15 @@
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi"
+            "@php artisan package:discover --ansi",
+            "@php scripts/fix-broken-pipe.php"
         ],
         "post-update-cmd": [
-            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
+            "@php scripts/fix-broken-pipe.php"
+        ],
+        "post-install-cmd": [
+            "@php scripts/fix-broken-pipe.php"
         ],
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""

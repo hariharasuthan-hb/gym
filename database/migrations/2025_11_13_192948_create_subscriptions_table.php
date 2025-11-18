@@ -15,10 +15,24 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('subscription_plan_id')->constrained()->onDelete('cascade');
-            $table->date('start_date');
-            $table->date('end_date');
-            $table->enum('status', ['active', 'expired', 'cancelled', 'pending'])->default('pending');
-            $table->boolean('auto_renew')->default(false);
+            
+            // Payment gateway fields (for new installations)
+            $table->string('gateway')->nullable(); // 'stripe' or 'razorpay'
+            $table->string('gateway_customer_id')->nullable();
+            $table->string('gateway_subscription_id')->nullable();
+            
+            // Updated status enum
+            $table->enum('status', ['trialing', 'active', 'canceled', 'past_due', 'expired', 'pending'])->default('pending');
+            
+            // Subscription lifecycle dates
+            $table->timestamp('trial_end_at')->nullable();
+            $table->timestamp('next_billing_at')->nullable();
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('canceled_at')->nullable();
+            
+            // Metadata for storing additional gateway information
+            $table->json('metadata')->nullable();
+            
             $table->timestamps();
         });
     }

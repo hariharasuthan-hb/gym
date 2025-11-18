@@ -13,6 +13,11 @@
 
     <!-- Scripts -->
     @vite(['resources/css/frontend/app.css', 'resources/js/frontend/app.js'])
+    
+    <!-- SweetAlert2 Component -->
+    @include('frontend.components.swal')
+    
+    @stack('styles')
 </head>
 <body class="font-sans antialiased">
     {{-- Header --}}
@@ -25,6 +30,8 @@
     
     {{-- Footer --}}
     @include('frontend.components.footer')
+    
+    @stack('scripts')
 </body>
 </html>
 

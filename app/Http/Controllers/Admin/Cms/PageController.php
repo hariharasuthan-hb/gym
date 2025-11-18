@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Cms;
 
 use App\Http\Controllers\Controller;
+use App\DataTables\CmsPageDataTable;
 use App\Http\Requests\Admin\Cms\StorePageRequest;
 use App\Http\Requests\Admin\Cms\UpdatePageRequest;
 use App\Repositories\Interfaces\CmsPageRepositoryInterface;
@@ -11,6 +12,13 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
+/**
+ * Controller for managing CMS pages in the admin panel.
+ * 
+ * Handles CRUD operations for CMS pages including creation, updating,
+ * deletion, and viewing. CMS pages are used for creating custom content
+ * pages on the frontend website.
+ */
 class PageController extends Controller
 {
     protected CmsPageRepositoryInterface $repository;
@@ -27,23 +35,15 @@ class PageController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request): View
+    public function index(CmsPageDataTable $dataTable)
     {
-        $filters = [
-            'search' => $request->get('search'),
-            'is_active' => $request->get('is_active'),
-            'category' => $request->get('category'),
-        ];
+        if (request()->ajax() || request()->wantsJson()) {
+            return $dataTable->dataTable($dataTable->query(new \App\Models\CmsPage))->toJson();
+        }
 
-        $sort = [
-            $request->get('sort_by', 'created_at') => $request->get('sort_dir', 'desc')
-        ];
-
-        $perPage = $request->get('per_page', 15);
-
-        $pages = $this->repository->all($filters, $sort, $perPage);
-
-        return view('admin.cms.pages.index', compact('pages'));
+        return view('admin.cms.pages.index', [
+            'dataTable' => $dataTable
+        ]);
     }
 
     /**

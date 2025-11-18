@@ -29,6 +29,7 @@ class UpdateSiteSettingsRequest extends FormRequest
             'twitter_url' => 'nullable|url|max:255',
             'instagram_url' => 'nullable|url|max:255',
             'linkedin_url' => 'nullable|url|max:255',
+            'footer_partner' => 'nullable|string|max:255',
         ];
     }
 

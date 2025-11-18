@@ -91,7 +91,13 @@
         </div>
         
         <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; {{ date('Y') }} {{ $siteTitle }}. All rights reserved.</p>
+        <p>
+    &copy; {{ date('Y') }} {{ $siteTitle }}. All rights reserved
+    @if (!empty($siteSettings->footer_partner))
+        {{ $siteSettings->footer_partner }}
+    @endif
+    .
+        </p>        
         </div>
     </div>
 </footer>

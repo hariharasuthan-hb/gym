@@ -7,8 +7,27 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {{-- Page Header --}}
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Member Dashboard</h1>
-            <p class="mt-2 text-gray-600">Welcome back! Here's your overview.</p>
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Member Dashboard</h1>
+                    <p class="mt-2 text-gray-600">Welcome back! Here's your overview.</p>
+                </div>
+                @if(!($checkedInToday ?? false))
+                <button id="check-in-btn" onclick="checkIn()" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center shadow-md">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Check In
+                </button>
+                @else
+                <div class="px-6 py-3 bg-green-100 text-green-700 rounded-lg font-semibold flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Checked In Today
+                </div>
+                @endif
+            </div>
         </div>
 
         {{-- Dashboard Stats --}}
@@ -25,7 +44,11 @@
                         <p class="text-sm font-medium text-gray-500">Active Subscription</p>
                         @if($activeSubscription && $activeSubscription->subscriptionPlan)
                             <p class="text-2xl font-semibold text-gray-900">{{ $activeSubscription->subscriptionPlan->plan_name }}</p>
-                            <p class="text-xs text-gray-500">Expires: {{ $activeSubscription->end_date->format('M d, Y') }}</p>
+                            @if($activeSubscription->next_billing_at)
+                                <p class="text-xs text-gray-500">Next billing: {{ $activeSubscription->next_billing_at->format('M d, Y') }}</p>
+                            @elseif($activeSubscription->trial_end_at)
+                                <p class="text-xs text-gray-500">Trial ends: {{ $activeSubscription->trial_end_at->format('M d, Y') }}</p>
+                            @endif
                         @else
                             <p class="text-2xl font-semibold text-gray-900">None</p>
                             <p class="text-xs text-red-500">No active plan</p>
@@ -44,7 +67,8 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-500">Workout Plans</p>
-                        <p class="text-2xl font-semibold text-gray-900">3</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ $totalWorkoutPlans ?? 0 }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Active plans</p>
                     </div>
                 </div>
             </div>
@@ -59,7 +83,8 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-500">Diet Plans</p>
-                        <p class="text-2xl font-semibold text-gray-900">2</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ $totalDietPlans ?? 0 }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Active plans</p>
                     </div>
                 </div>
             </div>
@@ -74,11 +99,52 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-500">Activities</p>
-                        <p class="text-2xl font-semibold text-gray-900">12</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ $totalActivities ?? 0 }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Total check-ins</p>
                     </div>
                 </div>
             </div>
         </div>
+
+        @if(!empty($todayRecordingProgress))
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wide">Today's Workout Progress</p>
+                    <h2 class="text-2xl font-bold text-gray-900">{{ $todayRecordingProgress['plan']->plan_name ?? 'Workout Plan' }}</h2>
+                </div>
+                <div class="text-right">
+                    <p class="text-3xl font-bold text-gray-900">{{ $todayRecordingProgress['percent'] }}%</p>
+                    <p class="text-xs text-gray-500">{{ $todayRecordingProgress['recorded_count'] }} / {{ $todayRecordingProgress['total_exercises'] }} exercises recorded</p>
+                </div>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3 mb-4 overflow-hidden">
+                <div class="bg-green-500 h-3 rounded-full transition-all duration-500" style="width: {{ $todayRecordingProgress['percent'] }}%"></div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between text-sm text-gray-600">
+                <div class="flex items-center space-x-4">
+                    <span class="inline-flex items-center">
+                        <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                        Recorded today
+                    </span>
+                    <span class="inline-flex items-center">
+                        <span class="w-3 h-3 bg-gray-300 rounded-full mr-2"></span>
+                        Pending
+                    </span>
+                </div>
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-2 {{ $todayRecordingProgress['attendance_marked'] ? 'text-green-600' : 'text-yellow-500' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    @if($todayRecordingProgress['attendance_marked'])
+                        <span class="font-semibold text-green-700">Attendance marked for today</span>
+                    @else
+                        <span class="font-semibold text-yellow-700">Complete recordings to auto-mark attendance</span>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
 
         {{-- Subscription Plans Section (Show if user has no active subscription) --}}
         @if(!$activeSubscription && $subscriptionPlans && $subscriptionPlans->count() > 0)
@@ -133,12 +199,59 @@
                     </ul>
                     @endif
                     
-                    <button class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                    <a href="{{ route('member.subscription.checkout', $plan->id) }}" class="block w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-center">
                         Subscribe Now
-                    </button>
+                    </a>
                 </div>
                 @endforeach
             </div>
+        </div>
+        @endif
+
+        {{-- Active Plans Section --}}
+        @if(($activeWorkoutPlans && $activeWorkoutPlans->count() > 0) || ($activeDietPlans && $activeDietPlans->count() > 0))
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {{-- Active Workout Plans --}}
+            @if($activeWorkoutPlans && $activeWorkoutPlans->count() > 0)
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900">Active Workout Plans</h2>
+                    <a href="{{ route('member.workout-plans') }}" class="text-sm text-green-600 hover:text-green-800 font-medium">
+                        View All →
+                    </a>
+                </div>
+                <div class="space-y-4">
+                    @foreach($activeWorkoutPlans as $plan)
+                        @include('frontend.components.plan-card', [
+                            'plan' => $plan,
+                            'type' => 'workout',
+                            'viewRoute' => null // Add route if needed
+                        ])
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            {{-- Active Diet Plans --}}
+            @if($activeDietPlans && $activeDietPlans->count() > 0)
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900">Active Diet Plans</h2>
+                    <a href="{{ route('member.diet-plans') }}" class="text-sm text-purple-600 hover:text-purple-800 font-medium">
+                        View All →
+                    </a>
+                </div>
+                <div class="space-y-4">
+                    @foreach($activeDietPlans as $plan)
+                        @include('frontend.components.plan-card', [
+                            'plan' => $plan,
+                            'type' => 'diet',
+                            'viewRoute' => null // Add route if needed
+                        ])
+                    @endforeach
+                </div>
+            </div>
+            @endif
         </div>
         @endif
 
@@ -197,5 +310,75 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+async function checkIn() {
+    const btn = document.getElementById('check-in-btn');
+    if (!btn) return;
+    
+    // Disable button
+    btn.disabled = true;
+    btn.innerHTML = `
+        <svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Checking In...
+    `;
+    
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const response = await fetch('{{ route("member.check-in") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+            },
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Show success message with SweetAlert
+            await SwalHelper.success(
+                'Check-in Successful!',
+                'You have been checked in for today.'
+            );
+            // Reload page to update UI
+            window.location.reload();
+        } else {
+            await SwalHelper.warning(
+                'Check-in Failed',
+                data.message || 'Check-in failed. Please try again.'
+            );
+            // Re-enable button
+            btn.disabled = false;
+            btn.innerHTML = `
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Check In
+            `;
+        }
+    } catch (error) {
+        console.error('Check-in error:', error);
+        await SwalHelper.error(
+            'Error',
+            'An error occurred. Please try again.'
+        );
+        // Re-enable button
+        btn.disabled = false;
+        btn.innerHTML = `
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Check In
+        `;
+    }
+}
+</script>
+@endpush
 @endsection
 

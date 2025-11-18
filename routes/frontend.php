@@ -38,7 +38,22 @@ Route::prefix('member')->name('member.')->middleware(['auth', 'role:member'])->g
     Route::get('/subscriptions', [\App\Http\Controllers\Frontend\MemberController::class, 'subscriptions'])->name('subscriptions');
     Route::get('/activities', [\App\Http\Controllers\Frontend\MemberController::class, 'activities'])->name('activities');
     Route::get('/workout-plans', [\App\Http\Controllers\Frontend\MemberController::class, 'workoutPlans'])->name('workout-plans');
+    Route::get('/workout-plans/{workoutPlan}', [\App\Http\Controllers\Frontend\MemberController::class, 'showWorkoutPlan'])->name('workout-plans.show');
+    Route::post('/workout-plans/{workoutPlan}/upload-video', [\App\Http\Controllers\Frontend\MemberController::class, 'uploadWorkoutVideo'])->name('workout-plans.upload-video');
+    Route::post('/workout-plans/{workoutPlan}/upload-video-chunk', [\App\Http\Controllers\Frontend\MemberController::class, 'uploadWorkoutVideoChunk'])->name('workout-plans.upload-video-chunk');
+    Route::post('/workout-plans/{workoutPlan}/mark-attendance', [\App\Http\Controllers\Frontend\MemberController::class, 'markAttendance'])->name('workout-plans.mark-attendance');
+    Route::post('/check-in', [\App\Http\Controllers\Frontend\MemberController::class, 'checkIn'])->name('check-in');
     Route::get('/diet-plans', [\App\Http\Controllers\Frontend\MemberController::class, 'dietPlans'])->name('diet-plans');
+    
+    // Subscription routes
+            Route::prefix('subscription')->name('subscription.')->group(function () {
+                Route::get('/checkout/{plan}', [\App\Http\Controllers\Member\CheckoutController::class, 'checkout'])->name('checkout');
+                Route::post('/create/{plan}', [\App\Http\Controllers\Member\CheckoutController::class, 'create'])->name('create');
+                Route::get('/success', [\App\Http\Controllers\Member\SubscriptionController::class, 'success'])->name('success');
+                Route::get('/', [\App\Http\Controllers\Member\SubscriptionController::class, 'index'])->name('index');
+                Route::post('/cancel/{subscription}', [\App\Http\Controllers\Member\SubscriptionController::class, 'cancel'])->name('cancel');
+                Route::post('/refresh/{subscription}', [\App\Http\Controllers\Member\SubscriptionController::class, 'refresh'])->name('refresh');
+            });
 });
 
 // API Routes for CMS (for fetching dynamic content)

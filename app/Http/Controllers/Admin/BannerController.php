@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\DataTables\BannerDataTable;
 use App\Http\Requests\Admin\StoreBannerRequest;
 use App\Http\Requests\Admin\UpdateBannerRequest;
 use App\Models\Banner;
@@ -10,15 +11,26 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
+/**
+ * Controller for managing banners in the admin panel.
+ * 
+ * Handles CRUD operations for banner images displayed on the frontend.
+ * Banners can be activated/deactivated and ordered for display purposes.
+ */
 class BannerController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(): View
+    public function index(BannerDataTable $dataTable)
     {
-        $banners = Banner::orderBy('order', 'asc')->orderBy('created_at', 'desc')->get();
-        return view('admin.banners.index', compact('banners'));
+        if (request()->ajax() || request()->wantsJson()) {
+            return $dataTable->dataTable($dataTable->query(new Banner))->toJson();
+        }
+        
+        return view('admin.banners.index', [
+            'dataTable' => $dataTable
+        ]);
     }
 
     /**

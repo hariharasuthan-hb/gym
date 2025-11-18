@@ -3,6 +3,14 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\PostTooLargeException;
+
+// Increase PHP limits early for large file uploads
+// NOTE: post_max_size and upload_max_filesize cannot be changed with ini_set()
+// They must be set in php.ini or .htaccess. These ini_set() calls are for other settings.
+ini_set('max_execution_time', '300');
+ini_set('max_input_time', '300');
+ini_set('memory_limit', '256M');
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -14,8 +22,55 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'permission' => \App\Http\Middleware\PermissionMiddleware::class,
+            'increase.post.size' => \App\Http\Middleware\IncreasePostSize::class,
+        ]);
+        
+        // Apply to routes that handle large file uploads
+        $middleware->web(append: [
+            \App\Http\Middleware\IncreasePostSize::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Handle PostTooLargeException with a more helpful message
+        $exceptions->render(function (PostTooLargeException $e, $request) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The uploaded file is too large. Maximum allowed size is 200MB. Please compress your video or use a smaller file.',
+                    'error' => 'POST_TOO_LARGE',
+                ], 413);
+            }
+            
+            return redirect()->back()
+                ->withInput()
+                ->withErrors([
+                    'demo_video' => 'The uploaded file is too large. Maximum allowed size is 200MB. Please compress your video or use a smaller file.',
+                ]);
+        });
+        
+        // Handle ValidationException for AJAX requests
+        $exceptions->render(function (\Illuminate\Validation\ValidationException $e, $request) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed.',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+        });
+        
+        // Handle general exceptions for AJAX requests
+        $exceptions->render(function (\Exception $e, $request) {
+            if ($request->expectsJson() || $request->ajax()) {
+                \Illuminate\Support\Facades\Log::error('AJAX request error', [
+                    'error' => $e->getMessage(),
+                    'url' => $request->url(),
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An error occurred: ' . $e->getMessage(),
+                ], 500);
+            }
+        });
     })->create();

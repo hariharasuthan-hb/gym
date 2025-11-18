@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Cms;
 
 use App\Http\Controllers\Controller;
+use App\DataTables\CmsContentDataTable;
 use App\Http\Requests\Admin\Cms\StoreContentRequest;
 use App\Http\Requests\Admin\Cms\UpdateContentRequest;
 use App\Repositories\Interfaces\CmsContentRepositoryInterface;
@@ -11,6 +12,14 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
+/**
+ * Controller for managing CMS content in the admin panel.
+ * 
+ * Handles CRUD operations for CMS content items including creation, updating,
+ * deletion, and viewing. CMS content is used for managing reusable content
+ * blocks displayed on the frontend website (e.g., hero sections, features,
+ * testimonials).
+ */
 class ContentController extends Controller
 {
     protected CmsContentRepositoryInterface $repository;
@@ -27,23 +36,15 @@ class ContentController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request): View
+    public function index(CmsContentDataTable $dataTable)
     {
-        $filters = [
-            'search' => $request->get('search'),
-            'type' => $request->get('type'),
-            'is_active' => $request->get('is_active'),
-        ];
+        if (request()->ajax() || request()->wantsJson()) {
+            return $dataTable->dataTable($dataTable->query(new \App\Models\CmsContent))->toJson();
+        }
 
-        $sort = [
-            $request->get('sort_by', 'order') => $request->get('sort_dir', 'asc')
-        ];
-
-        $perPage = $request->get('per_page', 15);
-
-        $contents = $this->repository->all($filters, $sort, $perPage);
-
-        return view('admin.cms.content.index', compact('contents'));
+        return view('admin.cms.content.index', [
+            'dataTable' => $dataTable
+        ]);
     }
 
     /**
@@ -66,6 +67,22 @@ class ContentController extends Controller
             $data['image'] = $this->imageService->upload(
                 $request->file('image'),
                 'cms/content'
+            );
+        }
+
+        // Handle background image upload
+        if ($request->hasFile('background_image')) {
+            $data['background_image'] = $this->imageService->upload(
+                $request->file('background_image'),
+                'cms/content'
+            );
+        }
+
+        // Handle video upload (e.g., testimonials)
+        if ($request->hasFile('video')) {
+            $data['video_path'] = $this->imageService->upload(
+                $request->file('video'),
+                'cms/videos'
             );
         }
 
@@ -104,12 +121,54 @@ class ContentController extends Controller
         $content = $this->repository->findOrFail($id);
         $data = $request->validated();
 
+        // Remove image if requested
+        if ($request->boolean('remove_image')) {
+            if ($content->image) {
+                $this->imageService->delete($content->image);
+            }
+            $data['image'] = null;
+        }
+
+        // Remove background image if requested
+        if ($request->boolean('remove_background_image')) {
+            if ($content->background_image) {
+                $this->imageService->delete($content->background_image);
+            }
+            $data['background_image'] = null;
+        }
+
+        // Remove video if requested
+        if ($request->boolean('remove_video')) {
+            if ($content->video_path) {
+                $this->imageService->delete($content->video_path);
+            }
+            $data['video_path'] = null;
+        }
+
         // Handle image upload
         if ($request->hasFile('image')) {
             $data['image'] = $this->imageService->upload(
                 $request->file('image'),
                 'cms/content',
                 $content->image
+            );
+        }
+
+        // Handle background image upload
+        if ($request->hasFile('background_image')) {
+            $data['background_image'] = $this->imageService->upload(
+                $request->file('background_image'),
+                'cms/content',
+                $content->background_image
+            );
+        }
+
+        // Handle video upload
+        if ($request->hasFile('video')) {
+            $data['video_path'] = $this->imageService->upload(
+                $request->file('video'),
+                'cms/videos',
+                $content->video_path
             );
         }
 
@@ -128,9 +187,15 @@ class ContentController extends Controller
     {
         $content = $this->repository->findOrFail($id);
 
-        // Delete image if exists
+        // Delete images if exist
         if ($content->image) {
             $this->imageService->delete($content->image);
+        }
+        if ($content->background_image) {
+            $this->imageService->delete($content->background_image);
+        }
+        if ($content->video_path) {
+            $this->imageService->delete($content->video_path);
         }
 
         $this->repository->delete($id);

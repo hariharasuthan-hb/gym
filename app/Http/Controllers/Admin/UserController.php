@@ -11,11 +11,19 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
 use App\Repositories\Interfaces\UserRepositoryInterface;
+use App\Services\EntityIntegrityService;
 
+/**
+ * Controller for managing users in the admin panel.
+ * 
+ * Handles CRUD operations for users including creation, updating, deletion,
+ * and role assignment. Accessible only to admin users.
+ */
 class UserController extends Controller
 {
     public function __construct(
-        private readonly UserRepositoryInterface $userRepository
+        private readonly UserRepositoryInterface $userRepository,
+        private readonly EntityIntegrityService $entityIntegrityService
     ) {
     }
 
@@ -91,6 +99,11 @@ class UserController extends Controller
      */
     public function destroy(User $user): RedirectResponse
     {
+        if ($reason = $this->entityIntegrityService->firstUserDeletionBlocker($user)) {
+            return redirect()->route('admin.users.index')
+                ->with('error', $reason);
+        }
+
         $this->userRepository->deleteByModel($user);
 
         return redirect()->route('admin.users.index')
