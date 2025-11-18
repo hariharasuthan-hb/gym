@@ -14,32 +14,24 @@ abstract class BaseDataTable
      */
     public function html(): Builder
     {
-        $url = request()->url();
         $formId = $this->getFilterFormId();
         
-        return $this->builder()
+        $builder = $this->builder()
             ->setTableId($this->getTableId())
-            ->columns($this->getColumns())
-            ->ajax([
-                'url' => $url,
+            ->columns($this->getColumns());
+        
+        // Add filter form data if form exists
+        if ($formId) {
+            $builder->ajax([
                 'data' => "function(d) {
-                    // Get filter form values and merge with DataTables parameters
                     var form = document.getElementById('{$formId}');
                     if (form) {
-                        // Get all form inputs
                         var inputs = form.querySelectorAll('input, select, textarea');
                         for (var i = 0; i < inputs.length; i++) {
                             var input = inputs[i];
                             var name = input.name;
                             var value = input.value;
-                            
-                            // Skip if no name
-                            if (!name) {
-                                continue;
-                            }
-                            
-                            // For date inputs, always include (even if empty) to clear filters
-                            // For other inputs, skip empty values
+                            if (!name) continue;
                             if (input.type === 'date') {
                                 d[name] = value || '';
                             } else if (value && value.toString().trim() !== '') {
@@ -49,7 +41,10 @@ abstract class BaseDataTable
                     }
                     return d;
                 }"
-            ])
+            ]);
+        }
+        
+        return $builder
             ->orderBy(0, 'asc')
             ->buttons($this->getButtons())
             ->parameters([

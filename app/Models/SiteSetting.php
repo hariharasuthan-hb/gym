@@ -16,6 +16,7 @@ class SiteSetting extends Model
         'twitter_url',
         'instagram_url',
         'linkedin_url',
+        'footer_partner',
     ];
 
     /**

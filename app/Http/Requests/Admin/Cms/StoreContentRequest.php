@@ -27,6 +27,7 @@ class StoreContentRequest extends FormRequest
             'description' => 'nullable|string|max:1000',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'background_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'video' => 'nullable|mimetypes:video/mp4,video/quicktime,video/x-msvideo,video/x-ms-wmv|max:51200',
             'link' => 'nullable|url|max:500',
             'link_text' => 'nullable|string|max:100',
             'order' => 'nullable|integer|min:0',
