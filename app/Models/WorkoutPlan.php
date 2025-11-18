@@ -10,6 +10,11 @@ class WorkoutPlan extends Model
     use HasFactory;
 
     /**
+     * Default video recording duration in seconds
+     */
+    public static int $defaultVideoRecordingDuration = 30;
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -81,6 +86,15 @@ class WorkoutPlan extends Model
     public function workoutVideos()
     {
         return $this->hasMany(WorkoutVideo::class);
+    }
+
+    /**
+     * Get the video recording duration for this plan.
+     * Returns the plan-specific duration or the default static duration.
+     */
+    public function getVideoRecordingDuration(): int
+    {
+        return $this->video_recording_duration ?? self::$defaultVideoRecordingDuration;
     }
 }
 

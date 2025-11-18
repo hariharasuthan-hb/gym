@@ -36,8 +36,9 @@ window.initializeExerciseRecorder = async function(index, exerciseName, workoutP
     }
     
     // Check camera availability
+    const recordingDuration = {{ \App\Models\WorkoutPlan::$defaultVideoRecordingDuration }}; // Static duration from model (30 seconds)
     const cameraRecorder = new CameraRecorder({
-        maxDuration: 60,
+        maxDuration: recordingDuration,
         videoConstraints: { facingMode: 'user' },
         audioEnabled: true,
         onCameraAvailable: () => {
@@ -86,12 +87,17 @@ window.initializeExerciseRecorder = async function(index, exerciseName, workoutP
             // Store timer for cleanup
             cameraRecorder.updateTimer = updateTimer;
         },
-        onRecordingStop: (blob, duration) => {
+        onRecordingStop: async (blob, duration) => {
             const recordingStatus = document.getElementById(`recording-status-${index}`);
             const startBtn = document.getElementById(`start-btn-${index}`);
             const stopBtn = document.getElementById(`stop-btn-${index}`);
             const uploadBtn = document.getElementById(`upload-btn-${index}`);
             const preview = document.getElementById(`preview-${index}`);
+            
+            // Stop camera stream
+            if (cameraRecorder) {
+                cameraRecorder.stopCamera();
+            }
             
             if (recordingStatus) recordingStatus.classList.add('hidden');
             if (startBtn) startBtn.classList.remove('hidden');
@@ -113,6 +119,19 @@ window.initializeExerciseRecorder = async function(index, exerciseName, workoutP
             // Cleanup timer
             if (cameraRecorder.updateTimer) {
                 clearInterval(cameraRecorder.updateTimer);
+            }
+            
+            // Show notification if recording reached max duration (auto-stop)
+            if (duration >= recordingDuration && typeof SwalHelper !== 'undefined') {
+                await SwalHelper.success(
+                    'Recording Complete!',
+                    `Your ${recordingDuration}-second video is ready for upload.`,
+                    {
+                        timer: 2000,
+                        timerProgressBar: true,
+                        showConfirmButton: false
+                    }
+                );
             }
         },
         onError: (error) => {
@@ -324,7 +343,7 @@ window.uploadVideo = async function(index, exerciseName, workoutPlanId, file = n
                 },
                 additionalData: {
                     exercise_name: exerciseName,
-                    duration_seconds: 60
+                    duration_seconds: recordingDuration
                 }
             }
         );
@@ -791,7 +810,7 @@ async function checkInWorkout() {
                 </svg>
                 Record Workout Videos
             </h2>
-            <p class="text-sm text-gray-600 mb-6">Record a 1-minute video for each exercise and upload for trainer approval.</p>
+            <p class="text-sm text-gray-600 mb-6">Record a {{ \App\Models\WorkoutPlan::$defaultVideoRecordingDuration }}-second video for each exercise and upload for trainer approval. Recording will automatically stop after {{ \App\Models\WorkoutPlan::$defaultVideoRecordingDuration }} seconds.</p>
 
             {{-- Today's Recording Progress --}}
             <div class="bg-blue-50 border border-blue-100 rounded-lg p-5 mb-6">
