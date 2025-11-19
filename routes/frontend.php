@@ -62,5 +62,38 @@ Route::prefix('member')->name('member.')->middleware(['auth', 'role:member'])->g
 Route::prefix('api')->name('api.')->group(function () {
     Route::get('/pages/{slug}', [\App\Http\Controllers\Api\PageController::class, 'show'])->name('pages.show');
     Route::get('/content/{type}', [\App\Http\Controllers\Api\ContentController::class, 'index'])->name('content.index');
+    
+    // Member API Routes (requires authentication and member role)
+    Route::prefix('member')->name('member.')->middleware(['auth', 'role:member'])->group(function () {
+        // Profile endpoints
+        Route::get('/profile', [\App\Http\Controllers\Api\MemberController::class, 'profile'])->name('profile');
+        Route::put('/profile', [\App\Http\Controllers\Api\MemberController::class, 'updateProfile'])->name('profile.update');
+        Route::put('/password', [\App\Http\Controllers\Api\MemberController::class, 'updatePassword'])->name('password.update');
+        
+        // Dashboard
+        Route::get('/dashboard', [\App\Http\Controllers\Api\MemberController::class, 'dashboard'])->name('dashboard');
+        
+        // Subscriptions
+        Route::get('/subscriptions', [\App\Http\Controllers\Api\MemberController::class, 'subscriptions'])->name('subscriptions');
+        
+        // Activities
+        Route::get('/activities', [\App\Http\Controllers\Api\MemberController::class, 'activities'])->name('activities');
+        
+        // Workout Plans
+        Route::get('/workout-plans', [\App\Http\Controllers\Api\MemberController::class, 'workoutPlans'])->name('workout-plans');
+        Route::get('/workout-plans/{id}', [\App\Http\Controllers\Api\MemberController::class, 'showWorkoutPlan'])->name('workout-plans.show');
+        Route::post('/workout-plans/{id}/upload-video', [\App\Http\Controllers\Api\MemberController::class, 'uploadWorkoutVideo'])->name('workout-plans.upload-video');
+        Route::post('/workout-plans/{id}/mark-attendance', [\App\Http\Controllers\Api\MemberController::class, 'markAttendance'])->name('workout-plans.mark-attendance');
+        
+        // Workout Videos
+        Route::get('/workout-videos', [\App\Http\Controllers\Api\MemberController::class, 'workoutVideos'])->name('workout-videos');
+        
+        // Diet Plans
+        Route::get('/diet-plans', [\App\Http\Controllers\Api\MemberController::class, 'dietPlans'])->name('diet-plans');
+        
+        // Check-in/Check-out
+        Route::post('/check-in', [\App\Http\Controllers\Api\MemberController::class, 'checkIn'])->name('check-in');
+        Route::post('/check-out', [\App\Http\Controllers\Api\MemberController::class, 'checkOut'])->name('check-out');
+    });
 });
 
