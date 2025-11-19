@@ -25,6 +25,9 @@
     
     {{-- Main Content --}}
     <main>
+        @if(request()->routeIs('member.*') && !request()->routeIs('frontend.home'))
+            <x-back-button />
+        @endif
         @yield('content')
     </main>
     

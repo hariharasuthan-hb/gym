@@ -2,12 +2,21 @@ import '../bootstrap';
 
 // Frontend specific JavaScript
 document.addEventListener('DOMContentLoaded', function() {
-    // Mobile menu toggle (if needed)
+    // Mobile menu toggle
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-    if (mobileMenuBtn) {
-        mobileMenuBtn.addEventListener('click', function() {
-            // Add mobile menu functionality here
-            console.log('Mobile menu clicked');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    if (mobileMenuBtn && mobileMenu) {
+        mobileMenuBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            mobileMenu.classList.toggle('hidden');
+        });
+        
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!mobileMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+                mobileMenu.classList.add('hidden');
+            }
         });
     }
     
