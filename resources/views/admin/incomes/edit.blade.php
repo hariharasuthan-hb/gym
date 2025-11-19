@@ -18,7 +18,7 @@
     </div>
 
     <div class="admin-card">
-        <form method="POST" action="{{ route('admin.incomes.update', $income) }}" class="space-y-6">
+        <form method="POST" action="{{ route('admin.incomes.update', $income) }}" class="space-y-6" enctype="multipart/form-data">
             @method('PUT')
             @include('admin.incomes.partials.form', [
                 'income' => $income,

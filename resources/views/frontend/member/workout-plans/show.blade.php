@@ -482,15 +482,6 @@ async function checkInWorkout() {
 @section('content')
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {{-- Back Button --}}
-        <div class="mb-6">
-            <a href="{{ route('member.workout-plans') }}" class="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                </svg>
-                Back to Workout Plans
-            </a>
-        </div>
 
         {{-- Plan Header Card --}}
         <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-lg p-8 mb-6 text-white">

@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\UpdateExpenseRequest;
 use App\Models\Expense;
 use App\Repositories\Interfaces\ExpenseRepositoryInterface;
 use App\Services\EntityIntegrityService;
+use App\Services\ImageUploadService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 
@@ -23,7 +24,8 @@ class ExpenseController extends Controller
 {
     public function __construct(
         private readonly ExpenseRepositoryInterface $expenseRepository,
-        private readonly EntityIntegrityService $integrityService
+        private readonly EntityIntegrityService $integrityService,
+        private readonly ImageUploadService $uploadService
     ) {
         $this->middleware('permission:view expenses')->only(['index', 'show']);
         $this->middleware('permission:create expenses')->only(['create', 'store']);
@@ -61,7 +63,16 @@ class ExpenseController extends Controller
      */
     public function store(StoreExpenseRequest $request): RedirectResponse
     {
-        $this->expenseRepository->createExpense($request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('reference_document')) {
+            $data['reference_document_path'] = $this->uploadService->upload(
+                $request->file('reference_document'),
+                'finance/expenses'
+            );
+        }
+
+        $this->expenseRepository->createExpense($data);
 
         return redirect()
             ->route('admin.expenses.index')
@@ -89,7 +100,20 @@ class ExpenseController extends Controller
      */
     public function update(UpdateExpenseRequest $request, Expense $expense): RedirectResponse
     {
-        $this->expenseRepository->updateExpense($expense, $request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('reference_document')) {
+            $data['reference_document_path'] = $this->uploadService->upload(
+                $request->file('reference_document'),
+                'finance/expenses',
+                $expense->reference_document_path
+            );
+        } elseif ($request->boolean('remove_reference_document')) {
+            $this->uploadService->delete($expense->reference_document_path);
+            $data['reference_document_path'] = null;
+        }
+
+        $this->expenseRepository->updateExpense($expense, $data);
 
         return redirect()
             ->route('admin.expenses.index')
@@ -108,6 +132,8 @@ class ExpenseController extends Controller
                 ->route('admin.expenses.index')
                 ->with('error', $blocker);
         }
+
+        $this->uploadService->delete($expense->reference_document_path);
 
         $this->expenseRepository->deleteExpense($expense);
 

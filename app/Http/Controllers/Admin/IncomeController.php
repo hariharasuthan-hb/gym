@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\UpdateIncomeRequest;
 use App\Models\Income;
 use App\Repositories\Interfaces\IncomeRepositoryInterface;
 use App\Services\EntityIntegrityService;
+use App\Services\ImageUploadService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 
@@ -23,7 +24,8 @@ class IncomeController extends Controller
 {
     public function __construct(
         private readonly IncomeRepositoryInterface $incomeRepository,
-        private readonly EntityIntegrityService $integrityService
+        private readonly EntityIntegrityService $integrityService,
+        private readonly ImageUploadService $uploadService
     ) {
         $this->middleware('permission:view incomes')->only(['index', 'show']);
         $this->middleware('permission:create incomes')->only(['create', 'store']);
@@ -61,7 +63,16 @@ class IncomeController extends Controller
      */
     public function store(StoreIncomeRequest $request): RedirectResponse
     {
-        $this->incomeRepository->createIncome($request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('reference_document')) {
+            $data['reference_document_path'] = $this->uploadService->upload(
+                $request->file('reference_document'),
+                'finance/incomes'
+            );
+        }
+
+        $this->incomeRepository->createIncome($data);
 
         return redirect()
             ->route('admin.incomes.index')
@@ -89,7 +100,20 @@ class IncomeController extends Controller
      */
     public function update(UpdateIncomeRequest $request, Income $income): RedirectResponse
     {
-        $this->incomeRepository->updateIncome($income, $request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('reference_document')) {
+            $data['reference_document_path'] = $this->uploadService->upload(
+                $request->file('reference_document'),
+                'finance/incomes',
+                $income->reference_document_path
+            );
+        } elseif ($request->boolean('remove_reference_document')) {
+            $this->uploadService->delete($income->reference_document_path);
+            $data['reference_document_path'] = null;
+        }
+
+        $this->incomeRepository->updateIncome($income, $data);
 
         return redirect()
             ->route('admin.incomes.index')
@@ -108,6 +132,8 @@ class IncomeController extends Controller
                 ->route('admin.incomes.index')
                 ->with('error', $blocker);
         }
+
+        $this->uploadService->delete($income->reference_document_path);
 
         $this->incomeRepository->deleteIncome($income);
 
