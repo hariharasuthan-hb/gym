@@ -72,6 +72,36 @@
             <p class="form-error">{{ $message }}</p>
         @enderror
     </div>
+    <div class="md:col-span-2 space-y-2">
+        <label class="form-label" for="reference_document">Reference Document</label>
+        <input type="file"
+               name="reference_document"
+               id="reference_document"
+               class="form-input w-full"
+               accept="application/pdf,image/*">
+        <p class="text-xs text-gray-500">Upload a bill image or PDF (max 5MB).</p>
+        @error('reference_document')
+            <p class="form-error">{{ $message }}</p>
+        @enderror
+
+        @if(($expense->reference_document_path ?? null))
+            <div class="flex flex-col gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <a href="{{ Storage::disk('public')->url($expense->reference_document_path) }}"
+                   target="_blank"
+                   class="text-sm text-primary-600 hover:underline">
+                    View current document
+                </a>
+                <label class="inline-flex items-center gap-2 text-sm text-gray-600">
+                    <input type="checkbox"
+                           name="remove_reference_document"
+                           value="1"
+                           class="form-checkbox"
+                           {{ old('remove_reference_document') ? 'checked' : '' }}>
+                    Remove existing document
+                </label>
+            </div>
+        @endif
+    </div>
     <div class="md:col-span-2">
         <label class="form-label" for="notes">Notes</label>
         <textarea name="notes"

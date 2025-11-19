@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Expense extends Model
 {
@@ -46,6 +47,7 @@ class Expense extends Model
         'spent_at',
         'payment_method',
         'reference',
+        'reference_document_path',
         'notes',
     ];
 
@@ -73,6 +75,18 @@ class Expense extends Model
         }
 
         return ucwords(str_replace('_', ' ', $this->payment_method));
+    }
+
+    /**
+     * Get the public URL for the uploaded reference document.
+     */
+    public function getReferenceDocumentUrlAttribute(): ?string
+    {
+        if (!$this->reference_document_path) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->reference_document_path);
     }
 }
 

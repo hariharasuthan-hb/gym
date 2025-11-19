@@ -21,6 +21,8 @@ class UpdateExpenseRequest extends FormRequest
             'payment_method' => ['nullable', 'string', 'max:255'],
             'reference' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
+            'reference_document' => ['nullable', 'file', 'mimes:pdf,jpeg,jpg,png,gif,webp', 'max:5120'],
+            'remove_reference_document' => ['nullable', 'boolean'],
         ];
     }
 }

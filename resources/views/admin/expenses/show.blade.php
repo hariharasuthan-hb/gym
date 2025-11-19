@@ -42,6 +42,18 @@
                     <dt class="text-gray-500">Reference</dt>
                     <dd>{{ $expense->reference ?? '—' }}</dd>
                 </div>
+                @if($expense->reference_document_url)
+                    <div>
+                        <dt class="text-gray-500">Reference Document</dt>
+                        <dd>
+                            <a href="{{ $expense->reference_document_url }}"
+                               target="_blank"
+                               class="text-primary-600 hover:underline">
+                                View file
+                            </a>
+                        </dd>
+                    </div>
+                @endif
                 <div>
                     <dt class="text-gray-500">Spent At</dt>
                     <dd>{{ $expense->spent_at?->format('M d, Y') ?? '—' }}</dd>

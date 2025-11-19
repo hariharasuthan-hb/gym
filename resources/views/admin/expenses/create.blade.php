@@ -18,7 +18,7 @@
     </div>
 
     <div class="admin-card">
-        <form method="POST" action="{{ route('admin.expenses.store') }}" class="space-y-6">
+        <form method="POST" action="{{ route('admin.expenses.store') }}" class="space-y-6" enctype="multipart/form-data">
             @include('admin.expenses.partials.form', [
                 'expense' => null,
                 'submitLabel' => 'Save Expense',
