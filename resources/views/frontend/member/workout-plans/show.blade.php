@@ -19,6 +19,7 @@ if (typeof VideoUploadUtils !== 'undefined') {
 // Store camera recorders and recorded blobs for each exercise
 window.cameraRecorders = {};
 window.recordedBlobs = {};
+const recordingDuration = {{ \App\Models\WorkoutPlan::$defaultVideoRecordingDuration }};
 
 /**
  * Initialize camera recorder for an exercise
@@ -36,7 +37,6 @@ window.initializeExerciseRecorder = async function(index, exerciseName, workoutP
     }
     
     // Check camera availability
-    const recordingDuration = {{ \App\Models\WorkoutPlan::$defaultVideoRecordingDuration }}; // Static duration from model (30 seconds)
     const cameraRecorder = new CameraRecorder({
         maxDuration: recordingDuration,
         videoConstraints: { facingMode: 'user' },

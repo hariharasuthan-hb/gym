@@ -39,10 +39,12 @@ Route::prefix('member')->name('member.')->middleware(['auth', 'role:member'])->g
     Route::get('/activities', [\App\Http\Controllers\Frontend\MemberController::class, 'activities'])->name('activities');
     Route::get('/workout-plans', [\App\Http\Controllers\Frontend\MemberController::class, 'workoutPlans'])->name('workout-plans');
     Route::get('/workout-plans/{workoutPlan}', [\App\Http\Controllers\Frontend\MemberController::class, 'showWorkoutPlan'])->name('workout-plans.show');
+    Route::get('/workout-videos', [\App\Http\Controllers\Frontend\MemberController::class, 'workoutVideos'])->name('workout-videos');
     Route::post('/workout-plans/{workoutPlan}/upload-video', [\App\Http\Controllers\Frontend\MemberController::class, 'uploadWorkoutVideo'])->name('workout-plans.upload-video');
     Route::post('/workout-plans/{workoutPlan}/upload-video-chunk', [\App\Http\Controllers\Frontend\MemberController::class, 'uploadWorkoutVideoChunk'])->name('workout-plans.upload-video-chunk');
     Route::post('/workout-plans/{workoutPlan}/mark-attendance', [\App\Http\Controllers\Frontend\MemberController::class, 'markAttendance'])->name('workout-plans.mark-attendance');
     Route::post('/check-in', [\App\Http\Controllers\Frontend\MemberController::class, 'checkIn'])->name('check-in');
+    Route::post('/check-out', [\App\Http\Controllers\Frontend\MemberController::class, 'checkOut'])->name('check-out');
     Route::get('/diet-plans', [\App\Http\Controllers\Frontend\MemberController::class, 'dietPlans'])->name('diet-plans');
     
     // Subscription routes

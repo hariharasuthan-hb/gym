@@ -38,6 +38,7 @@ class UpdateUserRequest extends FormRequest
             'gender' => 'nullable|in:male,female,other',
             'address' => 'nullable|string|max:500',
             'role' => 'nullable|exists:roles,id',
+            'status' => 'required|in:active,inactive',
         ];
     }
 

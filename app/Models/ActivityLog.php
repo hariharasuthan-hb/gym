@@ -10,6 +10,14 @@ class ActivityLog extends Model
     use HasFactory;
 
     /**
+     * Default attributes for new activity logs.
+     */
+    protected $attributes = [
+        'workout_summary' => null,
+        'duration_minutes' => 0,
+    ];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -76,6 +84,25 @@ class ActivityLog extends Model
     public function scopeDateRange($query, $startDate, $endDate)
     {
         return $query->whereBetween('date', [$startDate, $endDate]);
+    }
+
+    /**
+     * Scope logs for a specific user.
+     */
+    public function scopeForUser($query, int $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    /**
+     * Get today's activity log for a user (latest check-in).
+     */
+    public static function todayForUser(int $userId): ?self
+    {
+        return static::forUser($userId)
+            ->forDate(now()->toDateString())
+            ->latest('check_in_time')
+            ->first();
     }
 
     /**

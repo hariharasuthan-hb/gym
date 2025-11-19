@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\AutoCheckoutMemberJob;
+use App\Models\ActivityLog;
 use App\Models\SubscriptionPlan;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Repositories\Interfaces\WorkoutVideoRepositoryInterface;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -93,6 +96,9 @@ class MemberController extends Controller
             ->latest('start_date')
             ->limit(3)
             ->get();
+        $hasActiveWorkoutPlan = $activeWorkoutPlans->isNotEmpty();
+        $hasActiveSubscription = (bool) $activeSubscription;
+        $canTrackAttendance = $hasActiveWorkoutPlan && $hasActiveSubscription;
         $todayRecordingProgress = null;
         
         // Get active diet plans for the member
@@ -108,12 +114,16 @@ class MemberController extends Controller
         $totalDietPlans = $user->dietPlans()->where('status', 'active')->count();
         $totalActivities = \App\Models\ActivityLog::where('user_id', $user->id)->count();
 
-        // Check if user has checked in today
-        $today = now()->toDateString();
-        $checkedInToday = \App\Models\ActivityLog::where('user_id', $user->id)
-            ->where('date', $today)
-            ->whereNotNull('check_in_time')
-            ->exists();
+        // Today's activity log state
+        $todayActivity = $canTrackAttendance ? ActivityLog::todayForUser($user->id) : null;
+        $checkedInToday = $canTrackAttendance ? (bool) ($todayActivity?->check_in_time) : false;
+        $checkedOutToday = $canTrackAttendance ? (bool) ($todayActivity?->check_out_time) : false;
+        $todayCheckInTimeFormatted = $checkedInToday && $todayActivity?->check_in_time
+            ? $todayActivity->check_in_time->timezone(config('app.timezone', 'UTC'))->format('h:i A')
+            : null;
+        $todayCheckOutTimeFormatted = $checkedOutToday && $todayActivity?->check_out_time
+            ? $todayActivity->check_out_time->timezone(config('app.timezone', 'UTC'))->format('h:i A')
+            : null;
 
         // Build today's recording progress summary using first active workout plan
         if ($activeWorkoutPlans->count() > 0) {
@@ -147,7 +157,14 @@ class MemberController extends Controller
             'totalDietPlans',
             'totalActivities',
             'todayRecordingProgress',
-            'checkedInToday'
+            'checkedInToday',
+            'checkedOutToday',
+            'todayActivity',
+            'todayCheckInTimeFormatted',
+            'todayCheckOutTimeFormatted',
+            'hasActiveWorkoutPlan',
+            'hasActiveSubscription',
+            'canTrackAttendance'
         ));
     }
 
@@ -220,6 +237,12 @@ class MemberController extends Controller
     public function workoutPlans(Request $request): View
     {
         $user = auth()->user();
+
+        if (!$this->userHasActiveSubscription($user)) {
+            return redirect()
+                ->to(route('member.dashboard') . '#subscription-plans')
+                ->with('warning', 'Please activate a subscription to view workout plans.');
+        }
         
         // Get all workout plans for the member with trainer relationship
         $query = $user->workoutPlans()
@@ -244,6 +267,84 @@ class MemberController extends Controller
         ];
         
         return view('frontend.member.workout-plans', compact('workoutPlans', 'statusCounts'));
+    }
+
+    /**
+     * Show uploaded workout videos grouped by status for the member.
+     */
+    public function workoutVideos(Request $request): View|RedirectResponse
+    {
+        $user = auth()->user();
+
+        if (!$this->userHasActiveSubscription($user)) {
+            return redirect()
+                ->to(route('member.dashboard') . '#subscription-plans')
+                ->with('warning', 'Please activate a subscription to view workout videos.');
+        }
+
+        $validated = $request->validate([
+            'status' => ['nullable', 'in:all,pending,approved,rejected'],
+            'plan_id' => ['nullable', 'integer'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+        ]);
+
+        $validStatuses = ['all', 'pending', 'approved', 'rejected'];
+        $selectedStatus = in_array($request->get('status'), $validStatuses, true)
+            ? $request->get('status')
+            : 'all';
+
+        $workoutPlans = $user->workoutPlans()
+            ->select('id', 'plan_name')
+            ->orderBy('plan_name')
+            ->get();
+
+        $selectedPlanId = $request->integer('plan_id');
+        if ($selectedPlanId && !$workoutPlans->contains('id', $selectedPlanId)) {
+            $selectedPlanId = null;
+        }
+
+        $startDate = $validated['start_date'] ?? null;
+        $endDate = $validated['end_date'] ?? null;
+
+        $videosQuery = $user->workoutVideos()
+            ->with(['workoutPlan.trainer', 'reviewer'])
+            ->latest();
+
+        if ($selectedStatus !== 'all') {
+            $videosQuery->where('status', $selectedStatus);
+        }
+
+        if ($selectedPlanId) {
+            $videosQuery->where('workout_plan_id', $selectedPlanId);
+        }
+
+        if ($startDate) {
+            $videosQuery->whereDate('created_at', '>=', $startDate);
+        }
+
+        if ($endDate) {
+            $videosQuery->whereDate('created_at', '<=', $endDate);
+        }
+
+        $videos = $videosQuery->paginate(9)->withQueryString();
+
+        $statusCounts = [
+            'all' => $user->workoutVideos()->count(),
+            'pending' => $user->workoutVideos()->where('status', 'pending')->count(),
+            'approved' => $user->workoutVideos()->where('status', 'approved')->count(),
+            'rejected' => $user->workoutVideos()->where('status', 'rejected')->count(),
+        ];
+
+        return view('frontend.member.workout-videos', compact(
+            'videos',
+            'statusCounts',
+            'selectedStatus',
+            'workoutPlans',
+            'selectedPlanId',
+            'startDate',
+            'endDate'
+        ));
     }
 
     /**
@@ -537,14 +638,34 @@ class MemberController extends Controller
     {
         $user = auth()->user();
         $today = now()->toDateString();
+
+        // Ensure user has active subscription and workout plan
+        $hasActiveSubscription = $user->subscriptions()
+            ->whereIn('status', ['active', 'trialing'])
+            ->where(function ($query) {
+                $query->whereNull('next_billing_at')
+                    ->orWhere('next_billing_at', '>=', now());
+            })
+            ->exists();
+
+        if (!$hasActiveSubscription) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You need an active subscription to check in.',
+            ], 403);
+        }
+
+        $hasActiveWorkoutPlan = $user->workoutPlans()->where('status', 'active')->exists();
+        if (!$hasActiveWorkoutPlan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You need an active workout plan to check in.',
+            ], 403);
+        }
         
         // Check if already checked in today
-        $existingCheckIn = \App\Models\ActivityLog::where('user_id', $user->id)
-            ->where('date', $today)
-            ->whereNotNull('check_in_time')
-            ->first();
-        
-        if ($existingCheckIn) {
+        $existingCheckIn = ActivityLog::todayForUser($user->id);
+        if ($existingCheckIn && $existingCheckIn->check_in_time) {
             return response()->json([
                 'success' => false,
                 'message' => 'You have already checked in today.',
@@ -553,18 +674,81 @@ class MemberController extends Controller
         }
         
         // Create check-in record
-        \App\Models\ActivityLog::create([
+        $activityLog = ActivityLog::create([
             'user_id' => $user->id,
             'date' => $today,
             'check_in_time' => now(),
             'check_in_method' => 'manual',
             'workout_summary' => 'Manual check-in',
         ]);
-        
+
+        // Schedule automatic checkout at end of day
+        $delayUntil = Carbon::parse($today)->endOfDay();
+        AutoCheckoutMemberJob::dispatch($activityLog->id)->delay($delayUntil);
+
         return response()->json([
             'success' => true,
             'message' => 'Check-in successful!',
             'checked_in' => true,
+        ]);
+    }
+
+    /**
+     * Manual check-out for member.
+     */
+    public function checkOut(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $user = auth()->user();
+
+        $hasActiveSubscription = $user->subscriptions()
+            ->whereIn('status', ['active', 'trialing'])
+            ->where(function ($query) {
+                $query->whereNull('next_billing_at')
+                    ->orWhere('next_billing_at', '>=', now());
+            })
+            ->exists();
+
+        if (!$hasActiveSubscription) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You need an active subscription to check out.',
+            ], 403);
+        }
+
+        $hasActiveWorkoutPlan = $user->workoutPlans()->where('status', 'active')->exists();
+        if (!$hasActiveWorkoutPlan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You need an active workout plan to check out.',
+            ], 403);
+        }
+
+        $todayActivity = ActivityLog::todayForUser($user->id);
+
+        if (!$todayActivity || !$todayActivity->check_in_time) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active check-in found for today.',
+            ], 400);
+        }
+
+        if ($todayActivity->check_out_time) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have already checked out today.',
+            ], 400);
+        }
+
+        $checkoutTime = now();
+        $todayActivity->check_out_time = $checkoutTime;
+        $todayActivity->duration_minutes = $todayActivity->check_in_time
+            ? $todayActivity->check_in_time->diffInMinutes($checkoutTime)
+            : 0;
+        $todayActivity->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Checkout successful. Enjoy your rest!',
         ]);
     }
 
@@ -574,6 +758,12 @@ class MemberController extends Controller
     public function dietPlans(Request $request): View
     {
         $user = auth()->user();
+
+        if (!$this->userHasActiveSubscription($user)) {
+            return redirect()
+                ->to(route('member.dashboard') . '#subscription-plans')
+                ->with('warning', 'Please activate a subscription to view diet plans.');
+        }
 
         \App\Models\DietPlan::autoCompleteExpired();
 
@@ -596,5 +786,19 @@ class MemberController extends Controller
         ];
 
         return view('frontend.member.diet-plans', compact('dietPlans', 'statusCounts'));
+    }
+
+    /**
+     * Determine if the user has an active subscription.
+     */
+    protected function userHasActiveSubscription($user): bool
+    {
+        return $user->subscriptions()
+            ->whereIn('status', ['active', 'trialing'])
+            ->where(function ($query) {
+                $query->whereNull('next_billing_at')
+                    ->orWhere('next_billing_at', '>=', now());
+            })
+            ->exists();
     }
 }
