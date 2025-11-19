@@ -23,6 +23,12 @@ class UserDataTable extends BaseDataTable
             ->addColumn('roles', function ($user) {
                 return $user->roles->pluck('name')->implode(', ') ?: '-';
             })
+            ->editColumn('status', function ($user) {
+                $color = $user->status === 'active'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800';
+                return '<span class="px-2 py-1 text-xs font-semibold rounded-full ' . $color . '">' . ucfirst($user->status) . '</span>';
+            })
             ->addColumn('action', function ($user) {
                 $editUrl = route('admin.users.edit', $user->id);
                 $showUrl = route('admin.users.show', $user->id);
@@ -45,7 +51,7 @@ class UserDataTable extends BaseDataTable
                 
                 return $html;
             })
-            ->rawColumns(['action', 'roles']);
+            ->rawColumns(['action', 'roles', 'status']);
     }
 
     /**
@@ -75,6 +81,7 @@ class UserDataTable extends BaseDataTable
             Column::make('email')->title('Email')->width('20%'),
             Column::make('phone')->title('Phone')->width('12%'),
             Column::make('roles')->title('Roles')->width('15%')->orderable(false)->searchable(false),
+            Column::make('status')->title('Status')->width('10%'),
             Column::make('created_at')->title('Created At')->width('13%'),
             Column::computed('action')
                 ->exportable(false)

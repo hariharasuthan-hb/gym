@@ -28,6 +28,7 @@ class User extends Authenticatable
         'address',
         'qr_code',
         'rfid_card',
+        'status',
     ];
 
     /**
@@ -50,7 +51,32 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'status' => 'string',
         ];
+    }
+
+    /**
+     * Scope a query to only include active users.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    /**
+     * Scope a query to only include members with an active subscription.
+     */
+    public function scopeSubscribed($query)
+    {
+        return $query->active()->whereHas('activeSubscription');
+    }
+
+    /**
+     * Determine if the user is active.
+     */
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
     }
 
     /**
@@ -67,9 +93,15 @@ class User extends Authenticatable
     public function activeSubscription()
     {
         return $this->hasOne(\App\Models\Subscription::class)
-            ->where('status', 'active')
-            ->where('end_date', '>=', now())
-            ->latest();
+            ->whereIn('status', [
+                \App\Models\Subscription::STATUS_ACTIVE,
+                \App\Models\Subscription::STATUS_TRIALING,
+            ])
+            ->where(function ($query) {
+                $query->whereNull('next_billing_at')
+                    ->orWhere('next_billing_at', '>=', now());
+            })
+            ->latest('next_billing_at');
     }
 
     /**

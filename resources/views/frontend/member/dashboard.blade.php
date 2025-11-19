@@ -7,26 +7,49 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {{-- Page Header --}}
         <div class="mb-8">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                     <h1 class="text-3xl font-bold text-gray-900">Member Dashboard</h1>
                     <p class="mt-2 text-gray-600">Welcome back! Here's your overview.</p>
                 </div>
-                @if(!($checkedInToday ?? false))
-                <button id="check-in-btn" onclick="checkIn()" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center shadow-md">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    Check In
-                </button>
-                @else
-                <div class="px-6 py-3 bg-green-100 text-green-700 rounded-lg font-semibold flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    Checked In Today
+                <div class="flex flex-col md:flex-row md:items-center gap-3">
+                    @if($canTrackAttendance ?? false)
+                    @if(!($checkedInToday ?? false))
+                    <button id="check-in-btn" onclick="checkIn()" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center shadow-md">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Check In
+                    </button>
+                    @else
+                    <div class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-semibold flex items-center shadow-inner">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        {{ $todayCheckInTimeFormatted ? 'Checked in at ' . $todayCheckInTimeFormatted : 'Checked in today' }}
+                    </div>
+                        @if(!($checkedOutToday ?? false))
+                        <button id="check-out-btn" onclick="checkOut()" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold flex items-center shadow-md">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m0 0l3-3m-3 3l3 3m-9 4a9 9 0 1118 0 9 9 0 01-18 0z"></path>
+                            </svg>
+                            Check Out
+                        </button>
+                        @else
+                        <div class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            {{ $todayCheckOutTimeFormatted ? 'Checked out at ' . $todayCheckOutTimeFormatted : 'Checked out' }}
+                        </div>
+                        @endif
+                    @endif
+                    @else
+                    <div class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg font-semibold">
+                        You need an active subscription & workout plan to track attendance.
+                    </div>
+                    @endif
                 </div>
-                @endif
             </div>
         </div>
 
@@ -148,7 +171,7 @@
 
         {{-- Subscription Plans Section (Show if user has no active subscription) --}}
         @if(!$activeSubscription && $subscriptionPlans && $subscriptionPlans->count() > 0)
-        <div class="bg-white rounded-lg shadow mb-8 p-6">
+        <div id="subscription-plans" class="bg-white rounded-lg shadow mb-8 p-6">
             <div class="flex items-center justify-between mb-6">
                 <div>
                     <h2 class="text-2xl font-bold text-gray-900">Choose Your Plan</h2>
@@ -258,14 +281,23 @@
         {{-- Quick Actions --}}
         <div class="bg-white rounded-lg shadow mb-8 p-6">
             <h2 class="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <a href="{{ route('member.workout-plans') }}" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+            @php
+                $subscriptionAnchor = route('member.dashboard') . '#subscription-plans';
+            @endphp
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <a href="{{ $hasActiveSubscription ? route('member.workout-plans') : $subscriptionAnchor }}" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                     <svg class="w-5 h-5 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                     </svg>
                     <span class="font-medium text-gray-900">View Workout Plans</span>
                 </a>
-                <a href="{{ route('member.diet-plans') }}" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                <a href="{{ $hasActiveSubscription ? route('member.workout-videos') : $subscriptionAnchor }}" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <svg class="w-5 h-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    <span class="font-medium text-gray-900">Video Reviews</span>
+                </a>
+                <a href="{{ $hasActiveSubscription ? route('member.diet-plans') : $subscriptionAnchor }}" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                     <svg class="w-5 h-5 text-purple-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                     </svg>
@@ -376,6 +408,58 @@ async function checkIn() {
             </svg>
             Check In
         `;
+    }
+}
+
+async function checkOut() {
+    const btn = document.getElementById('check-out-btn');
+    if (!btn) return;
+
+    btn.disabled = true;
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = `
+        <svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Checking Out...
+    `;
+
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const response = await fetch('{{ route("member.check-out") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+            },
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            await SwalHelper.success(
+                'Checkout Complete',
+                'You have been checked out. See you soon!'
+            );
+            window.location.reload();
+        } else {
+            await SwalHelper.warning(
+                'Checkout Failed',
+                data.message || 'Checkout failed. Please try again.'
+            );
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    } catch (error) {
+        console.error('Checkout error:', error);
+        await SwalHelper.error(
+            'Error',
+            'An error occurred. Please try again.'
+        );
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
     }
 }
 </script>

@@ -127,6 +127,16 @@
             'options' => collect($roles)->pluck('name', 'id')->toArray(),
             'value' => $isEdit && $user->roles->isNotEmpty() ? $user->roles->first()->id : null,
         ])
+
+        <div class="mt-4">
+            @include('admin.components.form-select', [
+                'name' => 'status',
+                'label' => 'Account Status',
+                'options' => ['active' => 'Active', 'inactive' => 'Inactive'],
+                'value' => $user->status ?? 'active',
+                'required' => true,
+            ])
+        </div>
     </div>
 </div>
 

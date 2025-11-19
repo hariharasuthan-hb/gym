@@ -59,6 +59,7 @@ class DietPlanController extends Controller
                 ->unique();
             
             $members = User::role('member')
+                ->subscribed()
                 ->where(function ($query) use ($memberIds, $user) {
                     $query->whereIn('id', $memberIds)
                         ->orWhereDoesntHave('dietPlans', function ($q) use ($user) {
@@ -70,7 +71,7 @@ class DietPlanController extends Controller
             $trainers = collect(); // Trainers don't need trainer list
         } else {
             // Admins see all members and all trainers
-            $members = User::role('member')->get();
+            $members = User::role('member')->subscribed()->get();
             $trainers = User::role('trainer')->get();
         }
         
@@ -146,13 +147,20 @@ class DietPlanController extends Controller
             $memberIds = DietPlan::where('trainer_id', $user->id)
                 ->pluck('member_id')
                 ->unique();
-            $members = User::whereIn('id', $memberIds)
-                ->orWhere('id', $dietPlan->member_id) // Include current member
-                ->role('member')
+
+            $members = User::role('member')
+                ->subscribed()
+                ->whereIn('id', $memberIds)
                 ->get();
+
+            $currentMember = $dietPlan->member()->first();
+            if ($currentMember && !$members->contains('id', $currentMember->id)) {
+                $members->push($currentMember);
+            }
+
             $trainers = collect(); // Trainers don't need trainer list
         } else {
-            $members = User::role('member')->get();
+            $members = User::role('member')->subscribed()->get();
             $trainers = User::role('trainer')->get();
         }
         
