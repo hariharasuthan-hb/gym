@@ -40,8 +40,7 @@ class LoginController extends Controller
 
         $tokenResult = $user->createToken('member-api');
 
-        return $this->successResponse([
-            'token' => $tokenResult->accessToken,
+        return $this->tokenResponse('Login successful', $tokenResult->accessToken, [
             'token_type' => 'Bearer',
             'expires_at' => optional($tokenResult->token->expires_at)->toDateTimeString(),
             'user' => [
@@ -50,7 +49,7 @@ class LoginController extends Controller
                 'email' => $user->email,
                 'phone' => $user->phone,
             ],
-        ], 'Login successful.');
+        ]);
     }
 }
 

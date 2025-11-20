@@ -41,7 +41,7 @@ class MemberController extends Controller
     {
         $user = auth()->user()->load('roles');
         
-        return $this->successResponse([
+        return $this->successResponse('Profile retrieved successfully', [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
@@ -75,13 +75,13 @@ class MemberController extends Controller
         $this->userRepository->updateWithRole($user, $validated);
         $user->refresh();
 
-        return $this->successResponse([
+        return $this->successResponse('Profile updated successfully', [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
             'phone' => $user->phone,
             'address' => $user->address,
-        ], 'Profile updated successfully');
+        ]);
     }
 
     /**
@@ -101,7 +101,7 @@ class MemberController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        return $this->successResponse(null, 'Password updated successfully');
+        return $this->successResponse('Password updated successfully');
     }
 
     /**
@@ -209,7 +209,7 @@ class MemberController extends Controller
             }
         }
         
-        return $this->successResponse([
+        return $this->successResponse('Dashboard data retrieved successfully', [
             'active_subscription' => $activeSubscription ? [
                 'id' => $activeSubscription->id,
                 'status' => $activeSubscription->status,
@@ -226,7 +226,7 @@ class MemberController extends Controller
             'stats' => $stats,
             'today_activity' => $todayActivity,
             'can_track_attendance' => $canTrackAttendance,
-        ], 'Dashboard data retrieved successfully');
+        ]);
     }
 
     /**
@@ -259,7 +259,7 @@ class MemberController extends Controller
                 ];
             });
         
-        return $this->successResponse($subscriptions, 'Subscriptions retrieved successfully');
+        return $this->successResponse('Subscriptions retrieved successfully', $subscriptions);
     }
 
     /**
@@ -349,7 +349,7 @@ class MemberController extends Controller
             ->with('trainer')
             ->findOrFail($id);
         
-        return $this->successResponse([
+        return $this->successResponse('Workout plan retrieved successfully', [
             'id' => $workoutPlan->id,
             'plan_name' => $workoutPlan->plan_name,
             'description' => $workoutPlan->description,
@@ -362,7 +362,7 @@ class MemberController extends Controller
                 'name' => $workoutPlan->trainer->name,
                 'email' => $workoutPlan->trainer->email,
             ] : null,
-        ], 'Workout plan retrieved successfully');
+        ]);
     }
 
     /**
@@ -512,7 +512,9 @@ class MemberController extends Controller
         $delayUntil = Carbon::parse($today)->endOfDay();
         AutoCheckoutMemberJob::dispatch($activityLog->id)->delay($delayUntil);
 
-        return $this->successResponse(['checked_in' => true], 'Check-in successful!');
+        return $this->successResponse('Check-in successful!', [
+            'checked_in' => true,
+        ]);
     }
 
     /**
@@ -548,12 +550,12 @@ class MemberController extends Controller
             $request->input('duration_seconds', 60)
         );
         
-        return $this->successResponse([
+        return $this->successResponse('Video uploaded successfully. Waiting for trainer approval.', [
             'id' => $workoutVideo->id,
             'exercise_name' => $workoutVideo->exercise_name,
             'status' => $workoutVideo->status,
             'video_url' => $workoutVideo->video_url,
-        ], 'Video uploaded successfully. Waiting for trainer approval.');
+        ]);
     }
 
     /**
@@ -601,7 +603,9 @@ class MemberController extends Controller
             ]);
         }
         
-        return $this->successResponse(['attendance_marked' => true], 'Attendance marked successfully for today!');
+        return $this->successResponse('Attendance marked successfully for today!', [
+            'attendance_marked' => true,
+        ]);
     }
 
     /**
@@ -648,7 +652,7 @@ class MemberController extends Controller
             : 0;
         $todayActivity->save();
 
-        return $this->successResponse(null, 'Checkout successful. Enjoy your rest!');
+        return $this->successResponse('Checkout successful. Enjoy your rest!');
     }
 }
 

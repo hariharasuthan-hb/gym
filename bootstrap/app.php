@@ -1,11 +1,16 @@
 <?php
 
 use App\Jobs\SendDailyDietPlanNotificationsJob;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Exceptions\PostTooLargeException;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 // Increase PHP limits early for large file uploads
 // NOTE: post_max_size and upload_max_filesize cannot be changed with ini_set()
@@ -38,6 +43,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\IncreasePostSize::class,
         ]);
+
+        $middleware->api(prepend: [
+            \App\Http\Middleware\ForceJsonResponse::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Handle PostTooLargeException with a more helpful message
@@ -65,6 +74,51 @@ return Application::configure(basePath: dirname(__DIR__))
                     'message' => 'Validation failed.',
                     'errors' => $e->errors(),
                 ], 422);
+            }
+        });
+
+        $exceptions->render(function (AuthenticationException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication required.',
+                ], 401);
+            }
+        });
+
+        $exceptions->render(function (AuthorizationException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage() ?: 'You are not authorized to perform this action.',
+                ], 403);
+            }
+        });
+
+        $exceptions->render(function (ModelNotFoundException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Resource not found.',
+                ], 404);
+            }
+        });
+
+        $exceptions->render(function (NotFoundHttpException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Endpoint not found.',
+                ], 404);
+            }
+        });
+
+        $exceptions->render(function (MethodNotAllowedHttpException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'HTTP method not allowed for this endpoint.',
+                ], 405);
             }
         });
         

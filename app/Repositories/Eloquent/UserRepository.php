@@ -36,11 +36,15 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
             unset($data['password']);
         }
 
-        $roleId = $data['role'] ?? null;
+        $shouldSyncRole = array_key_exists('role', $data);
+        $roleId = $shouldSyncRole ? $data['role'] : null;
         unset($data['role']);
 
         $updated = $user->update($data);
-        $this->syncRole($user, $roleId);
+
+        if ($shouldSyncRole) {
+            $this->syncRole($user, $roleId);
+        }
 
         return $updated;
     }

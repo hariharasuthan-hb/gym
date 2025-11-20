@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,6 +20,11 @@ class WorkoutVideo extends Model
         'trainer_feedback',
         'reviewed_by',
         'reviewed_at',
+    ];
+
+    protected $appends = [
+        'video_url',
+        'thumbnail_url',
     ];
 
     protected function casts(): array
@@ -75,5 +81,24 @@ class WorkoutVideo extends Model
     public function scopeRejected($query)
     {
         return $query->where('status', 'rejected');
+    }
+
+    /**
+     * Accessor for full video URL.
+     */
+    protected function videoUrl(): Attribute
+    {
+        return Attribute::get(fn () => file_url($this->video_path));
+    }
+
+    /**
+     * Accessor for full thumbnail URL (if stored).
+     */
+    protected function thumbnailUrl(): Attribute
+    {
+        return Attribute::get(function () {
+            $thumbnailPath = $this->getAttribute('thumbnail_path');
+            return file_url($thumbnailPath);
+        });
     }
 }

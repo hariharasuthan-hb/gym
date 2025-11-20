@@ -57,11 +57,7 @@ class ImageUploadService
      */
     public function url(?string $path): ?string
     {
-        if (!$path) {
-            return null;
-        }
-
-        return Storage::disk('public')->url($path);
+        return file_url($path);
     }
 
     /**

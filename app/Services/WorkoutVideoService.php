@@ -110,11 +110,7 @@ class WorkoutVideoService
      */
     public function getVideoUrl(WorkoutVideo $workoutVideo): ?string
     {
-        if (!$workoutVideo->video_path) {
-            return null;
-        }
-        
-        return Storage::disk('public')->url($workoutVideo->video_path);
+        return file_url($workoutVideo->video_path);
     }
 }
 

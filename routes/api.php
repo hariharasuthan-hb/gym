@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\PageController;
 use Illuminate\Support\Facades\Route;
 
-Route::name('api.')->group(function () {
+Route::middleware('api')->name('api.')->group(function () {
     Route::get('/pages/{slug}', [PageController::class, 'show'])->name('pages.show');
     Route::get('/content/{type}', [ContentController::class, 'index'])->name('content.index');
 

@@ -127,3 +127,22 @@ if (!function_exists('format_date_input')) {
     }
 }
 
+if (!function_exists('file_url')) {
+    /**
+     * Build a fully-qualified URL for a stored file path.
+     */
+    function file_url(?string $path): ?string
+    {
+        if (!$path) {
+            return null;
+        }
+
+        // Already a full URL
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            return $path;
+        }
+
+        return url('storage/' . ltrim($path, '/'));
+    }
+}
+
