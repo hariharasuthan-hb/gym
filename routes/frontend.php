@@ -58,9 +58,3 @@ Route::prefix('member')->name('member.')->middleware(['auth', 'role:member'])->g
             });
 });
 
-// API Routes for CMS (for fetching dynamic content)
-Route::prefix('api')->name('api.')->group(function () {
-    Route::get('/pages/{slug}', [\App\Http\Controllers\Api\PageController::class, 'show'])->name('pages.show');
-    Route::get('/content/{type}', [\App\Http\Controllers\Api\ContentController::class, 'index'])->name('content.index');
-});
-

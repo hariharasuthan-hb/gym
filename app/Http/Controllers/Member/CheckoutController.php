@@ -29,7 +29,7 @@ class CheckoutController extends Controller
 
         // Allow upgrade by auto-canceling current subscription
         $activeSubscription = $user->subscriptions()
-            ->whereIn('status', ['active', 'trialing'])
+            ->active()
             ->first();
 
         if ($activeSubscription) {
@@ -104,7 +104,7 @@ class CheckoutController extends Controller
 
         // Check if user already has an active subscription
         $activeSubscription = $user->subscriptions()
-            ->whereIn('status', ['active', 'trialing'])
+            ->active()
             ->first();
 
         if ($activeSubscription) {

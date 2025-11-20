@@ -369,7 +369,7 @@ class WorkoutPlanController extends Controller
                 'success' => true,
                 'message' => 'Video uploaded and converted successfully.',
                 'video_path' => $videoPath,
-                'video_url' => \Illuminate\Support\Facades\Storage::disk('public')->url($videoPath),
+                'video_url' => file_url($videoPath),
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             $errors = $e->errors();
@@ -491,7 +491,7 @@ class WorkoutPlanController extends Controller
                     'success' => true,
                     'message' => 'Video uploaded successfully.',
                     'video_path' => $videoPath,
-                    'video_url' => \Illuminate\Support\Facades\Storage::disk('public')->url($videoPath),
+                    'video_url' => file_url($videoPath),
                 ]);
             }
 

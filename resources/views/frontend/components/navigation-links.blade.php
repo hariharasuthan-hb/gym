@@ -19,10 +19,6 @@
        class="{{ $linkClass }}">
         Profile
     </a>
-    <form method="POST" action="{{ route('logout') }}" class="inline">
-        @csrf
-        <button type="submit" class="{{ $linkClass }}">Logout</button>
-    </form>
 @else
     {{-- Regular navigation for all other pages --}}
     @foreach($menus as $menu)
@@ -56,10 +52,6 @@
                class="{{ $linkClass }}">
                 Profile
             </a>
-            <form method="POST" action="{{ route('logout') }}" class="inline">
-                @csrf
-                <button type="submit" class="{{ $linkClass }}">Logout</button>
-            </form>
         @elseif(auth()->user()->hasRole('admin'))
             <a href="{{ route('admin.dashboard') }}" 
                class="{{ $linkClass }}">
