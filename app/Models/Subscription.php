@@ -119,6 +119,10 @@ class Subscription extends Model
             ->where(function ($q) {
                 $q->whereNull('next_billing_at')
                   ->orWhere('next_billing_at', '>=', now());
+            })
+            ->where(function ($q) {
+                $q->whereNull('trial_end_at')
+                  ->orWhere('trial_end_at', '>=', now());
             });
     }
 

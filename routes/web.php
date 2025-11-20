@@ -18,6 +18,19 @@ require __DIR__.'/auth.php';
 require __DIR__.'/frontend.php';
 require __DIR__.'/admin.php';
 
+Route::view('/api/documentation', 'swagger.member')
+    ->name('api.documentation');
+
+Route::get('/api/documentation/member.yaml', function () {
+    $path = storage_path('api-docs/member-api.yaml');
+
+    abort_unless(file_exists($path), 404);
+
+    return response()->file($path, [
+        'Content-Type' => 'application/yaml',
+    ]);
+})->name('api.documentation.schema');
+
 // Debug routes (only in local environment)
 if (app()->environment('local')) {
     require __DIR__.'/debug.php';
