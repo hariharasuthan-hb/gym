@@ -1,93 +1,166 @@
 /**
  * Rich Text Editor Initialization
- * 
- * Handles TinyMCE initialization for rich text editor components.
- * Ensures proper HTML encoding/decoding and handles form submissions.
+ *
+ * Simple rich text editor using contentEditable
+ * Provides basic formatting without external dependencies
  */
-
-// Import TinyMCE core
-import tinymce from 'tinymce';
-
-// Import theme
-import 'tinymce/themes/silver';
-
-// Import plugins
-import 'tinymce/plugins/lists';
-import 'tinymce/plugins/link';
-import 'tinymce/plugins/image';
-import 'tinymce/plugins/code';
-import 'tinymce/plugins/table';
-import 'tinymce/plugins/media';
-import 'tinymce/plugins/wordcount';
-import 'tinymce/plugins/autoresize';
-
-// Import content CSS
-import 'tinymce/skins/ui/oxide/content.min.css';
 
 /**
  * Initialize a rich text editor instance
- * 
+ *
  * @param {string} editorId - The ID of the textarea element
  * @param {object} options - Configuration options
  */
 export function initRichTextEditor(editorId, options = {}) {
-    const defaultOptions = {
-        selector: `#${editorId}`,
-        height: options.height || 400,
-        menubar: false,
-        plugins: options.plugins || ['lists', 'link', 'image', 'code', 'wordcount', 'autoresize'],
-        toolbar: options.toolbar || 'undo redo | formatselect | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image code | removeformat',
-        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; }',
-        branding: false,
-        promotion: false,
-        resize: true,
-        convert_urls: false,
-        relative_urls: false,
-        remove_script_host: false,
-        // Ensure proper encoding
-        entity_encoding: 'raw',
-        // Auto-resize to content
-        autoresize_bottom_margin: 16,
-        autoresize_min_height: options.height || 400,
-        autoresize_max_height: 800,
-        // Setup callback to handle content properly
-        setup: function(editor) {
-            // Ensure content is properly handled on save
-            editor.on('SaveContent', function(e) {
-                // Content is already in correct format, no encoding needed
-                // TinyMCE handles HTML properly
-            });
-            
-            // Handle form submission
-            editor.on('submit', function() {
-                // Get content and ensure it's properly formatted
-                const content = editor.getContent();
-                // Update the textarea value
-                editor.save();
-            });
-        },
-        // Image upload handler (can be extended)
-        images_upload_handler: function(blobInfo, progress) {
-            return new Promise(function(resolve, reject) {
-                // For now, convert to base64
-                // Can be extended to upload to server
-                const reader = new FileReader();
-                reader.onload = function() {
-                    resolve(reader.result);
-                };
-                reader.onerror = function() {
-                    reject('Image upload failed');
-                };
-                reader.readAsDataURL(blobInfo.blob());
-            });
-        }
+    const textarea = document.getElementById(editorId);
+    if (!textarea) {
+        console.warn(`Rich text editor element with ID '${editorId}' not found`);
+        return;
+    }
+
+    const height = options.height || 400;
+    const toolbar = options.toolbar || 'basic';
+
+    // Create container for the editor
+    const container = document.createElement('div');
+    container.className = 'simple-rich-editor-container';
+    container.style.cssText = `
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        min-height: ${height}px;
+        background: white;
+        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    `;
+
+    // Create toolbar
+    const toolbarElement = document.createElement('div');
+    toolbarElement.className = 'simple-rich-editor-toolbar';
+    toolbarElement.style.cssText = `
+        border-bottom: 1px solid #e5e7eb;
+        padding: 0.5rem 0.75rem;
+        background: #f9fafb;
+        border-radius: 0.375rem 0.375rem 0 0;
+        display: flex;
+        gap: 0.25rem;
+        flex-wrap: wrap;
+        align-items: center;
+    `;
+
+    // Create editable content area
+    const editable = document.createElement('div');
+    editable.className = 'simple-rich-editor-content';
+    editable.contentEditable = true;
+    editable.style.cssText = `
+        padding: 0.75rem;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.6;
+        min-height: ${height - 60}px;
+        outline: none;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        color: #374151;
+    `;
+
+    // Set initial content
+    editable.innerHTML = textarea.value || '';
+
+    // Toolbar buttons based on configuration
+    const buttons = [];
+
+    if (toolbar === 'full' || toolbar === 'basic') {
+        buttons.push(
+            { command: 'bold', icon: 'B', title: 'Bold' },
+            { command: 'italic', icon: 'I', title: 'Italic' },
+            { command: 'underline', icon: 'U', title: 'Underline' }
+        );
+    }
+
+    if (toolbar === 'full') {
+        buttons.push(
+            { command: 'insertUnorderedList', icon: '•', title: 'Bullet List' },
+            { command: 'insertOrderedList', icon: '1.', title: 'Numbered List' },
+            { command: 'justifyLeft', icon: '⬅', title: 'Align Left' },
+            { command: 'justifyCenter', icon: '⬌', title: 'Align Center' },
+            { command: 'justifyRight', icon: '➡', title: 'Align Right' }
+        );
+    }
+
+    // Create toolbar buttons
+    buttons.forEach(btn => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.innerHTML = btn.icon;
+        button.title = btn.title;
+        button.style.cssText = `
+            padding: 0.25rem 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.25rem;
+            background: white;
+            color: #374151;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 12px;
+            min-width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        `;
+
+        button.addEventListener('mouseover', () => {
+            button.style.background = '#f3f4f6';
+            button.style.borderColor = '#9ca3af';
+        });
+
+        button.addEventListener('mouseout', () => {
+            button.style.background = 'white';
+            button.style.borderColor = '#d1d5db';
+        });
+
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.execCommand(btn.command, false, null);
+            editable.focus();
+        });
+
+        toolbarElement.appendChild(button);
+    });
+
+    // Sync content back to textarea
+    const syncContent = () => {
+        textarea.value = editable.innerHTML;
     };
 
-    // Merge with custom options
-    const config = { ...defaultOptions, ...options };
+    editable.addEventListener('input', syncContent);
+    editable.addEventListener('blur', syncContent);
 
-    // Initialize TinyMCE
-    tinymce.init(config);
+    // Handle form submission
+    const form = textarea.closest('form');
+    if (form) {
+        form.addEventListener('submit', syncContent);
+    }
+
+    // Replace textarea with editor
+    container.appendChild(toolbarElement);
+    container.appendChild(editable);
+    textarea.style.display = 'none';
+    textarea.parentNode.insertBefore(container, textarea);
+
+    // Add focus/blur styling
+    editable.addEventListener('focus', () => {
+        container.style.borderColor = '#3b82f6';
+        container.style.boxShadow = '0 0 0 3px rgb(59 130 246 / 0.1)';
+    });
+
+    editable.addEventListener('blur', () => {
+        container.style.borderColor = '#d1d5db';
+        container.style.boxShadow = '0 1px 2px 0 rgb(0 0 0 / 0.05)';
+    });
+
+    // Focus the editor
+    setTimeout(() => editable.focus(), 100);
 }
 
 /**
@@ -103,35 +176,21 @@ export function initAllRichTextEditors() {
 
         const toolbar = textarea.dataset.toolbar || 'full';
         const height = parseInt(textarea.dataset.height) || 400;
-        const plugins = textarea.dataset.plugins 
-            ? JSON.parse(textarea.dataset.plugins) 
-            : ['lists', 'link', 'image', 'code'];
-
-        // Toolbar presets
-        const toolbarConfigs = {
-            'full': 'undo redo | formatselect | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image code | removeformat',
-            'basic': 'bold italic underline | bullist numlist | link | removeformat',
-            'minimal': 'bold italic | removeformat',
-        };
-
-        const toolbarConfig = toolbarConfigs[toolbar] || toolbarConfigs['full'];
 
         initRichTextEditor(editorId, {
-            toolbar: toolbarConfig,
-            height: height,
-            plugins: plugins
+            toolbar: toolbar,
+            height: height
         });
     });
 }
 
 /**
- * Destroy all TinyMCE instances
+ * Destroy all rich text editors
  * Useful for cleanup or when navigating away
  */
 export function destroyAllRichTextEditors() {
-    if (typeof tinymce !== 'undefined') {
-        tinymce.remove();
-    }
+    // For contentEditable editors, we don't need special cleanup
+    // The DOM elements will be removed when the page changes
 }
 
 // Make functions globally available
