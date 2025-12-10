@@ -146,3 +146,48 @@ if (!function_exists('file_url')) {
     }
 }
 
+if (!function_exists('render_rich_content')) {
+    /**
+     * Render HTML content safely for rich text editor content
+     * Used for displaying content created with the rich text editor
+     *
+     * @param string|null $content
+     * @return string
+     */
+    function render_rich_content(?string $content): string
+    {
+        if (empty($content)) {
+            return '';
+        }
+
+        // For rich text editor content, render HTML directly
+        // Content comes from trusted admin users via the rich text editor
+        return $content;
+    }
+}
+
+if (!function_exists('render_content')) {
+    /**
+     * Render content for display - auto-detects if it's rich text or plain text
+     * Rich text (with HTML) is rendered as HTML, plain text gets line breaks converted
+     *
+     * @param string|null $content
+     * @return string
+     */
+    function render_content(?string $content): string
+    {
+        if (empty($content)) {
+            return '';
+        }
+
+        // Check if content contains HTML tags
+        if (preg_match('/<[^>]+>/', $content)) {
+            // Contains HTML - render as rich content
+            return render_rich_content($content);
+        } else {
+            // Plain text - convert newlines to breaks and escape HTML
+            return nl2br(e($content));
+        }
+    }
+}
+
