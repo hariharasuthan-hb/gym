@@ -21,7 +21,9 @@
                 <a href="{{ route('admin.diet-plans.index') }}" class="btn btn-secondary">
                     Cancel
                 </a>
-                <button type="submit" class="btn btn-primary">
+                <button type="submit"
+                        class="btn btn-primary {{ auth()->user()->hasRole('admin') && collect($trainers ?? [])->isEmpty() ? 'opacity-50 cursor-not-allowed' : '' }}"
+                        {{ auth()->user()->hasRole('admin') && collect($trainers ?? [])->isEmpty() ? 'disabled' : '' }}>
                     Update Plan
                 </button>
             </div>

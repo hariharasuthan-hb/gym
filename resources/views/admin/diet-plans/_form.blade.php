@@ -5,6 +5,26 @@
     $trainers = $trainers ?? collect();
 @endphp
 
+@if(auth()->user()->hasRole('admin') && $trainers->isEmpty())
+    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-amber-800">
+                    Action Required: No Trainers Available
+                </h3>
+                <div class="mt-2 text-sm text-amber-700">
+                    <p>You cannot create diet plans without trainers. Please add at least one trainer first.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+@endif
+
 <div class="space-y-4">
     {{-- Plan Information Section --}}
     <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-100">
@@ -28,15 +48,47 @@
                 'placeholder' => 'Select a member',
             ])
             
-            @if(auth()->user()->hasRole('admin') && $trainers->isNotEmpty())
-                @include('admin.components.form-select', [
-                    'name' => 'trainer_id',
-                    'label' => 'Trainer',
-                    'options' => $trainers->pluck('name', 'id')->toArray(),
-                    'value' => old('trainer_id', $dietPlan->trainer_id ?? null),
-                    'required' => true,
-                    'placeholder' => 'Select a trainer',
-                ])
+            @if(auth()->user()->hasRole('admin'))
+                @if($trainers->isNotEmpty())
+                    @include('admin.components.form-select', [
+                        'name' => 'trainer_id',
+                        'label' => 'Trainer',
+                        'options' => $trainers->pluck('name', 'id')->toArray(),
+                        'value' => old('trainer_id', $dietPlan->trainer_id ?? null),
+                        'required' => true,
+                        'placeholder' => 'Select a trainer',
+                    ])
+                @else
+                    <div class="md:col-span-1">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Trainer</label>
+                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-amber-800">
+                                        No Trainers Available
+                                    </h3>
+                                    <div class="mt-2 text-sm text-amber-700">
+                                        <p>You need to add trainers before you can assign them to diet plans.</p>
+                                        <p class="mt-2">
+                                            <a href="{{ route('admin.users.create') }}?role=trainer"
+                                               class="font-medium underline text-amber-700 hover:text-amber-600">
+                                                Add a Trainer →
+                                            </a>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <strong>Note:</strong> You must add at least one trainer before creating diet plans.
+                        </p>
+                    </div>
+                @endif
             @endif
             
             @include('admin.components.form-input', [
