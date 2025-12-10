@@ -56,9 +56,9 @@
     @endif
     <div class="container mx-auto px-4 relative z-10">
         <div class="text-center mb-12">
-            <h2 class="text-4xl font-bold mb-4 {{ $testimonialsBackgroundImage ? 'text-white' : 'text-gray-900' }}">{{ $testimonialsTitle }}</h2>
+            <h2 class="text-4xl font-bold mb-4 {{ $testimonialsBackgroundImage ? 'text-white' : 'text-gray-900' }}">{!! render_content($testimonialsTitle) !!}</h2>
             <p class="{{ $testimonialsBackgroundImage ? 'text-white' : 'text-gray-600' }} max-w-2xl mx-auto">
-                {{ $testimonialsDescription }}
+                {!! render_content($testimonialsDescription) !!}
             </p>
         </div>
         @if($sectionVideo)
@@ -82,14 +82,14 @@
                                      alt="{{ $testimonial->title }}" 
                                      class="h-16 w-16 rounded-full object-cover mr-4">
                                 <div>
-                                    <h4 class="font-semibold text-gray-900">{{ $testimonial->title }}</h4>
+                                    <h4 class="font-semibold text-gray-900">{!! render_content($testimonial->title) !!}</h4>
                                     @if($testimonial->extra_data && isset($testimonial->extra_data['position']))
                                         <p class="text-sm text-gray-500">{{ $testimonial->extra_data['position'] }}</p>
                                     @endif
                                 </div>
                             </div>
                         @else
-                            <h4 class="font-semibold text-gray-900 mb-2">{{ $testimonial->title }}</h4>
+                            <h4 class="font-semibold text-gray-900 mb-2">{!! render_content($testimonial->title) !!}</h4>
                         @endif
 
                         @if($testimonialVideo)
@@ -102,7 +102,7 @@
                         @endif
 
                         <p class="text-gray-600 italic mb-4">
-                            "{{ $testimonial->content ?? $testimonial->description ?? '' }}"
+                            "{!! render_content($testimonial->content ?? $testimonial->description ?? '') !!}"
                         </p>
                         @if($testimonial->extra_data && isset($testimonial->extra_data['rating']))
                             <div class="flex items-center">

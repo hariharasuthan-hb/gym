@@ -37,13 +37,13 @@
                             @endif
                             @if($banner->subtitle)
                                 <p class="text-xl md:text-2xl mb-8 animate-fade-in-up-delay">
-                                    {{ $banner->subtitle }}
+                                    {!! render_content($banner->subtitle) !!}
                                 </p>
                             @endif
                             @if($banner->link)
-                                <a href="{{ $banner->link }}" 
+                                <a href="{{ $banner->link }}"
                                    class="inline-block bg-white text-gray-900 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition transform hover:scale-105 animate-fade-in-up-delay-2">
-                                    {{ $banner->link_text ?? 'Learn More' }}
+                                    {!! render_content($banner->link_text ?? 'Learn More') !!}
                                 </a>
                             @endif
                         </div>

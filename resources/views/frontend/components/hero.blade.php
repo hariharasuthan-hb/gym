@@ -25,8 +25,8 @@
     @endif
     <div class="container mx-auto px-4 relative z-10">
         <div class="text-center">
-            <h1 class="text-5xl font-bold mb-4">{{ $heroTitle }}</h1>
-            <p class="text-xl mb-8">{{ $heroSubtitle }}</p>
+            <h1 class="text-5xl font-bold mb-4">{!! render_content($heroTitle) !!}</h1>
+            <p class="text-xl mb-8">{!! render_content($heroSubtitle) !!}</p>
             <div class="flex justify-center gap-4">
                 <a href="{{ $heroLink }}" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
                     {{ $heroLinkText }}
