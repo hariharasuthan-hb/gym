@@ -54,7 +54,25 @@
                             </li>
                         @endif
                     @endforeach
-                    <li><a href="{{ route('frontend.register') }}" class="text-gray-400 hover:text-white transition">Register</a></li>
+
+                    {{-- Show Register link for guests, Dashboard link for authenticated users --}}
+                    @guest
+                        <li><a href="{{ route('frontend.register') }}" class="text-gray-400 hover:text-white transition">Register</a></li>
+                    @else
+                        @php
+                            $user = auth()->user();
+                            $dashboardRoute = 'frontend.home'; // Default fallback
+
+                            if ($user->hasRole('admin')) {
+                                $dashboardRoute = 'admin.dashboard';
+                            } elseif ($user->hasRole('trainer')) {
+                                $dashboardRoute = 'admin.dashboard'; // Trainers also go to admin dashboard
+                            } elseif ($user->hasRole('member')) {
+                                $dashboardRoute = 'member.dashboard';
+                            }
+                        @endphp
+                        <li><a href="{{ route($dashboardRoute) }}" class="text-gray-400 hover:text-white transition">Dashboard</a></li>
+                    @endguest
                 </ul>
             </div>
             

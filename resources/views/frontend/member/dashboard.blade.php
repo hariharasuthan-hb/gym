@@ -68,9 +68,9 @@
                         @if($activeSubscription && $activeSubscription->subscriptionPlan)
                             <p class="text-2xl font-semibold text-gray-900">{{ $activeSubscription->subscriptionPlan->plan_name }}</p>
                             @if($activeSubscription->next_billing_at)
-                                <p class="text-xs text-gray-500">Next billing: {{ $activeSubscription->next_billing_at->format('M d, Y') }}</p>
+                                <p class="text-xs text-gray-500">Next billing: {{ format_date_smart($activeSubscription->next_billing_at) }}</p>
                             @elseif($activeSubscription->trial_end_at)
-                                <p class="text-xs text-gray-500">Trial ends: {{ $activeSubscription->trial_end_at->format('M d, Y') }}</p>
+                                <p class="text-xs text-gray-500">Trial ends: {{ format_date_smart($activeSubscription->trial_end_at) }}</p>
                             @endif
                         @else
                             <p class="text-2xl font-semibold text-gray-900">None</p>

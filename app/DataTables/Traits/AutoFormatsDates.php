@@ -65,8 +65,8 @@ trait AutoFormatsDates
                     return $value;
                 }
                 
-                // Format the date
-                return format_date($value);
+                // Format the date with smart timezone awareness (auto-detects admin context)
+                return format_date_smart($value);
             });
         }
         

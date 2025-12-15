@@ -51,6 +51,25 @@ Route::post('/webhook/razorpay', [\App\Http\Controllers\WebhookController::class
     ->name('webhook.razorpay')
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 
+// Timezone detection route
+Route::post('/timezone/set', function (Illuminate\Http\Request $request) {
+    $timezone = $request->input('timezone');
+    $offset = $request->input('offset');
+
+    if ($timezone && in_array($timezone, array_keys(get_available_timezones()))) {
+        detect_browser_timezone($timezone);
+        return response()->json(['success' => true]);
+    }
+
+    // Try to set timezone from offset
+    if ($offset !== null) {
+        set_user_timezone_from_offset((int)$offset);
+        return response()->json(['success' => true]);
+    }
+
+    return response()->json(['success' => false], 400);
+})->middleware('web');
+
 // Dashboard route - redirects based on user role
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function () {

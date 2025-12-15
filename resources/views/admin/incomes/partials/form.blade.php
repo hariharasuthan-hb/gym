@@ -43,7 +43,7 @@
         <input type="date"
                name="received_at"
                id="received_at"
-               value="{{ old('received_at', isset($income->received_at) ? $income->received_at->format('Y-m-d') : '') }}"
+               value="{{ old('received_at', format_date_input($income->received_at ?? null)) }}"
                class="form-input w-full"
                required>
         @error('received_at')

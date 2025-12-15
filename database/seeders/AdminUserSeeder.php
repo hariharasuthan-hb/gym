@@ -22,6 +22,7 @@ class AdminUserSeeder extends Seeder
                 'phone' => '1234567890',
                 'age' => 30,
                 'gender' => 'male',
+                'timezone' => 'UTC', // Admin typically uses UTC for consistency
             ]
         );
 

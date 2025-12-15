@@ -84,10 +84,10 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                 </svg>
                 <span class="font-medium">Start:</span>
-                <span class="ml-2">{{ format_date($plan->start_date) }}</span>
+                <span class="ml-2">{{ format_date_smart($plan->start_date) }}</span>
                 @if($plan->end_date)
                     <span class="mx-2">-</span>
-                    <span>{{ format_date($plan->end_date) }}</span>
+                    <span>{{ format_date_smart($plan->end_date) }}</span>
                 @endif
             </div>
             

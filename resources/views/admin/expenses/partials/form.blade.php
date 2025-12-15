@@ -43,7 +43,7 @@
         <input type="date"
                name="spent_at"
                id="spent_at"
-               value="{{ old('spent_at', isset($expense->spent_at) ? $expense->spent_at->format('Y-m-d') : '') }}"
+               value="{{ old('spent_at', format_date_input($expense->spent_at ?? null)) }}"
                class="form-input w-full"
                required>
         @error('spent_at')

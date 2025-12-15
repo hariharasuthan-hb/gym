@@ -26,7 +26,7 @@
 @include('admin.components.report-section', [
     'title' => 'Attendance & Activity',
     'description' => $activityDescription,
-    'categoryLabel' => 'Attendance',
+    'categoryLabel' => '',
     'exportType' => \App\Models\Export::TYPE_ACTIVITY_LOGS,
     'filters' => $filters ?? [],
     'filterOptions' => $filterOptions ?? [],

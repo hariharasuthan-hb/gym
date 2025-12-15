@@ -62,18 +62,14 @@
                         <div class="flex items-center justify-between">
                             <span class="text-sm text-gray-600">Last Activity</span>
                             <span class="text-sm font-semibold text-gray-900">
-                                {{ $member->last_activity->date->format('M d, Y') }}
+                                {{ format_date_smart($member->last_activity->date) }}
                             </span>
                         </div>
                         @if($member->last_activity->check_in_time)
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-gray-600">Check-in Time</span>
                                 <span class="text-sm font-semibold text-gray-900">
-                                    @if($member->last_activity->check_in_time instanceof \Carbon\Carbon)
-                                        {{ $member->last_activity->check_in_time->format('H:i') }}
-                                    @else
-                                        {{ $member->last_activity->check_in_time }}
-                                    @endif
+                                    {{ format_time_smart($member->last_activity->check_in_time) }}
                                 </span>
                             </div>
                         @endif

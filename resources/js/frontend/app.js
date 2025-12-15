@@ -33,5 +33,43 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Timezone detection
+    detectAndSetUserTimezone();
 });
+
+/**
+ * Detect user's timezone and send to server
+ */
+function detectAndSetUserTimezone() {
+    try {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        // Get UTC offset in minutes
+        const now = new Date();
+        const utcOffset = -now.getTimezoneOffset(); // getTimezoneOffset returns minutes
+
+        // Send timezone to server if user is logged in
+        if (window.Laravel && window.Laravel.user) {
+            fetch('/timezone/set', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    timezone: timezone,
+                    offset: utcOffset
+                })
+            }).catch(error => {
+                console.log('Timezone detection failed:', error);
+            });
+        } else {
+            // Store in session for guest users
+            sessionStorage.setItem('detected_timezone', timezone);
+        }
+    } catch (error) {
+        console.log('Timezone detection error:', error);
+    }
+}
 

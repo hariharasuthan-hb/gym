@@ -42,9 +42,9 @@
                             <p class="text-xs font-semibold uppercase text-gray-500">Plan</p>
                             <h2 class="text-2xl font-bold text-gray-900">{{ $plan->plan_name ?? 'Untitled Plan' }}</h2>
                             <p class="text-sm text-gray-500 mt-1">
-                                Created {{ optional($plan->start_date)->format('M d, Y') ?? 'N/A' }}
+                                Created {{ format_date_smart($plan->start_date) ?? 'N/A' }}
                                 @if($plan->end_date)
-                                    • Ends {{ $plan->end_date->format('M d, Y') }}
+                                    • Ends {{ format_date_smart($plan->end_date) }}
                                 @endif
                             </p>
                         </div>
@@ -65,7 +65,7 @@
                                 <span class="text-gray-500">Duration</span>
                                 <span class="font-semibold text-gray-900">
                                     @if($plan->start_date && $plan->end_date)
-                                        {{ $plan->start_date->format('M d, Y') }} - {{ $plan->end_date->format('M d, Y') }}
+                                        {{ format_date_smart($plan->start_date) }} - {{ format_date_smart($plan->end_date) }}
                                     @else
                                         N/A
                                     @endif
@@ -92,11 +92,11 @@
                             </div>
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-500">Created</span>
-                                <span class="font-semibold text-gray-900">{{ optional($plan->created_at)->format('M d, Y') }}</span>
+                                <span class="font-semibold text-gray-900">{{ format_date_member($plan->created_at) }}</span>
                             </div>
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-500">Updated</span>
-                                <span class="font-semibold text-gray-900">{{ optional($plan->updated_at)->format('M d, Y') }}</span>
+                                <span class="font-semibold text-gray-900">{{ format_date_member($plan->updated_at) }}</span>
                             </div>
                             @if($plan->nutritional_goals)
                                 <div>

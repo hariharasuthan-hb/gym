@@ -172,6 +172,58 @@
                     <p class="mt-1 text-sm text-gray-500">Max size: 50MB. Formats: MP4, MOV, AVI, WMV.</p>
                 </div>
 
+                {{-- Background Video Toggle --}}
+                <div class="flex items-center">
+                    <input type="checkbox"
+                           name="video_is_background"
+                           id="video_is_background"
+                           value="1"
+                           {{ old('video_is_background', $content->video_is_background) ? 'checked' : '' }}
+                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                    <label for="video_is_background" class="ml-2 block text-sm text-gray-700">
+                        Set as background video for homepage section
+                    </label>
+                </div>
+
+                {{-- Title Color --}}
+                <div>
+                    <label for="title_color" class="block text-sm font-medium text-gray-700 mb-2">
+                        Title Color
+                    </label>
+                    <input type="color"
+                           name="title_color"
+                           id="title_color"
+                           value="{{ old('title_color', $content->title_color ?? '#ffffff') }}"
+                           class="h-10 w-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="mt-1 text-sm text-gray-500">Color for the title text</p>
+                </div>
+
+                {{-- Description Color --}}
+                <div>
+                    <label for="description_color" class="block text-sm font-medium text-gray-700 mb-2">
+                        Description Color
+                    </label>
+                    <input type="color"
+                           name="description_color"
+                           id="description_color"
+                           value="{{ old('description_color', $content->description_color ?? '#ffffff') }}"
+                           class="h-10 w-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="mt-1 text-sm text-gray-500">Color for the description text</p>
+                </div>
+
+                {{-- Content Color --}}
+                <div>
+                    <label for="content_color" class="block text-sm font-medium text-gray-700 mb-2">
+                        Content Color
+                    </label>
+                    <input type="color"
+                           name="content_color"
+                           id="content_color"
+                           value="{{ old('content_color', $content->content_color ?? '#ffffff') }}"
+                           class="h-10 w-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="mt-1 text-sm text-gray-500">Color for the content text</p>
+                </div>
+
                 {{-- Link --}}
                 <div>
                     <label for="link" class="block text-sm font-medium text-gray-700 mb-2">

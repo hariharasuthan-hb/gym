@@ -80,11 +80,11 @@
                     <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div>
                             <p class="text-sm font-semibold text-gray-900">{{ $activity->user->name ?? 'Unknown' }}</p>
-                            <p class="text-xs text-gray-600">{{ $activity->date->format('M d, Y') }}</p>
+                            <p class="text-xs text-gray-600">{{ format_date_smart($activity->date) }}</p>
                         </div>
                         <div class="text-right">
                             @if($activity->check_in_time)
-                                <p class="text-sm font-semibold text-gray-900">{{ $activity->check_in_time->format('H:i') }}</p>
+                                <p class="text-sm font-semibold text-gray-900">{{ format_time_smart($activity->check_in_time) }}</p>
                             @endif
                             @if($activity->duration_minutes)
                                 <p class="text-xs text-gray-600">{{ $activity->duration_minutes }} min</p>

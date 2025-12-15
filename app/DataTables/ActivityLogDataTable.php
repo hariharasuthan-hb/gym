@@ -14,10 +14,9 @@ class ActivityLogDataTable extends BaseDataTable
     {
         $dataTable = datatables()
             ->eloquent($query);
-        
-        // Automatically format date columns
-        $this->autoFormatDates($dataTable);
-        
+
+        // No auto-formatting - we handle all date/time formatting manually with custom columns
+
         return $dataTable
             ->addColumn('member_name', function ($log) {
                 return $log->user->name ?? '-';
@@ -26,21 +25,19 @@ class ActivityLogDataTable extends BaseDataTable
                 if (!$log->check_in_time) {
                     return '-';
                 }
-                // Handle both time and datetime formats
-                if ($log->check_in_time instanceof \Carbon\Carbon) {
-                    return $log->check_in_time->format('H:i');
-                }
-                return $log->check_in_time;
+                return format_time_smart($log->check_in_time);
             })
             ->addColumn('check_out_time_formatted', function ($log) {
                 if (!$log->check_out_time) {
                     return '-';
                 }
-                // Handle both time and datetime formats
-                if ($log->check_out_time instanceof \Carbon\Carbon) {
-                    return $log->check_out_time->format('H:i');
-                }
-                return $log->check_out_time;
+                return format_time_smart($log->check_out_time);
+            })
+            ->addColumn('date_formatted', function ($log) {
+                return format_date_smart($log->date);
+            })
+            ->addColumn('created_at_formatted', function ($log) {
+                return format_datetime_smart($log->created_at);
             })
             ->addColumn('duration_formatted', function ($log) {
                 return $log->duration_minutes ? $log->duration_minutes . ' min' : '-';
@@ -127,6 +124,8 @@ class ActivityLogDataTable extends BaseDataTable
         return 'activity_logs-filter-form';
     }
 
+
+
     /**
      * Get table ID
      */
@@ -143,13 +142,13 @@ class ActivityLogDataTable extends BaseDataTable
         return [
             Column::make('id')->title('ID')->width('5%'),
             Column::make('member_name')->title('Member')->width('15%')->orderable(false)->searchable(false),
-            Column::make('date')->title('Date')->width('12%'),
+            Column::make('date_formatted')->title('Date')->width('12%')->orderable(false)->searchable(false),
             Column::make('check_in_time_formatted')->title('Check In')->width('10%')->orderable(false)->searchable(false),
             Column::make('check_out_time_formatted')->title('Check Out')->width('10%')->orderable(false)->searchable(false),
             Column::make('duration_formatted')->title('Duration')->width('10%')->orderable(false)->searchable(false),
             Column::make('calories_formatted')->title('Calories')->width('10%')->orderable(false)->searchable(false),
             Column::make('check_in_method_badge')->title('Method')->width('12%')->orderable(false)->searchable(false),
-            Column::make('created_at')->title('Created At')->width('16%'),
+            Column::make('created_at_formatted')->title('Created At')->width('16%')->orderable(false)->searchable(false),
             Column::computed('actions')
                 ->title('Actions')
                 ->orderable(false)

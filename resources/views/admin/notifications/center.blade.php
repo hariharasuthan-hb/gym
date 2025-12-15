@@ -24,7 +24,7 @@
                             <p class="text-sm text-gray-500 uppercase tracking-wide">{{ ucfirst($announcement->audience_type) }}</p>
                             <h3 class="text-base font-semibold text-gray-900">{{ $announcement->title }}</h3>
                             <p class="text-sm text-gray-600 mt-1">{{ \Illuminate\Support\Str::limit(strip_tags($announcement->body), 140) }}</p>
-                            <p class="text-xs text-gray-400 mt-2">{{ $announcement->published_at?->diffForHumans() }}</p>
+                            <p class="text-xs text-gray-400 mt-2">{{ format_datetime_admin($announcement->published_at) }}</p>
                         </div>
                     @empty
                         <p class="text-sm text-gray-500">No announcements yet.</p>
@@ -50,7 +50,7 @@
                                     <span class="badge badge-light capitalize">{{ $notification->audience_type }}</span>
                                 </div>
                                 <p class="text-sm text-gray-600 mt-1">{{ $notification->message }}</p>
-                                <p class="text-xs text-gray-400 mt-2">Sent {{ $notification->published_at?->diffForHumans() ?? $notification->created_at->diffForHumans() }}</p>
+                                <p class="text-xs text-gray-400 mt-2">Sent {{ format_datetime_admin($notification->published_at ?? $notification->created_at) }}</p>
                             </div>
                             @if($showMarkRead)
                                 <div class="flex items-center gap-3">

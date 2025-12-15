@@ -812,7 +812,7 @@ async function checkInWorkout() {
                     </div>
                     <div class="text-right">
                         <p class="text-lg font-semibold text-blue-900">{{ $todayRecordingPercent }}%</p>
-                        <p class="text-xs text-blue-700">Updated {{ now()->format('h:i A') }}</p>
+                        <p class="text-xs text-blue-700">Updated {{ format_time_smart(now()) }}</p>
                     </div>
                 </div>
                 <div class="w-full bg-blue-100 rounded-full h-3 mb-3 overflow-hidden">

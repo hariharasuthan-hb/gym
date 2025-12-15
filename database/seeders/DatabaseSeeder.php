@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolePermissionSeeder::class,
             AdminUserSeeder::class,
+            UserTimezoneSeeder::class, // Update existing users with timezone data
             MenuSeeder::class,
         ]);
     }

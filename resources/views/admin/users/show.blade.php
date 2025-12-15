@@ -156,7 +156,7 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Created At</p>
-                        <p class="text-sm text-gray-900 font-medium">{{ $user->created_at->format('M d, Y H:i') }}</p>
+                        <p class="text-sm text-gray-900 font-medium">{{ format_datetime_admin($user->created_at) }}</p>
                     </div>
                 </div>
                 
@@ -168,7 +168,7 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Updated At</p>
-                        <p class="text-sm text-gray-900 font-medium">{{ $user->updated_at->format('M d, Y H:i') }}</p>
+                        <p class="text-sm text-gray-900 font-medium">{{ format_datetime_admin($user->updated_at) }}</p>
                     </div>
                 </div>
             </div>

@@ -94,7 +94,7 @@
                         </div>
                         <div class="flex justify-between">
                             <span class="text-sm font-medium text-gray-700">Created:</span>
-                            <span class="text-sm text-gray-900">{{ $content->created_at->format('M d, Y H:i') }}</span>
+                            <span class="text-sm text-gray-900">{{ format_datetime_admin($content->created_at) }}</span>
                         </div>
                         @if($content->created_by && $content->creator)
                         <div class="flex justify-between">
@@ -104,7 +104,7 @@
                         @endif
                         <div class="flex justify-between">
                             <span class="text-sm font-medium text-gray-700">Updated:</span>
-                            <span class="text-sm text-gray-900">{{ $content->updated_at->format('M d, Y H:i') }}</span>
+                            <span class="text-sm text-gray-900">{{ format_datetime_admin($content->updated_at) }}</span>
                         </div>
                         @if($content->updated_by && $content->updater)
                         <div class="flex justify-between">

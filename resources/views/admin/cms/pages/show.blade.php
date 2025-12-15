@@ -93,11 +93,11 @@
                 <dl class="space-y-3">
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Created At</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $page->created_at->format('M d, Y H:i') }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ format_datetime_admin($page->created_at) }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Updated At</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $page->updated_at->format('M d, Y H:i') }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ format_datetime_admin($page->updated_at) }}</dd>
                     </div>
                     @if($page->creator)
                         <div>

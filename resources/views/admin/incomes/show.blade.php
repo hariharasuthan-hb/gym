@@ -9,7 +9,7 @@
             <p class="text-sm text-gray-500 uppercase tracking-wide">Incomes</p>
             <h1 class="text-2xl font-bold text-gray-900">{{ $income->category }}</h1>
             <p class="text-sm text-gray-500 mt-1">
-                Received on {{ $income->received_at?->format('M d, Y') ?? '—' }}
+                Received on {{ format_date_admin($income->received_at) ?? '—' }}
             </p>
         </div>
         <a href="{{ route('admin.incomes.index') }}" class="btn btn-secondary">
@@ -56,7 +56,7 @@
                 @endif
                 <div>
                     <dt class="text-gray-500">Received At</dt>
-                    <dd>{{ $income->received_at?->format('M d, Y') ?? '—' }}</dd>
+                    <dd>{{ format_date_smart($income->received_at) ?? '—' }}</dd>
                 </div>
             </dl>
         </div>

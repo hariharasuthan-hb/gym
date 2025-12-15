@@ -36,11 +36,11 @@
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-500">Started</span>
-                    <span class="font-semibold text-gray-900">{{ optional($subscription->started_at)->format('M d, Y H:i') ?? 'N/A' }}</span>
+                    <span class="font-semibold text-gray-900">{{ format_datetime_smart($subscription->started_at) ?? 'N/A' }}</span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-500">Next Billing</span>
-                    <span class="font-semibold text-gray-900">{{ optional($subscription->next_billing_at)->format('M d, Y H:i') ?? 'N/A' }}</span>
+                    <span class="font-semibold text-gray-900">{{ format_datetime_smart($subscription->next_billing_at) ?? 'N/A' }}</span>
                 </div>
             </div>
         </div>

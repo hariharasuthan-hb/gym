@@ -20,13 +20,40 @@ window.$ = window.jQuery = $;
 // Initialize DataTables enhancement automatically
 initYajraDataTable();
 
+// Helper: detect user's timezone and send to backend (reuse same endpoint as frontend)
+function detectAndSetAdminTimezone() {
+    try {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const now = new Date();
+        const utcOffset = -now.getTimezoneOffset(); // minutes
+
+        fetch('/timezone/set', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document
+                    .querySelector('meta[name=\"csrf-token\"]')
+                    ?.getAttribute('content') || '',
+            },
+            body: JSON.stringify({
+                timezone: timezone,
+                offset: utcOffset,
+            }),
+        }).catch((error) => {
+            console.log('Admin timezone detection failed:', error);
+        });
+    } catch (error) {
+        console.log('Admin timezone detection error:', error);
+    }
+}
+
 // Admin specific JavaScript
-document.addEventListener('DOMContentLoaded', function() {
-    // Admin dashboard functionality
-    console.log('Admin dashboard loaded');
-    
+document.addEventListener('DOMContentLoaded', function () {
     // Initialize all rich text editors on the page
     initAllRichTextEditors();
     initConfirmDialogs();
+
+    // Detect admin/trainer timezone so dates use system/browser timezone
+    detectAndSetAdminTimezone();
 });
 

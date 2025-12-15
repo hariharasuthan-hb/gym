@@ -33,7 +33,7 @@
             <dl class="grid grid-cols-1 gap-3 text-sm text-gray-700">
                 <div>
                     <dt class="text-gray-500">Paid At</dt>
-                    <dd>{{ $payment->paid_at ? $payment->paid_at->format('M d, Y h:i A') : '—' }}</dd>
+                    <dd>{{ format_datetime_smart($payment->paid_at) ?: '—' }}</dd>
                 </div>
                 <div>
                     <dt class="text-gray-500">Payment Method</dt>

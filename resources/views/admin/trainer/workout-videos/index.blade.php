@@ -40,7 +40,7 @@
                         <p class="text-sm text-gray-500">{{ $video->user->name ?? 'Member' }}</p>
                         <p class="text-lg font-semibold text-gray-900">{{ $video->exercise_name }}</p>
                         <p class="text-xs text-gray-500">
-                            Uploaded {{ $video->created_at->diffForHumans() }}
+                            Uploaded {{ format_datetime_admin($video->created_at) }}
                             @if($video->workoutPlan)
                                 • Plan: {{ $video->workoutPlan->plan_name }}
                             @endif
@@ -96,7 +96,7 @@
                         </form>
                     @else
                         <p class="text-xs text-gray-500">
-                            Reviewed {{ optional($video->reviewed_at)->diffForHumans() }}
+                            Reviewed {{ format_datetime_admin($video->reviewed_at) }}
                             @if($video->reviewer)
                                 • By {{ $video->reviewer->name }}
                             @endif

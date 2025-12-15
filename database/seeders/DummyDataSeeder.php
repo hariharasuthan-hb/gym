@@ -98,6 +98,21 @@ class DummyDataSeeder extends Seeder
         // Pre-hash password once for all users (faster for dummy data)
         $hashedPassword = Hash::make('password');
 
+        // Available timezones for dummy data generation
+        $timezones = [
+            'UTC',
+            'America/New_York',
+            'America/Chicago',
+            'America/Denver',
+            'America/Los_Angeles',
+            'Europe/London',
+            'Europe/Paris',
+            'Europe/Berlin',
+            'Asia/Tokyo',
+            'Asia/Shanghai',
+            'Australia/Sydney',
+        ];
+
         for ($i = 0; $i < $count; $i++) {
             $users[] = [
                 'name' => $faker->name(),
@@ -107,6 +122,7 @@ class DummyDataSeeder extends Seeder
                 'age' => $faker->numberBetween(18, 70),
                 'gender' => $faker->randomElement(['male', 'female', 'other']),
                 'address' => $faker->address(),
+                'timezone' => $faker->randomElement($timezones), // Assign random timezone
                 'email_verified_at' => $faker->optional(0.8)->dateTimeBetween('-1 year', 'now'),
                 'created_at' => $faker->dateTimeBetween('-2 years', 'now'),
                 'updated_at' => now(),

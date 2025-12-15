@@ -30,6 +30,7 @@ class User extends Authenticatable
         'qr_code',
         'rfid_card',
         'status',
+        'timezone',
     ];
 
     /**

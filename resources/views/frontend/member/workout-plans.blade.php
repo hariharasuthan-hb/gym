@@ -108,7 +108,7 @@
                         @if($plan->start_date)
                         <div class="flex items-center justify-between mb-4">
                             <span class="text-sm font-medium text-gray-500">Start Date</span>
-                            <span class="text-sm font-semibold text-gray-900">{{ format_date($plan->start_date) }}</span>
+                            <span class="text-sm font-semibold text-gray-900">{{ format_date_member($plan->start_date) }}</span>
                         </div>
                         @endif
                         <div class="pt-4 border-t border-gray-200">

@@ -68,7 +68,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                             <p class="text-sm text-blue-800">
-                                <strong>Trial Period Active</strong> - Your trial ends on {{ $activeSubscription->trial_end_at->format('F d, Y') }}.
+                                <strong>Trial Period Active</strong> - Your trial ends on {{ format_date_smart($activeSubscription->trial_end_at) }}.
                                 After that, you'll be charged ₹{{ number_format($activeSubscription->subscriptionPlan->price, 2) }}.
                             </p>
                         </div>
@@ -78,7 +78,7 @@
                 @if($activeSubscription->next_billing_at)
                     <div class="mb-6">
                         <p class="text-sm text-gray-500 mb-1">Next Billing Date</p>
-                        <p class="text-lg font-semibold text-gray-900">{{ $activeSubscription->next_billing_at->format('F d, Y') }}</p>
+                        <p class="text-lg font-semibold text-gray-900">{{ format_date_smart($activeSubscription->next_billing_at) }}</p>
                     </div>
                 @endif
 
@@ -151,10 +151,10 @@
                                         {{ ucfirst($subscription->gateway ?? 'N/A') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ $subscription->started_at ? $subscription->started_at->format('M d, Y') : 'N/A' }}
+                                        {{ $subscription->started_at ? format_date_smart($subscription->started_at) : 'N/A' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ $subscription->next_billing_at ? $subscription->next_billing_at->format('M d, Y') : 'N/A' }}
+                                        {{ $subscription->next_billing_at ? format_date_smart($subscription->next_billing_at) : 'N/A' }}
                                     </td>
                                 </tr>
                             @endforeach

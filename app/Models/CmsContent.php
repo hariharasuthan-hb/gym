@@ -18,6 +18,11 @@ class CmsContent extends Model
         'image',
         'background_image',
         'video_path',
+        'video_is_background',
+        'background_video',
+        'title_color',
+        'description_color',
+        'content_color',
         'link',
         'link_text',
         'extra_data',
@@ -29,6 +34,7 @@ class CmsContent extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'video_is_background' => 'boolean',
         'order' => 'integer',
         'extra_data' => 'array',
     ];

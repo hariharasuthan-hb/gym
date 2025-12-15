@@ -70,6 +70,9 @@ class MemberController extends Controller
     {
         $user = auth()->user();
         \App\Models\DietPlan::autoCompleteExpired();
+
+        // Ensure user has timezone set
+        ensure_user_has_timezone();
         
         // Check if user has an active subscription
         $activeSubscription = $user->subscriptions()
@@ -118,11 +121,14 @@ class MemberController extends Controller
         $todayActivity = $canTrackAttendance ? ActivityLog::todayForUser($user->id) : null;
         $checkedInToday = $canTrackAttendance ? (bool) ($todayActivity?->check_in_time) : false;
         $checkedOutToday = $canTrackAttendance ? (bool) ($todayActivity?->check_out_time) : false;
+        // Ensure user has timezone set before formatting
+        ensure_user_has_timezone();
+
         $todayCheckInTimeFormatted = $checkedInToday && $todayActivity?->check_in_time
-            ? $todayActivity->check_in_time->timezone(config('app.timezone', 'UTC'))->format('h:i A')
+            ? format_time_smart($todayActivity->check_in_time)
             : null;
         $todayCheckOutTimeFormatted = $checkedOutToday && $todayActivity?->check_out_time
-            ? $todayActivity->check_out_time->timezone(config('app.timezone', 'UTC'))->format('h:i A')
+            ? format_time_smart($todayActivity->check_out_time)
             : null;
 
         // Build today's recording progress summary using first active workout plan

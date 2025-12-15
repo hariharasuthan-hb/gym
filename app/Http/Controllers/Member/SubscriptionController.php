@@ -185,6 +185,7 @@ class SubscriptionController extends Controller
                         $this->createPaymentFromSubscription($subscription);
                     }
 
+                    $subscription->update([
                         'subscription_id' => $subscription->id,
                         'stripe_subscription_id' => $subscription->gateway_subscription_id,
                         'status' => $status,
@@ -231,6 +232,7 @@ class SubscriptionController extends Controller
                         $this->createPaymentFromStripeIntent($subscription, $intent, $intentType);
                     }
 
+                    $subscription->update([
                         'subscription_id' => $subscription->id,
                         'intent_id' => $intentId,
                         'status' => $status,
@@ -277,6 +279,7 @@ class SubscriptionController extends Controller
                     $this->createPaymentFromRazorpay($subscription, $payment);
                 }
 
+                $subscription->update([
                     'subscription_id' => $subscription->id,
                     'payment_id' => $paymentId,
                     'status' => $status,
@@ -395,6 +398,7 @@ class SubscriptionController extends Controller
                 'paid_at' => $invoice->paid ? now() : null,
             ]);
 
+            $subscription->update([
                 'subscription_id' => $subscription->id,
                 'invoice_id' => $invoice->id,
                 'amount' => $amount,
@@ -459,6 +463,7 @@ class SubscriptionController extends Controller
                 'paid_at' => $intent->status === 'succeeded' ? now() : null,
             ]);
 
+            $subscription->update([
                 'subscription_id' => $subscription->id,
                 'intent_id' => $intent->id,
                 'intent_type' => $intentType,
@@ -514,6 +519,7 @@ class SubscriptionController extends Controller
                 'paid_at' => ($payment->status === 'captured' || $payment->status === 'authorized') ? now() : null,
             ]);
 
+            $subscription->update([
                 'subscription_id' => $subscription->id,
                 'payment_id' => $payment->id,
                 'amount' => $amount,
@@ -599,6 +605,7 @@ class SubscriptionController extends Controller
                 'paid_at' => $paidAt,
             ]);
 
+            $subscription->update([
                 'subscription_id' => $subscription->id,
                 'amount' => $plan->price,
             ]);
@@ -739,6 +746,7 @@ class SubscriptionController extends Controller
 
             Payment::create($paymentData);
 
+            $subscription->update([
                 'subscription_id' => $subscription->id,
                 'payment_intent_id' => $paymentIntentId,
                 'amount' => $amount,

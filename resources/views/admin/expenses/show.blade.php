@@ -9,7 +9,7 @@
             <p class="text-sm text-gray-500 uppercase tracking-wide">Expenses</p>
             <h1 class="text-2xl font-bold text-gray-900">{{ $expense->category }}</h1>
             <p class="text-sm text-gray-500 mt-1">
-                Logged on {{ $expense->spent_at?->format('M d, Y') ?? '—' }}
+                Logged on {{ format_date_smart($expense->spent_at) ?? '—' }}
             </p>
         </div>
         <a href="{{ route('admin.expenses.index') }}" class="btn btn-secondary">
@@ -56,7 +56,7 @@
                 @endif
                 <div>
                     <dt class="text-gray-500">Spent At</dt>
-                    <dd>{{ $expense->spent_at?->format('M d, Y') ?? '—' }}</dd>
+                    <dd>{{ format_date_smart($expense->spent_at) ?? '—' }}</dd>
                 </div>
             </dl>
         </div>
