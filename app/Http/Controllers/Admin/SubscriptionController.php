@@ -69,12 +69,6 @@ class SubscriptionController extends Controller
 
         $subscription->update($validated);
 
-        Log::info('Admin updated subscription status', [
-            'subscription_id' => $subscription->id,
-            'old_status' => $subscription->getOriginal('status'),
-            'new_status' => $validated['status'],
-            'admin_id' => auth()->id(),
-        ]);
 
         return redirect()->route('admin.subscriptions.show', $subscription)
             ->with('success', 'Subscription updated successfully.');
@@ -101,10 +95,6 @@ class SubscriptionController extends Controller
                     'canceled_at' => now(),
                 ]);
 
-                Log::info('Admin canceled subscription', [
-                    'subscription_id' => $subscription->id,
-                    'admin_id' => auth()->id(),
-                ]);
 
                 return redirect()->route('admin.subscriptions.show', $subscription)
                     ->with('success', 'Subscription canceled successfully.');

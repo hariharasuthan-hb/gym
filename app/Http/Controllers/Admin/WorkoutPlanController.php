@@ -274,12 +274,6 @@ class WorkoutPlanController extends Controller
                 ], 403);
             }
             
-            // Log request data for debugging
-            \Illuminate\Support\Facades\Log::info('Demo video upload request', [
-                'has_file' => $request->hasFile('demo_video'),
-                'all_files' => array_keys($request->allFiles()),
-                'content_type' => $request->header('Content-Type'),
-            ]);
             
             // Check if file exists
             if (!$request->hasFile('demo_video')) {
@@ -291,14 +285,6 @@ class WorkoutPlanController extends Controller
             
             $file = $request->file('demo_video');
             
-            // Log file information for debugging
-            \Illuminate\Support\Facades\Log::info('Demo video file details', [
-                'original_name' => $file->getClientOriginalName(),
-                'mime_type' => $file->getMimeType(),
-                'client_mime_type' => $file->getClientMimeType(),
-                'extension' => $file->getClientOriginalExtension(),
-                'size' => $file->getSize(),
-            ]);
             
             // Validate file extension first (more reliable)
             $extension = strtolower($file->getClientOriginalExtension());

@@ -20,10 +20,6 @@ class VideoConversionService
     public function convertToWebFormat($videoFile, string $outputPath, array $options = []): ?string
     {
         try {
-            Log::info('VideoConversionService: Starting conversion', [
-                'output_path' => $outputPath,
-                'has_file' => $videoFile instanceof UploadedFile,
-            ]);
             
             // Determine input file path
             $inputPath = $this->getInputFilePath($videoFile);
@@ -36,17 +32,9 @@ class VideoConversionService
                 return $this->storeOriginalFile($videoFile, $outputPath);
             }
             
-            Log::info('VideoConversionService: Input file found', [
-                'input_path' => $inputPath,
-                'file_size' => filesize($inputPath),
-            ]);
 
             // Check if FFmpeg is available
             $ffmpegAvailable = $this->isFFmpegAvailable();
-            Log::info('VideoConversionService: FFmpeg check', [
-                'available' => $ffmpegAvailable,
-                'path' => $this->getFFmpegPath(),
-            ]);
             
             if (!$ffmpegAvailable) {
                 Log::warning('VideoConversionService: FFmpeg not available, storing original file');
@@ -78,9 +66,6 @@ class VideoConversionService
             );
 
             // Execute conversion
-            Log::info('VideoConversionService: Executing FFmpeg command', [
-                'command' => $command,
-            ]);
             
             $output = [];
             $returnVar = 0;
@@ -88,12 +73,6 @@ class VideoConversionService
             exec($command . ' 2>&1', $output, $returnVar);
             $duration = microtime(true) - $startTime;
 
-            Log::info('VideoConversionService: FFmpeg execution completed', [
-                'return_var' => $returnVar,
-                'duration' => round($duration, 2) . 's',
-                'output_exists' => file_exists($fullOutputPath),
-                'output_size' => file_exists($fullOutputPath) ? filesize($fullOutputPath) : 0,
-            ]);
 
             if ($returnVar !== 0 || !file_exists($fullOutputPath)) {
                 Log::error('VideoConversionService: Conversion failed', [
@@ -118,11 +97,6 @@ class VideoConversionService
                 @unlink($inputPath);
             }
 
-            Log::info('VideoConversionService: Video converted successfully', [
-                'input' => $inputPath,
-                'output' => $fullOutputPath,
-                'size' => filesize($fullOutputPath),
-            ]);
 
             return $outputPath;
 
@@ -167,9 +141,6 @@ class VideoConversionService
     protected function storeOriginalFile($videoFile, string $outputPath): ?string
     {
         try {
-            Log::info('VideoConversionService: Storing original file (no conversion)', [
-                'output_path' => $outputPath,
-            ]);
             
             if ($videoFile instanceof UploadedFile) {
                 $extension = $videoFile->getClientOriginalExtension();
@@ -177,7 +148,6 @@ class VideoConversionService
                 $outputPath = dirname($outputPath) . '/' . $fileName . '.' . $extension;
                 
                 $storedPath = $videoFile->storeAs(dirname($outputPath), basename($outputPath), 'public');
-                Log::info('VideoConversionService: Original file stored', ['path' => $storedPath]);
                 return $storedPath;
             }
 
@@ -192,7 +162,6 @@ class VideoConversionService
                 }
                 
                 copy($videoFile, storage_path('app/public/' . $outputPath));
-                Log::info('VideoConversionService: Original file copied', ['path' => $outputPath]);
                 return $outputPath;
             }
 

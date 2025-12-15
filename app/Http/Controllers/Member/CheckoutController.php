@@ -74,15 +74,6 @@ class CheckoutController extends Controller
     {
         $user = auth()->user();
 
-        // Debug: Log incoming request
-        Log::info('🔵 CheckoutController::create - Request received', [
-            'user_id' => $user->id,
-            'plan_id' => $plan->id,
-            'request_method' => $request->method(),
-            'request_data' => $request->all(),
-            'has_gateway' => $request->has('gateway'),
-            'gateway_value' => $request->input('gateway'),
-        ]);
 
         try {
             $validated = $request->validate([
