@@ -44,7 +44,12 @@
                         $menus = \App\Models\Menu::getActiveMenus();
                     @endphp
                     @foreach($menus as $menu)
-                        @if($menu->title !== 'Pages')
+                        @php
+                            // Avoid duplicating auth-related links we handle manually below
+                            $normalizedTitle = trim(strtolower($menu->title));
+                            $isAuthLink = in_array($normalizedTitle, ['register', 'sign up', 'signup', 'dashboard', 'login']);
+                        @endphp
+                        @if($menu->title !== 'Pages' && !$isAuthLink)
                             <li>
                                 <a href="{{ $menu->getFullUrlAttribute() }}" 
                                    target="{{ $menu->target }}"

@@ -37,8 +37,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         // Invoices
         Route::resource('invoices', \App\Http\Controllers\Admin\InvoiceController::class);
         
-        // Announcements & Notifications
-        Route::resource('announcements', \App\Http\Controllers\Admin\AnnouncementController::class)->except(['show']);
+        // Notifications (admin-only management of in-app notification templates)
         Route::resource('notifications', \App\Http\Controllers\Admin\InAppNotificationController::class)->except(['show']);
 
         // Expenses
@@ -84,6 +83,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     
     // Routes accessible by both admin and trainer (permission-based)
     Route::middleware(['role:admin,trainer'])->group(function () {
+        // Announcements management (admin & trainer, permission-based)
+        Route::resource('announcements', \App\Http\Controllers\Admin\AnnouncementController::class)
+            ->except(['show'])
+            ->middleware('permission:view announcements|create announcements|edit announcements|delete announcements');
+
         // Activity Logs (accessible by admin and trainer with permission)
         Route::get('/activities', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])
             ->middleware('permission:view activities')
