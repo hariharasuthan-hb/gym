@@ -23,10 +23,15 @@
 
 # Allow specific folders inside public/storage
 !/public/storage/banner/
+!/public/storage/banner/**
 !/public/storage/site-settings/
+!/public/storage/site-settings/**
 !/public/storage/cms/
+!/public/storage/cms/**
 !/public/storage/fonts/
+!/public/storage/fonts/**
 !/public/storage/subscriptions/
+!/public/storage/subscriptions/**
 
 # To force add these directories when needed:
 # git add -f public/storage/banner/
