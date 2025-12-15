@@ -27,6 +27,12 @@
         <p class="text-sm text-gray-600 leading-relaxed">
             Sign in to your account to continue
         </p>
+        <div class="mt-4 inline-block text-left bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-xs text-blue-800">
+            <p class="font-semibold mb-1">Quick test accounts:</p>
+            <p>Admin: <span class="font-mono">admin@gym.com</span> / <span class="font-mono">password</span></p>
+            <p>Member: <span class="font-mono">hari@gym.com</span> / <span class="font-mono">12345678</span></p>
+            <p>Trainer: <span class="font-mono">test@test.com</span> / <span class="font-mono">1345678</span></p>
+        </div>
     </div>
 
     <!-- Session Status -->
