@@ -5,9 +5,9 @@
             Review Videos
         </a>
     @endif
-    <a href="{{ route('admin.activities.index', ['member_id' => $log->user_id]) }}"
+    <!-- a href="{{ route('admin.activities.index', ['member_id' => $log->user_id]) }}"
        class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
         View Logs
-    </a>
+    </a -->
 </div>
 

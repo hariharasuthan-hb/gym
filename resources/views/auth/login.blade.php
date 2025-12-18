@@ -31,7 +31,7 @@
             <p class="font-semibold mb-1">Quick test accounts:</p>
             <p>Admin: <span class="font-mono">admin@gym.com</span> / <span class="font-mono">password</span></p>
             <p>Member: <span class="font-mono">hari@gym.com</span> / <span class="font-mono">12345678</span></p>
-            <p>Trainer: <span class="font-mono">test@test.com</span> / <span class="font-mono">1345678</span></p>
+            <p>Trainer: <span class="font-mono">test@test.com</span> / <span class="font-mono">12345678</span></p>
         </div>
     </div>
 
