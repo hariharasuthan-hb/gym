@@ -40,6 +40,26 @@
             <div>
                 <h4 class="text-xl font-semibold mb-4">Quick Links</h4>
                 <ul class="space-y-2">
+                    {{-- Home page section links --}}
+                    <li>
+                        <a href="{{ route('frontend.home') }}#about"
+                           class="text-gray-400 hover:text-white transition">
+                            About
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('frontend.home') }}#services"
+                           class="text-gray-400 hover:text-white transition">
+                            Services
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('frontend.home') }}#contact"
+                           class="text-gray-400 hover:text-white transition">
+                            Contact
+                        </a>
+                    </li>
+
                     @php
                         $menus = \App\Models\Menu::getActiveMenus();
                     @endphp
@@ -48,8 +68,10 @@
                             // Avoid duplicating auth-related links we handle manually below
                             $normalizedTitle = trim(strtolower($menu->title));
                             $isAuthLink = in_array($normalizedTitle, ['register', 'sign up', 'signup', 'dashboard', 'login']);
+                            // Avoid duplicating the static About / Services / Contact links above
+                            $isSectionLink = in_array($normalizedTitle, ['about', 'services', 'service', 'contact', 'contact us']);
                         @endphp
-                        @if($menu->title !== 'Pages' && !$isAuthLink)
+                        @if($menu->title !== 'Pages' && !$isAuthLink && !$isSectionLink)
                             <li>
                                 <a href="{{ $menu->getFullUrlAttribute() }}" 
                                    target="{{ $menu->target }}"

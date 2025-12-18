@@ -5,7 +5,7 @@
     $isMemberDashboard = request()->routeIs('member.dashboard');
     $isMemberProfile = request()->routeIs('member.profile');
     $isMemberPage = request()->routeIs('member.*');
-    // Menu items to exclude on all member pages
+    // Menu items to exclude on all member pages - we show About, Services, Contact as home page section links instead
     $excludedMenusOnMemberPages = ['About', 'Services', 'Service', 'Contact Us', 'Contact'];
 @endphp
 
@@ -29,7 +29,7 @@
             {{-- Skip Dashboard from menu - we show it separately for authenticated users --}}
             @continue
         @elseif($isMemberPage && in_array($menu->title, $excludedMenusOnMemberPages))
-            {{-- Skip About, Services, and Contact Us on all member pages --}}
+            {{-- Skip certain menu items on member pages --}}
             @continue
         @else
             {{-- Regular Menu Item --}}
@@ -41,19 +41,35 @@
         @endif
     @endforeach
 
+    {{-- Home page section links for member pages --}}
+    @if($isMemberPage)
+        <a href="{{ route('frontend.home') }}#about"
+           class="{{ $linkClass }}">
+            About
+        </a>
+        <a href="{{ route('frontend.home') }}#services"
+           class="{{ $linkClass }}">
+            Services
+        </a>
+        <a href="{{ route('frontend.home') }}#contact"
+           class="{{ $linkClass }}">
+            Contact
+        </a>
+    @endif
+
     {{-- Dashboard and Profile Links for authenticated members --}}
     @auth
         @if(auth()->user()->hasRole('member'))
-            <a href="{{ route('member.dashboard') }}" 
+            <a href="{{ route('member.dashboard') }}"
                class="{{ $linkClass }}">
                 Dashboard
             </a>
-            <a href="{{ route('member.profile') }}" 
+            <a href="{{ route('member.profile') }}"
                class="{{ $linkClass }}">
                 Profile
             </a>
         @elseif(auth()->user()->hasRole('admin'))
-            <a href="{{ route('admin.dashboard') }}" 
+            <a href="{{ route('admin.dashboard') }}"
                class="{{ $linkClass }}">
                 Admin
             </a>
