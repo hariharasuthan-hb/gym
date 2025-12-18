@@ -139,7 +139,6 @@ class RolePermissionSeeder extends Seeder
             'view diet plans',
             'view reports',
             'export reports',
-            'view announcements',
             'view notifications',
             'mark notifications read',
         ]);

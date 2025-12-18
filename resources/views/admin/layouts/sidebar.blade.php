@@ -161,6 +161,7 @@
                     </svg>
                 </button>
                 <div x-show="openGroups.communications" x-collapse class="ml-4 mt-0.5 space-y-0.5">
+                    {{-- Shared notification center (announcements + in-app notifications feed) --}}
                     <a href="{{ route('admin.notification-center.index') }}" 
                        class="admin-sidebar-item {{ request()->routeIs('admin.notification-center.*') ? 'active' : '' }}"
                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
@@ -172,6 +173,7 @@
                         </svg>
                         <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Notification Center</span>
                     </a>
+                    {{-- Announcements listing (permission-based) --}}
                     @can('view announcements')
                     <a href="{{ route('admin.announcements.index') }}" 
                        class="admin-sidebar-item {{ request()->routeIs('admin.announcements.*') ? 'active' : '' }}"
@@ -185,7 +187,8 @@
                         <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Announcements</span>
                     </a>
                     @endcan
-                    @can('view notifications')
+                    {{-- Notification template management (admin only) --}}
+                    @role('admin')
                     <a href="{{ route('admin.notifications.index') }}" 
                        class="admin-sidebar-item {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}"
                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
@@ -197,7 +200,7 @@
                         </svg>
                         <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Notifications</span>
                     </a>
-                    @endcan
+                    @endrole
                 </div>
             </div>
             @endcanany
