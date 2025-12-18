@@ -1,0 +1,28 @@
+[Unit]
+Description=Laravel Queue Worker for gym.hbitpartner.com
+After=network.target
+After=mysql.service
+Requires=mysql.service
+
+[Service]
+User=www-data
+Group=www-data
+Type=simple
+WorkingDirectory=/var/www/html/gym
+ExecStart=/usr/bin/php /var/www/html/gym/artisan queue:work --sleep=3 --tries=3 --max-jobs=1000 --timeout=90
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=laravel-queue
+
+# Security settings
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+# Resource limits
+LimitNOFILE=65536
+MemoryLimit=256M
+
+[Install]
+WantedBy=multi-user.target
