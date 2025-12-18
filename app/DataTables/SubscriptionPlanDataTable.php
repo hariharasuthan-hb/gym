@@ -78,13 +78,13 @@ class SubscriptionPlanDataTable extends BaseDataTable
     protected function getColumns(): array
     {
         return [
-            Column::make('id')->title('ID')->width('5%'),
-            Column::make('plan_name')->title('Plan Name')->width('20%'),
-            Column::make('duration_type')->title('Duration Type')->width('12%'),
-            Column::make('duration')->title('Duration')->width('10%'),
-            Column::make('formatted_price')->title('Price')->width('12%')->orderable(false)->searchable(false),
-            Column::make('status')->title('Status')->width('10%')->orderable(false)->searchable(false),
-            Column::make('created_at')->title('Created At')->width('13%'),
+            Column::make('id')->title('ID')->width('5%')->addClass('text-right'),
+            Column::make('plan_name')->title('Plan Name')->width('20%')->addClass('text-left'),
+            Column::make('duration_type')->title('Duration Type')->width('12%')->addClass('text-left'),
+            Column::make('duration')->title('Duration')->width('10%')->addClass('text-right'),
+            Column::make('formatted_price')->title('Price')->width('12%')->orderable(false)->searchable(false)->addClass('text-right'),
+            Column::make('status')->title('Status')->width('10%')->orderable(false)->searchable(false)->addClass('text-center'),
+            Column::make('created_at')->title('Created At')->width('13%')->addClass('text-right'),
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)

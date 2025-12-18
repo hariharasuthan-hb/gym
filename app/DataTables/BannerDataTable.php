@@ -84,12 +84,12 @@ class BannerDataTable extends BaseDataTable
     protected function getColumns(): array
     {
         return [
-            Column::make('id')->title('ID')->width('5%'),
-            Column::make('image_preview')->title('Image')->width('15%')->orderable(false)->searchable(false),
-            Column::make('title')->title('Title')->width('25%'),
-            Column::make('order')->title('Order')->width('10%'),
-            Column::make('status')->title('Status')->width('10%')->orderable(false)->searchable(false),
-            Column::make('created_at')->title('Created At')->width('15%'),
+            Column::make('id')->title('ID')->width('5%')->addClass('text-right'),
+            Column::make('image_preview')->title('Image')->width('15%')->orderable(false)->searchable(false)->addClass('text-center'),
+            Column::make('title')->title('Title')->width('25%')->addClass('text-left'),
+            Column::make('order')->title('Order')->width('10%')->addClass('text-right'),
+            Column::make('status')->title('Status')->width('10%')->orderable(false)->searchable(false)->addClass('text-center'),
+            Column::make('created_at')->title('Created At')->width('15%')->addClass('text-right'),
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)

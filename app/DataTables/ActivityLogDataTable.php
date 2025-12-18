@@ -140,22 +140,23 @@ class ActivityLogDataTable extends BaseDataTable
     protected function getColumns(): array
     {
         return [
-            Column::make('id')->title('ID')->width('5%'),
-            Column::make('member_name')->title('Member')->width('15%')->orderable(false)->searchable(false),
-            Column::make('date_formatted')->title('Date')->width('12%')->orderable(false)->searchable(false),
-            Column::make('check_in_time_formatted')->title('Check In')->width('10%')->orderable(false)->searchable(false),
-            Column::make('check_out_time_formatted')->title('Check Out')->width('10%')->orderable(false)->searchable(false),
-            Column::make('duration_formatted')->title('Duration')->width('10%')->orderable(false)->searchable(false),
-            Column::make('calories_formatted')->title('Calories')->width('10%')->orderable(false)->searchable(false),
-            Column::make('check_in_method_badge')->title('Method')->width('12%')->orderable(false)->searchable(false),
-            Column::make('created_at_formatted')->title('Created At')->width('16%')->orderable(false)->searchable(false),
+            Column::make('id')->title('ID')->width('5%')->addClass('text-right'),
+            Column::make('member_name')->title('Member')->width('15%')->orderable(false)->searchable(false)->addClass('text-left'),
+            Column::make('date_formatted')->title('Date')->width('12%')->orderable(false)->searchable(false)->addClass('text-right'),
+            Column::make('check_in_time_formatted')->title('Check In')->width('10%')->orderable(false)->searchable(false)->addClass('text-right'),
+            Column::make('check_out_time_formatted')->title('Check Out')->width('10%')->orderable(false)->searchable(false)->addClass('text-right'),
+            Column::make('duration_formatted')->title('Duration')->width('10%')->orderable(false)->searchable(false)->addClass('text-right'),
+            Column::make('calories_formatted')->title('Calories')->width('10%')->orderable(false)->searchable(false)->addClass('text-right'),
+            Column::make('check_in_method_badge')->title('Method')->width('12%')->orderable(false)->searchable(false)->addClass('text-center'),
+            Column::make('created_at_formatted')->title('Created At')->width('16%')->orderable(false)->searchable(false)->addClass('text-right'),
             Column::computed('actions')
                 ->title('Actions')
                 ->orderable(false)
                 ->searchable(false)
                 ->exportable(false)
                 ->printable(false)
-                ->width('12%'),
+                ->width('12%')
+                ->addClass('text-center'),
         ];
     }
 }

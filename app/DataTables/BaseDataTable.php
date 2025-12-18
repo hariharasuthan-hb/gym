@@ -60,6 +60,24 @@ abstract class BaseDataTable
                 'autoWidth' => false,
                 'pageLength' => 5,
                 'lengthMenu' => [[5, 10, 25, 50, 100, -1], [5, 10, 25, 50, 100, "All"]],
+                'columnDefs' => [
+                    [
+                        'targets' => '_all',
+                        'createdCell' => "function(td, cellData, rowData, row, col) {
+                            var api = this.api();
+                            var header = $(api.column(col).header());
+                            // Apply alignment classes from header to cell
+                            if (header.hasClass('text-right')) {
+                                $(td).addClass('text-right').css('text-align', 'right');
+                            } else if (header.hasClass('text-center')) {
+                                $(td).addClass('text-center').css('text-align', 'center');
+                            } else {
+                                // Default to left alignment
+                                $(td).addClass('text-left').css('text-align', 'left');
+                            }
+                        }"
+                    ]
+                ],
             ]);
     }
 

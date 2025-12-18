@@ -72,12 +72,12 @@ class CmsPageDataTable extends BaseDataTable
     protected function getColumns(): array
     {
         return [
-            Column::make('id')->title('ID')->width('5%'),
-            Column::make('title')->title('Title')->width('20%'),
-            Column::make('slug')->title('Slug')->width('15%'),
-            Column::make('category')->title('Category')->width('12%'),
-            Column::make('status')->title('Status')->width('10%')->orderable(false)->searchable(false),
-            Column::make('created_at')->title('Created At')->width('13%'),
+            Column::make('id')->title('ID')->width('5%')->addClass('text-right'),
+            Column::make('title')->title('Title')->width('20%')->addClass('text-left'),
+            Column::make('slug')->title('Slug')->width('15%')->addClass('text-left'),
+            Column::make('category')->title('Category')->width('12%')->addClass('text-left'),
+            Column::make('status')->title('Status')->width('10%')->orderable(false)->searchable(false)->addClass('text-center'),
+            Column::make('created_at')->title('Created At')->width('13%')->addClass('text-right'),
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)

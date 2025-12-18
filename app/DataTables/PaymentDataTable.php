@@ -134,13 +134,13 @@ class PaymentDataTable extends BaseDataTable
     protected function getColumns(): array
     {
         return [
-            Column::make('payment_reference')->title('Payment')->orderable(false)->searchable(false),
-            Column::make('user_info')->title('User')->orderable(false)->searchable(false),
-            Column::make('plan_name')->title('Plan')->orderable(false)->searchable(true),
-            Column::make('final_amount')->title('Amount')->searchable(true),
-            Column::make('payment_method')->title('Method')->orderable(false)->searchable(true),
-            Column::make('status')->title('Status')->orderable(false)->searchable(false),
-            Column::make('paid_at')->title('Paid At')->searchable(true),
+            Column::make('payment_reference')->title('Payment')->orderable(false)->searchable(false)->addClass('text-left'),
+            Column::make('user_info')->title('User')->orderable(false)->searchable(false)->addClass('text-left'),
+            Column::make('plan_name')->title('Plan')->orderable(false)->searchable(true)->addClass('text-left'),
+            Column::make('final_amount')->title('Amount')->searchable(true)->addClass('text-right'),
+            Column::make('payment_method')->title('Method')->orderable(false)->searchable(true)->addClass('text-left'),
+            Column::make('status')->title('Status')->orderable(false)->searchable(false)->addClass('text-center'),
+            Column::make('paid_at')->title('Paid At')->searchable(true)->addClass('text-right'),
             Column::computed('action')
                 ->exportable(false)
             ->printable(false)

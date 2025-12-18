@@ -106,13 +106,13 @@ class ExpenseDataTable extends BaseDataTable
     protected function getColumns(): array
     {
         return [
-            Column::make('id')->title('ID')->width('5%'),
-            Column::make('category')->title('Category')->width('15%'),
-            Column::make('vendor')->title('Vendor')->width('15%')->orderable(false),
-            Column::make('amount')->title('Amount')->width('10%'),
-            Column::make('payment_method')->title('Payment Method')->width('15%')->orderable(false),
-            Column::make('spent_at')->title('Spent At')->width('15%'),
-            Column::make('notes')->title('Notes')->width('20%')->orderable(false)->searchable(false),
+            Column::make('id')->title('ID')->width('5%')->addClass('text-right'),
+            Column::make('category')->title('Category')->width('15%')->addClass('text-left'),
+            Column::make('vendor')->title('Vendor')->width('15%')->orderable(false)->addClass('text-left'),
+            Column::make('amount')->title('Amount')->width('10%')->addClass('text-right'),
+            Column::make('payment_method')->title('Payment Method')->width('15%')->orderable(false)->addClass('text-left'),
+            Column::make('spent_at')->title('Spent At')->width('15%')->addClass('text-right'),
+            Column::make('notes')->title('Notes')->width('20%')->orderable(false)->searchable(false)->addClass('text-left'),
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)

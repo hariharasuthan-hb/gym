@@ -398,6 +398,47 @@ select.dt-input:focus,
         @apply text-slate-900;
     }
 
+    /* Column alignment - ensure DataTable cells respect column alignment classes */
+    /* Default: left alignment for all cells */
+    :is(.dt-container, .dataTables_wrapper) table.dataTable thead th,
+    :is(.dt-container, .dataTables_wrapper) table.dataTable tbody td {
+        text-align: left !important;
+    }
+
+    /* Right alignment - override default */
+    :is(.dt-container, .dataTables_wrapper) table.dataTable thead th.text-right,
+    :is(.dt-container, .dataTables_wrapper) table.dataTable tbody td.text-right {
+        text-align: right !important;
+    }
+
+    /* Center alignment - override default */
+    :is(.dt-container, .dataTables_wrapper) table.dataTable thead th.text-center,
+    :is(.dt-container, .dataTables_wrapper) table.dataTable tbody td.text-center {
+        text-align: center !important;
+    }
+
+    /* Explicit left alignment - ensure it's unique and properly applied */
+    :is(.dt-container, .dataTables_wrapper) table.dataTable thead th.text-left,
+    :is(.dt-container, .dataTables_wrapper) table.dataTable tbody td.text-left {
+        text-align: left !important;
+    }
+
+    /* Force alignment on cell content - target cells that have alignment classes */
+    :is(.dt-container, .dataTables_wrapper) table.dataTable tbody td.text-right,
+    :is(.dt-container, .dataTables_wrapper) table.dataTable tbody td.text-right > * {
+        text-align: right !important;
+    }
+
+    :is(.dt-container, .dataTables_wrapper) table.dataTable tbody td.text-center,
+    :is(.dt-container, .dataTables_wrapper) table.dataTable tbody td.text-center > * {
+        text-align: center !important;
+    }
+
+    :is(.dt-container, .dataTables_wrapper) table.dataTable tbody td.text-left,
+    :is(.dt-container, .dataTables_wrapper) table.dataTable tbody td.text-left > * {
+        text-align: left !important;
+    }
+
     :is(.dt-container, .dataTables_wrapper) table.dataTable tbody tr:hover {
         @apply bg-slate-50;
     }

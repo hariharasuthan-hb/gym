@@ -101,22 +101,22 @@ class DietPlanDataTable extends BaseDataTable
     protected function getColumns(): array
     {
         $columns = [
-            Column::make('id')->title('ID')->width('5%'),
-            Column::make('plan_name')->title('Plan Name')->width('15%'),
-            Column::make('member_name')->title('Member')->width('15%')->orderable(false)->searchable(false),
+            Column::make('id')->title('ID')->width('5%')->addClass('text-right'),
+            Column::make('plan_name')->title('Plan Name')->width('15%')->addClass('text-left'),
+            Column::make('member_name')->title('Member')->width('15%')->orderable(false)->searchable(false)->addClass('text-left'),
         ];
 
         // Only show trainer column for admins
         if (auth()->user()->hasRole('admin')) {
-            $columns[] = Column::make('trainer_name')->title('Trainer')->width('15%')->orderable(false)->searchable(false);
+            $columns[] = Column::make('trainer_name')->title('Trainer')->width('15%')->orderable(false)->searchable(false)->addClass('text-left');
         }
 
         $columns = array_merge($columns, [
-            Column::make('status_badge')->title('Status')->width('10%')->orderable(false)->searchable(false),
-            Column::make('target_calories_formatted')->title('Target Calories')->width('12%')->orderable(false)->searchable(false),
-            Column::make('start_date')->title('Start Date')->width('12%'),
-            Column::make('end_date')->title('End Date')->width('12%'),
-            Column::make('created_at')->title('Created At')->width('11%'),
+            Column::make('status_badge')->title('Status')->width('10%')->orderable(false)->searchable(false)->addClass('text-center'),
+            Column::make('target_calories_formatted')->title('Target Calories')->width('12%')->orderable(false)->searchable(false)->addClass('text-right'),
+            Column::make('start_date')->title('Start Date')->width('12%')->addClass('text-right'),
+            Column::make('end_date')->title('End Date')->width('12%')->addClass('text-right'),
+            Column::make('created_at')->title('Created At')->width('11%')->addClass('text-right'),
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)

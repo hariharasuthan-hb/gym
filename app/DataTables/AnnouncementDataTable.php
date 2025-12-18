@@ -65,12 +65,12 @@ class AnnouncementDataTable extends BaseDataTable
     protected function getColumns(): array
     {
         return [
-            Column::make('id')->title('ID')->width('5%'),
-            Column::make('title')->title('Title')->width('20%'),
-            Column::make('audience_type')->title('Audience')->width('15%'),
-            Column::make('status')->title('Status')->width('10%'),
-            Column::make('published_at')->title('Published At')->width('20%'),
-            Column::make('creator_name')->title('Created By')->orderable(false)->searchable(false)->width('15%'),
+            Column::make('id')->title('ID')->width('5%')->addClass('text-right'),
+            Column::make('title')->title('Title')->width('20%')->addClass('text-left'),
+            Column::make('audience_type')->title('Audience')->width('15%')->addClass('text-left'),
+            Column::make('status')->title('Status')->width('10%')->addClass('text-center'),
+            Column::make('published_at')->title('Published At')->width('20%')->addClass('text-right'),
+            Column::make('creator_name')->title('Created By')->orderable(false)->searchable(false)->width('15%')->addClass('text-left'),
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)

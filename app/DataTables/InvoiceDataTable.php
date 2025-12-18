@@ -109,13 +109,13 @@ class InvoiceDataTable extends BaseDataTable
     protected function getColumns(): array
     {
         return [
-            Column::make('invoice_reference')->title('Invoice')->orderable(false)->searchable(false),
-            Column::make('user_info')->title('User')->orderable(false)->searchable(false),
-            Column::make('plan_name')->title('Plan')->orderable(false),
-            Column::make('final_amount')->title('Amount'),
-            Column::make('status')->title('Status')->orderable(false)->searchable(false),
-            Column::make('payment_method')->title('Method')->orderable(false),
-            Column::make('paid_at')->title('Issued At'),
+            Column::make('invoice_reference')->title('Invoice')->orderable(false)->searchable(false)->addClass('text-left'),
+            Column::make('user_info')->title('User')->orderable(false)->searchable(false)->addClass('text-left'),
+            Column::make('plan_name')->title('Plan')->orderable(false)->addClass('text-left'),
+            Column::make('final_amount')->title('Amount')->addClass('text-right'),
+            Column::make('status')->title('Status')->orderable(false)->searchable(false)->addClass('text-center'),
+            Column::make('payment_method')->title('Method')->orderable(false)->addClass('text-left'),
+            Column::make('paid_at')->title('Issued At')->addClass('text-right'),
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)

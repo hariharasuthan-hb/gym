@@ -155,15 +155,15 @@ class SubscriptionDataTable extends BaseDataTable
     protected function getColumns(): array
     {
         return [
-            Column::make('id')->title('ID')->width('5%'),
-            Column::make('user_name')->title('User Name')->width('12%')->orderable(false),
-            Column::make('user_email')->title('User Email')->width('15%')->orderable(false),
-            Column::make('plan_name')->title('Plan')->width('12%')->orderable(false),
-            Column::make('plan_price')->title('Price')->width('8%')->orderable(false)->searchable(false),
-            Column::make('gateway_badge')->title('Gateway')->width('10%')->orderable(false)->searchable(false),
-            Column::make('status_badge')->title('Status')->width('10%')->orderable(false)->searchable(false),
-            Column::make('next_billing')->title('Next Billing')->width('12%')->orderable(false)->searchable(false),
-            Column::make('created_at')->title('Created At')->width('10%'),
+            Column::make('id')->title('ID')->width('5%')->addClass('text-right'),
+            Column::make('user_name')->title('User Name')->width('12%')->orderable(false)->addClass('text-left'),
+            Column::make('user_email')->title('User Email')->width('15%')->orderable(false)->addClass('text-left'),
+            Column::make('plan_name')->title('Plan')->width('12%')->orderable(false)->addClass('text-left'),
+            Column::make('plan_price')->title('Price')->width('8%')->orderable(false)->searchable(false)->addClass('text-right'),
+            Column::make('gateway_badge')->title('Gateway')->width('10%')->orderable(false)->searchable(false)->addClass('text-center'),
+            Column::make('status_badge')->title('Status')->width('10%')->orderable(false)->searchable(false)->addClass('text-center'),
+            Column::make('next_billing')->title('Next Billing')->width('12%')->orderable(false)->searchable(false)->addClass('text-right'),
+            Column::make('created_at')->title('Created At')->width('10%')->addClass('text-right'),
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)

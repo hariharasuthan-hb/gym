@@ -79,14 +79,14 @@ class InAppNotificationDataTable extends BaseDataTable
     protected function getColumns(): array
     {
         return [
-            Column::make('id')->title('ID')->width('5%'),
-            Column::make('title')->title('Title')->width('20%'),
-            Column::make('audience_type')->title('Audience')->width('10%'),
-            Column::make('target')->title('Target User')->orderable(false)->searchable(false)->width('15%'),
-            Column::make('status')->title('Status')->width('10%'),
-            Column::make('scheduled_for')->title('Scheduled For')->width('15%'),
-            Column::make('published_at')->title('Published At')->width('15%'),
-            Column::make('creator_name')->title('Created By')->orderable(false)->searchable(false)->width('10%'),
+            Column::make('id')->title('ID')->width('5%')->addClass('text-right'),
+            Column::make('title')->title('Title')->width('20%')->addClass('text-left'),
+            Column::make('audience_type')->title('Audience')->width('10%')->addClass('text-left'),
+            Column::make('target')->title('Target User')->orderable(false)->searchable(false)->width('15%')->addClass('text-left'),
+            Column::make('status')->title('Status')->width('10%')->addClass('text-center'),
+            Column::make('scheduled_for')->title('Scheduled For')->width('15%')->addClass('text-right'),
+            Column::make('published_at')->title('Published At')->width('15%')->addClass('text-right'),
+            Column::make('creator_name')->title('Created By')->orderable(false)->searchable(false)->width('10%')->addClass('text-left'),
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)

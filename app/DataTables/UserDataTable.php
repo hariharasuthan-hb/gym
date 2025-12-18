@@ -76,13 +76,13 @@ class UserDataTable extends BaseDataTable
     protected function getColumns(): array
     {
         return [
-            Column::make('id')->title('ID')->width('5%'),
-            Column::make('name')->title('Name')->width('15%'),
-            Column::make('email')->title('Email')->width('20%'),
-            Column::make('phone')->title('Phone')->width('12%'),
-            Column::make('roles')->title('Roles')->width('15%')->orderable(false)->searchable(false),
-            Column::make('status')->title('Status')->width('10%'),
-            Column::make('created_at')->title('Created At')->width('13%'),
+            Column::make('id')->title('ID')->width('5%')->addClass('text-right'),
+            Column::make('name')->title('Name')->width('15%')->addClass('text-left'),
+            Column::make('email')->title('Email')->width('20%')->addClass('text-left'),
+            Column::make('phone')->title('Phone')->width('12%')->addClass('text-left'),
+            Column::make('roles')->title('Roles')->width('15%')->orderable(false)->searchable(false)->addClass('text-left'),
+            Column::make('status')->title('Status')->width('10%')->addClass('text-center'),
+            Column::make('created_at')->title('Created At')->width('13%')->addClass('text-right'),
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)
