@@ -1,14 +1,14 @@
 {{-- Contact Section --}}
-<section id="contact" class="py-20 bg-gray-50">
-    <div class="container mx-auto px-4">
-        <div class="text-center mb-12">
-            <h2 class="text-4xl font-bold mb-4">Contact Us</h2>
-            <p class="text-gray-600 max-w-2xl mx-auto">
+<section id="contact" class="py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50">
+    <div class="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+        <div class="text-center mb-8 sm:mb-10 md:mb-12">
+            <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 break-words leading-tight px-2 sm:px-0" style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">Contact Us</h2>
+            <p class="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base md:text-lg px-2 sm:px-0 break-words leading-relaxed" style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">
                 Have questions? Get in touch with us today!
             </p>
         </div>
-        <div class="max-w-2xl mx-auto">
-            <form action="{{ route('frontend.contact.store') }}" method="POST" class="bg-white rounded-lg shadow-lg p-8">
+        <div class="max-w-2xl mx-auto px-2 sm:px-0">
+            <form action="{{ route('frontend.contact.store') }}" method="POST" class="bg-white rounded-lg shadow-lg p-6 sm:p-8">
                 @csrf
                 
                 @if(session('success'))
@@ -55,7 +55,7 @@
                 </div>
 
                 <button type="submit" 
-                        class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
+                        class="w-full bg-blue-600 text-white py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base">
                     Send Message
                 </button>
             </form>

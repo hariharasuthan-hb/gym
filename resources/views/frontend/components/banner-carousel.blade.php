@@ -22,8 +22,8 @@
                 <div class="relative h-full w-full" 
                      style="background-image: url('{{ $imageUrl }}'); background-size: cover; background-position: center;">
                     <div class="absolute inset-0" style="background-color: {{ $rgba }};"></div>
-                    <div class="container mx-auto px-4 h-full flex items-center relative z-10">
-                        <div class="text-center text-white max-w-4xl mx-auto">
+                    <div class="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 h-full flex items-center relative z-10">
+                        <div class="text-center text-white max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto w-full">
                             @if($banner->title)
                                 @php
                                     // Process title to make "Burn" and "Build" bold and italic
@@ -31,12 +31,12 @@
                                     $title = preg_replace('/\b(Burn)\b/i', '<span class="font-bold italic">$1</span>', $title);
                                     $title = preg_replace('/\b(Build)\b/i', '<span class="font-bold italic">$1</span>', $title);
                                 @endphp
-                                <h1 class="text-5xl md:text-6xl font-bold mb-4 animate-fade-in-up whitespace-nowrap">
+                                <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 sm:mb-6 animate-fade-in-up break-words leading-tight px-2 sm:px-0" style="word-wrap: break-word !important; overflow-wrap: break-word !important; white-space: normal !important; max-width: 100%; display: block;">
                                     {!! $title !!}
                                 </h1>
                             @endif
                             @if($banner->subtitle)
-                                <p class="text-xl md:text-2xl mb-8 animate-fade-in-up-delay">
+                                <p class="text-base sm:text-lg md:text-xl lg:text-2xl mb-8 animate-fade-in-up-delay break-words px-2 sm:px-0 leading-relaxed" style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">
                                     {!! render_content($banner->subtitle) !!}
                                 </p>
                             @endif

@@ -50,19 +50,19 @@
         ? "background-image: url('{$testimonialsBackgroundImage}'); background-size: cover; background-position: center; background-attachment: fixed;"
         : '';
 @endphp
-<section id="testimonials" class="py-20 {{ $testimonialsBackgroundImage ? 'relative' : 'bg-gray-50' }}" style="{{ $testimonialsBgStyle }}">
+<section id="testimonials" class="py-12 sm:py-16 md:py-20 lg:py-24 {{ $testimonialsBackgroundImage ? 'relative' : 'bg-gray-50' }}" style="{{ $testimonialsBgStyle }}">
     @if($testimonialsBackgroundImage)
         <div class="absolute inset-0 bg-black bg-opacity-40 z-0"></div>
     @endif
-    <div class="container mx-auto px-4 relative z-10">
-        <div class="text-center mb-12">
-            <h2 class="text-4xl font-bold mb-4 {{ $testimonialsBackgroundImage ? 'text-white' : 'text-gray-900' }}">{!! render_content($testimonialsTitle) !!}</h2>
-            <p class="{{ $testimonialsBackgroundImage ? 'text-white' : 'text-gray-600' }} max-w-2xl mx-auto">
+    <div class="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 relative z-10">
+        <div class="text-center mb-8 sm:mb-10 md:mb-12">
+            <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 break-words leading-tight px-2 sm:px-0 {{ $testimonialsBackgroundImage ? 'text-white' : 'text-gray-900' }}" style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">{!! render_content($testimonialsTitle) !!}</h2>
+            <p class="{{ $testimonialsBackgroundImage ? 'text-white' : 'text-gray-600' }} max-w-2xl mx-auto text-sm sm:text-base md:text-lg px-2 sm:px-0 break-words leading-relaxed" style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">
                 {!! render_content($testimonialsDescription) !!}
             </p>
         </div>
         @if($sectionVideo)
-            <div class="max-w-4xl mx-auto mb-12">
+            <div class="max-w-4xl mx-auto mb-8 sm:mb-10 md:mb-12 px-2 sm:px-0">
                 <video controls class="w-full rounded-xl shadow-lg border border-gray-200 bg-black">
                     <source src="{{ $sectionVideo['url'] }}" type="{{ $sectionVideo['mime'] }}">
                     Your browser does not support the video tag.
@@ -70,30 +70,30 @@
             </div>
         @endif
         @if($cmsTestimonials->isNotEmpty())
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                 @foreach($cmsTestimonials as $testimonial)
-                    <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition">
+                    <div class="bg-white rounded-lg shadow-lg p-5 sm:p-6 hover:shadow-xl transition">
                         @php
                             $testimonialVideo = $resolveVideo($testimonial->video_path ?? null);
                         @endphp
                         @if($testimonial->image)
-                            <div class="flex items-center mb-4">
+                            <div class="flex items-center mb-3 sm:mb-4">
                                 <img src="{{ \Illuminate\Support\Facades\Storage::url($testimonial->image) }}" 
                                      alt="{{ $testimonial->title }}" 
-                                     class="h-16 w-16 rounded-full object-cover mr-4">
+                                     class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover mr-3 sm:mr-4">
                                 <div>
-                                    <h4 class="font-semibold text-gray-900">{!! render_content($testimonial->title) !!}</h4>
+                                    <h4 class="font-semibold text-sm sm:text-base text-gray-900 break-words leading-tight" style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">{!! render_content($testimonial->title) !!}</h4>
                                     @if($testimonial->extra_data && isset($testimonial->extra_data['position']))
-                                        <p class="text-sm text-gray-500">{{ $testimonial->extra_data['position'] }}</p>
+                                        <p class="text-xs sm:text-sm text-gray-500">{{ $testimonial->extra_data['position'] }}</p>
                                     @endif
                                 </div>
                             </div>
                         @else
-                            <h4 class="font-semibold text-gray-900 mb-2">{!! render_content($testimonial->title) !!}</h4>
+                            <h4 class="font-semibold text-sm sm:text-base text-gray-900 mb-2 break-words leading-tight" style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">{!! render_content($testimonial->title) !!}</h4>
                         @endif
 
                         @if($testimonialVideo)
-                            <div class="mb-4">
+                            <div class="mb-3 sm:mb-4">
                                 <video controls class="w-full rounded-lg border border-gray-200">
                                     <source src="{{ $testimonialVideo['url'] }}" type="{{ $testimonialVideo['mime'] }}">
                                     Your browser does not support the video tag.
@@ -101,13 +101,13 @@
                             </div>
                         @endif
 
-                        <p class="text-gray-600 italic mb-4">
+                        <p class="text-sm sm:text-base text-gray-600 italic mb-3 sm:mb-4 break-words leading-relaxed" style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">
                             "{!! render_content($testimonial->content ?? $testimonial->description ?? '') !!}"
                         </p>
                         @if($testimonial->extra_data && isset($testimonial->extra_data['rating']))
                             <div class="flex items-center">
                                 @for($i = 0; $i < 5; $i++)
-                                    <svg class="w-5 h-5 {{ $i < $testimonial->extra_data['rating'] ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
+                                    <svg class="w-4 h-4 sm:w-5 sm:h-5 {{ $i < $testimonial->extra_data['rating'] ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
                                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                                     </svg>
                                 @endfor
@@ -117,7 +117,7 @@
                 @endforeach
             </div>
         @else
-            <p class="text-center text-white text-lg">Testimonials coming soon.</p>
+            <p class="text-center text-white text-base sm:text-lg px-2">Testimonials coming soon.</p>
         @endif
     </div>
 </section>
