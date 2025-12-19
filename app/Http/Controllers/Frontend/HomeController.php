@@ -37,7 +37,12 @@ class HomeController extends Controller
         $cmsTestimonials = $allTestimonials->filter(function($item) {
             return $item->key !== 'testimonials-section';
         });
-        
+
+        // Fetch BMI Calculator content
+        $cmsBmiCalculator = $cmsContentRepository->findByKey('bmi-calculator-section') ??
+                           $cmsContentRepository->findByType('bmi-calculator')->first() ??
+                           $cmsContentRepository->findByType('other')->where('key', 'bmi-calculator-section')->first();
+
         return view('frontend.home.index', compact(
             'landingPage',
             'cmsHero',
@@ -46,7 +51,8 @@ class HomeController extends Controller
             'cmsServices',
             'cmsFeatures',
             'cmsTestimonialsSection',
-            'cmsTestimonials'
+            'cmsTestimonials',
+            'cmsBmiCalculator'
         ));
     }
 }

@@ -28,7 +28,17 @@
         'cmsServicesSection' => $cmsServicesSection ?? null,
         'cmsServices' => $cmsServices ?? collect()
     ])
-    
+
+    {{-- BMI Calculator Section --}}
+    @if(isset($cmsBmiCalculator) && $cmsBmiCalculator && $cmsBmiCalculator->is_active)
+        @include('frontend.components.bmi-calculator', [
+            'cmsBmiCalculator' => $cmsBmiCalculator
+        ])
+    @else
+        {{-- Default BMI Calculator (fallback if no CMS content) --}}
+        @include('frontend.components.bmi-calculator')
+    @endif
+
     {{-- Testimonials Section (if CMS content exists) --}}
     @if(isset($cmsTestimonials) && $cmsTestimonials->isNotEmpty())
         @include('frontend.components.testimonials', [

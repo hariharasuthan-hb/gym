@@ -78,6 +78,14 @@ class ContentController extends Controller
             );
         }
 
+        // Handle background video upload
+        if ($request->hasFile('background_video')) {
+            $data['background_video'] = $this->imageService->upload(
+                $request->file('background_video'),
+                'cms/videos'
+            );
+        }
+
         // Handle video upload (e.g., testimonials)
         if ($request->hasFile('video')) {
             $data['video_path'] = $this->imageService->upload(
@@ -137,6 +145,14 @@ class ContentController extends Controller
             $data['background_image'] = null;
         }
 
+        // Remove background video if requested
+        if ($request->boolean('remove_background_video')) {
+            if ($content->background_video) {
+                $this->imageService->delete($content->background_video);
+            }
+            $data['background_video'] = null;
+        }
+
         // Remove video if requested
         if ($request->boolean('remove_video')) {
             if ($content->video_path) {
@@ -160,6 +176,15 @@ class ContentController extends Controller
                 $request->file('background_image'),
                 'cms/content',
                 $content->background_image
+            );
+        }
+
+        // Handle background video upload
+        if ($request->hasFile('background_video')) {
+            $data['background_video'] = $this->imageService->upload(
+                $request->file('background_video'),
+                'cms/videos',
+                $content->background_video
             );
         }
 

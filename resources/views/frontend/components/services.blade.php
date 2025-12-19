@@ -12,18 +12,28 @@
         ? ($cmsServicesSection->description ?? $cmsServicesSection->content) 
         : ($landingPage->services_description ?? 'Choose from our range of fitness programs and services');
     
-    // Check for background image: First check services-section, then check all services content
+    // Check for background video/image: First check services-section, then check all services content
+    $servicesBackgroundVideo = null;
     $servicesBackgroundImage = null;
-    if ($cmsServicesSection && $cmsServicesSection->background_image) {
-        $servicesBackgroundImage = \Illuminate\Support\Facades\Storage::url($cmsServicesSection->background_image);
-    } else {
+    if ($cmsServicesSection) {
+        if ($cmsServicesSection->background_video) {
+            $servicesBackgroundVideo = \Illuminate\Support\Facades\Storage::url($cmsServicesSection->background_video);
+        } elseif ($cmsServicesSection->background_image) {
+            $servicesBackgroundImage = \Illuminate\Support\Facades\Storage::url($cmsServicesSection->background_image);
+        }
+    }
+    
+    if (!$servicesBackgroundVideo && !$servicesBackgroundImage) {
         // Check all services content (including the section if it's in the collection)
         $cmsContentRepo = app(\App\Repositories\Interfaces\CmsContentRepositoryInterface::class);
         $allServicesForBg = $cmsContentRepo->getFrontendContent('services');
         
-        // Find first service with background_image
+        // Find first service with background_video or background_image
         foreach ($allServicesForBg as $serviceItem) {
-            if ($serviceItem->background_image) {
+            if ($serviceItem->background_video) {
+                $servicesBackgroundVideo = \Illuminate\Support\Facades\Storage::url($serviceItem->background_video);
+                break;
+            } elseif ($serviceItem->background_image) {
                 $servicesBackgroundImage = \Illuminate\Support\Facades\Storage::url($serviceItem->background_image);
                 break;
             }
@@ -56,18 +66,24 @@
     }
 @endphp
 @php
-    $servicesBgStyle = $servicesBackgroundImage 
+    $hasBackground = $servicesBackgroundVideo || $servicesBackgroundImage;
+    $servicesBgStyle = $servicesBackgroundImage && !$servicesBackgroundVideo
         ? "background-image: url('{$servicesBackgroundImage}'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;"
         : '';
 @endphp
-<section id="services" class="py-12 sm:py-16 md:py-20 lg:py-24 {{ $servicesBackgroundImage ? 'relative min-h-[400px] sm:min-h-[500px] md:min-h-[600px]' : '' }}" style="{{ $servicesBgStyle }}">
-    @if($servicesBackgroundImage)
+<section id="services" class="py-12 sm:py-16 md:py-20 lg:py-24 {{ $hasBackground ? 'relative min-h-[400px] sm:min-h-[500px] md:min-h-[600px] overflow-hidden' : '' }}" style="{{ $servicesBgStyle }}">
+    @if($servicesBackgroundVideo)
+        <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover z-0">
+            <source src="{{ $servicesBackgroundVideo }}" type="video/mp4">
+        </video>
+        <div class="absolute inset-0 bg-black bg-opacity-40 z-0"></div>
+    @elseif($servicesBackgroundImage)
         <div class="absolute inset-0 bg-black bg-opacity-40 z-0"></div>
     @endif
     <div class="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 relative z-10">
         <div class="text-center mb-8 sm:mb-10 md:mb-12">
-            <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 break-words leading-tight px-2 sm:px-0 {{ $servicesBackgroundImage ? 'text-white' : 'text-gray-900' }}" style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">{!! render_content($servicesTitle) !!}</h2>
-            <p class="{{ $servicesBackgroundImage ? 'text-white' : 'text-gray-600' }} max-w-2xl mx-auto text-sm sm:text-base md:text-lg px-2 sm:px-0 break-words leading-relaxed" style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">
+            <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 break-words leading-tight px-2 sm:px-0 {{ $hasBackground ? 'text-white' : 'text-gray-900' }}" style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">{!! render_content($servicesTitle) !!}</h2>
+            <p class="{{ $hasBackground ? 'text-white' : 'text-gray-600' }} max-w-2xl mx-auto text-sm sm:text-base md:text-lg px-2 sm:px-0 break-words leading-relaxed" style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">
                 {!! render_content($servicesDescription) !!}
             </p>
         </div>

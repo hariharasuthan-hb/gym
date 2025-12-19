@@ -27,6 +27,7 @@ class StoreContentRequest extends FormRequest
             'description' => 'nullable|string|max:1000',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'background_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'background_video' => 'nullable|mimetypes:video/mp4,video/quicktime,video/x-msvideo,video/x-ms-wmv|max:51200',
             'video' => 'nullable|mimetypes:video/mp4,video/quicktime,video/x-msvideo,video/x-ms-wmv|max:51200',
             'video_is_background' => 'nullable|boolean',
             'title_color' => 'nullable|string|regex:/^#[a-fA-F0-9]{6}$/',
