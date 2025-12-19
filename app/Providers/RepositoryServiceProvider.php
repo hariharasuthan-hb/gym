@@ -23,7 +23,9 @@ use App\Repositories\Eloquent\PaymentRepository;
 use App\Repositories\Eloquent\PaymentSettingRepository;
 use App\Repositories\Eloquent\SubscriptionPlanRepository;
 use App\Repositories\Eloquent\UserRepository;
+use App\Repositories\Eloquent\ActivityRepository;
 use App\Repositories\Eloquent\WorkoutVideoRepository;
+use App\Repositories\Interfaces\ActivityRepositoryInterface;
 use App\Repositories\Interfaces\AnnouncementRepositoryInterface;
 use App\Repositories\Interfaces\CmsContentRepositoryInterface;
 use App\Repositories\Interfaces\CmsPageRepositoryInterface;
@@ -129,6 +131,14 @@ class RepositoryServiceProvider extends ServiceProvider
             WorkoutVideoRepositoryInterface::class,
             function ($app) {
                 return new WorkoutVideoRepository(new WorkoutVideo());
+            }
+        );
+
+        // Bind Activity Repository
+        $this->app->bind(
+            ActivityRepositoryInterface::class,
+            function ($app) {
+                return new ActivityRepository();
             }
         );
     }

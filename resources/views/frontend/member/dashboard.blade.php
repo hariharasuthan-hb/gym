@@ -316,28 +316,52 @@
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-xl font-semibold text-gray-900 mb-4">Recent Activities</h2>
             <div class="space-y-4">
-                <div class="flex items-center p-4 border border-gray-200 rounded-lg">
-                    <div class="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                        </svg>
+                @php
+                    $recentActivities = $recentActivities ?? [];
+                @endphp
+                @if(!empty($recentActivities) && is_array($recentActivities) && count($recentActivities) > 0)
+                    @foreach($recentActivities as $activity)
+                        @php
+                            $bgColorClass = match($activity['color']) {
+                                'blue' => 'bg-blue-100',
+                                'green' => 'bg-green-100',
+                                'purple' => 'bg-purple-100',
+                                default => 'bg-gray-100'
+                            };
+                            $textColorClass = match($activity['color']) {
+                                'blue' => 'text-blue-600',
+                                'green' => 'text-green-600',
+                                'purple' => 'text-purple-600',
+                                default => 'text-gray-600'
+                            };
+                        @endphp
+                        <div class="flex items-center p-4 border border-gray-200 rounded-lg">
+                            <div class="flex-shrink-0 w-10 h-10 {{ $bgColorClass }} rounded-full flex items-center justify-center">
+                                @if($activity['icon'] === 'workout')
+                                    <svg class="w-5 h-5 {{ $textColorClass }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                    </svg>
+                                @elseif($activity['icon'] === 'video')
+                                    <svg class="w-5 h-5 {{ $textColorClass }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                    </svg>
+                                @elseif($activity['icon'] === 'diet')
+                                    <svg class="w-5 h-5 {{ $textColorClass }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                    </svg>
+                                @endif
+                            </div>
+                            <div class="ml-4 flex-1">
+                                <p class="text-sm font-medium text-gray-900">{{ $activity['title'] }}</p>
+                                <p class="text-sm text-gray-500">{{ $activity['timestamp']->diffForHumans() }}</p>
+                            </div>
+                        </div>
+                    @endforeach
+                @else
+                    <div class="text-center py-8">
+                        <p class="text-sm text-gray-500">No recent activities</p>
                     </div>
-                    <div class="ml-4 flex-1">
-                        <p class="text-sm font-medium text-gray-900">Workout completed</p>
-                        <p class="text-sm text-gray-500">2 hours ago</p>
-                    </div>
-                </div>
-                <div class="flex items-center p-4 border border-gray-200 rounded-lg">
-                    <div class="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                        </svg>
-                    </div>
-                    <div class="ml-4 flex-1">
-                        <p class="text-sm font-medium text-gray-900">Diet plan updated</p>
-                        <p class="text-sm text-gray-500">1 day ago</p>
-                    </div>
-                </div>
+                @endif
             </div>
         </div>
     </div>

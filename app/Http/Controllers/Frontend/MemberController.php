@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\AutoCheckoutMemberJob;
 use App\Models\ActivityLog;
 use App\Models\SubscriptionPlan;
+use App\Repositories\Interfaces\ActivityRepositoryInterface;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Repositories\Interfaces\WorkoutVideoRepositoryInterface;
 use Carbon\Carbon;
@@ -20,7 +21,8 @@ class MemberController extends Controller
 {
     public function __construct(
         private readonly UserRepositoryInterface $userRepository,
-        private readonly WorkoutVideoRepositoryInterface $workoutVideoRepository
+        private readonly WorkoutVideoRepositoryInterface $workoutVideoRepository,
+        private readonly ActivityRepositoryInterface $activityRepository
     ) {
     }
 
@@ -154,6 +156,17 @@ class MemberController extends Controller
             ];
         }
         
+        // Get recent activities for the dashboard
+        try {
+            $recentActivities = $this->activityRepository->getRecentActivities($user);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to get recent activities', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            $recentActivities = [];
+        }
+        
         return view('frontend.member.dashboard', compact(
             'activeSubscription', 
             'subscriptionPlans',
@@ -170,7 +183,8 @@ class MemberController extends Controller
             'todayCheckOutTimeFormatted',
             'hasActiveWorkoutPlan',
             'hasActiveSubscription',
-            'canTrackAttendance'
+            'canTrackAttendance',
+            'recentActivities'
         ));
     }
 
@@ -807,4 +821,5 @@ class MemberController extends Controller
             })
             ->exists();
     }
+
 }
