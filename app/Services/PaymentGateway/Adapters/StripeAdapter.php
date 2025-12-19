@@ -150,6 +150,8 @@ class StripeAdapter
                         : $invoice->payment_intent;
                     
                     $clientSecret = $paymentIntent->client_secret ?? null;
+                    
+                    Log::debug('Retrieved payment intent from invoice', [
                         'payment_intent_id' => $paymentIntent->id ?? null,
                     ]);
                 }
@@ -164,6 +166,7 @@ class StripeAdapter
         // If still no client secret, retrieve the subscription with all expands
         if (!$clientSecret) {
             try {
+                Log::debug('Retrieving subscription with all expands', [
                     'subscription_id' => $subscription->id,
                 ]);
                 
@@ -171,6 +174,7 @@ class StripeAdapter
                     'expand' => ['latest_invoice.payment_intent', 'pending_setup_intent'],
                 ]);
                 
+                Log::debug('Retrieved full subscription', [
                     'has_pending_setup_intent' => isset($fullSubscription->pending_setup_intent),
                     'pending_setup_intent_type' => isset($fullSubscription->pending_setup_intent) ? gettype($fullSubscription->pending_setup_intent) : 'not set',
                     'has_latest_invoice' => isset($fullSubscription->latest_invoice),
@@ -183,6 +187,7 @@ class StripeAdapter
                         : $fullSubscription->pending_setup_intent;
                     $clientSecret = $setupIntentObj->client_secret ?? null;
                     
+                    Log::debug('Retrieved setup intent', [
                         'setup_intent_id' => $setupIntentObj->id ?? null,
                         'has_client_secret' => !empty($clientSecret),
                     ]);
@@ -200,6 +205,7 @@ class StripeAdapter
                             : $invoice->payment_intent;
                         $clientSecret = $paymentIntent->client_secret ?? null;
                         
+                        Log::debug('Retrieved payment intent from expanded subscription', [
                             'payment_intent_id' => $paymentIntent->id ?? null,
                             'has_client_secret' => !empty($clientSecret),
                         ]);
@@ -272,6 +278,7 @@ class StripeAdapter
         ]);
 
         // Debug: Log subscription object structure
+        Log::debug('Subscription object structure', [
             'subscription_id' => $subscription->id,
             'has_latest_invoice' => isset($subscription->latest_invoice),
             'latest_invoice_id' => is_string($subscription->latest_invoice) ? $subscription->latest_invoice : ($subscription->latest_invoice->id ?? null),
@@ -288,6 +295,7 @@ class StripeAdapter
                     ? $this->stripe->invoices->retrieve($subscription->latest_invoice, ['expand' => ['payment_intent']])
                     : $subscription->latest_invoice;
                 
+                Log::debug('Retrieved invoice', [
                     'invoice_id' => $invoice->id ?? null,
                     'has_payment_intent' => isset($invoice->payment_intent),
                     'payment_intent_type' => isset($invoice->payment_intent) ? gettype($invoice->payment_intent) : 'not set',
@@ -300,6 +308,7 @@ class StripeAdapter
                     
                     $clientSecret = $paymentIntent->client_secret ?? null;
                     
+                    Log::debug('Retrieved payment intent', [
                         'payment_intent_id' => $paymentIntent->id ?? null,
                         'has_client_secret' => !empty($clientSecret),
                         'client_secret_preview' => $clientSecret ? substr($clientSecret, 0, 20) . '...' : 'NULL',
@@ -327,6 +336,7 @@ class StripeAdapter
         // If still no client secret, try to get it from the subscription directly
         if (!$clientSecret) {
             try {
+                Log::debug('Retrieving subscription with expanded invoice', [
                     'subscription_id' => $subscription->id,
                 ]);
                 
@@ -335,6 +345,7 @@ class StripeAdapter
                     'expand' => ['latest_invoice.payment_intent'],
                 ]);
                 
+                Log::debug('Retrieved full subscription for paid subscription', [
                     'has_latest_invoice' => isset($fullSubscription->latest_invoice),
                     'latest_invoice_type' => isset($fullSubscription->latest_invoice) ? gettype($fullSubscription->latest_invoice) : 'not set',
                 ]);
@@ -344,6 +355,7 @@ class StripeAdapter
                         ? $this->stripe->invoices->retrieve($fullSubscription->latest_invoice, ['expand' => ['payment_intent']])
                         : $fullSubscription->latest_invoice;
                     
+                    Log::debug('Retrieved invoice from expanded subscription', [
                         'invoice_id' => $invoice->id ?? null,
                         'invoice_status' => $invoice->status ?? null,
                         'has_payment_intent' => isset($invoice->payment_intent),
@@ -356,6 +368,7 @@ class StripeAdapter
                         
                         $clientSecret = $paymentIntent->client_secret ?? null;
                         
+                        Log::debug('Retrieved payment intent from expanded subscription invoice', [
                             'payment_intent_id' => $paymentIntent->id ?? null,
                             'payment_intent_status' => $paymentIntent->status ?? null,
                             'has_client_secret' => !empty($clientSecret),
@@ -380,6 +393,7 @@ class StripeAdapter
             
             // Last resort: Try to create a payment intent manually for the subscription
             try {
+                Log::debug('Creating payment intent manually as last resort', [
                     'subscription_id' => $subscription->id,
                 ]);
                 
@@ -405,6 +419,7 @@ class StripeAdapter
                         
                         $clientSecret = $paymentIntent->client_secret;
                         
+                        Log::debug('Created payment intent manually', [
                             'payment_intent_id' => $paymentIntent->id,
                             'has_client_secret' => !empty($clientSecret),
                         ]);
@@ -573,6 +588,7 @@ class StripeAdapter
                 // Create payment record
                 $this->createPaymentFromInvoiceData($subscription, $data);
                 
+                Log::info('Subscription activated from pending status', [
                     'subscription_id' => $subscription->id,
                     'stripe_subscription_id' => $subscriptionId,
                     'status' => $status,
@@ -586,6 +602,7 @@ class StripeAdapter
                 // Create payment record for renewal
                 $this->createPaymentFromInvoiceData($subscription, $data);
                 
+                Log::info('Subscription activated from trialing status', [
                     'subscription_id' => $subscription->id,
                     'stripe_subscription_id' => $subscriptionId,
                 ]);
@@ -656,6 +673,7 @@ class StripeAdapter
                     $this->createPaymentFromPaymentIntent($subscription, $data);
                 }
                 
+                Log::info('Subscription activated from payment intent', [
                     'subscription_id' => $subscription->id,
                     'payment_intent_id' => $paymentIntentId,
                     'status' => $status,
@@ -664,6 +682,7 @@ class StripeAdapter
                 // Create payment record for active subscriptions that don't have payments
                 $this->createPaymentFromPaymentIntent($subscription, $data);
                 
+                Log::info('Payment record created for active subscription', [
                     'subscription_id' => $subscription->id,
                     'payment_intent_id' => $paymentIntentId,
                 ]);
@@ -697,6 +716,7 @@ class StripeAdapter
                             if (!$hasPayment) {
                                 $this->createPaymentFromPaymentIntent($subscription, $data);
                                 
+                                Log::info('Payment created from payment intent via invoice lookup', [
                                     'subscription_id' => $subscription->id,
                                     'payment_intent_id' => $paymentIntentId,
                                 ]);
@@ -757,6 +777,7 @@ class StripeAdapter
                 'started_at' => now(),
             ]);
             
+            Log::info('Subscription activated from setup intent', [
                 'subscription_id' => $subscription->id,
                 'setup_intent_id' => $setupIntentId,
                 'status' => $status,
@@ -899,6 +920,7 @@ class StripeAdapter
 
             Payment::create($paymentData);
 
+            Log::info('Payment created from invoice data', [
                 'subscription_id' => $subscription->id,
                 'invoice_id' => $invoiceId,
             ]);
@@ -1003,6 +1025,7 @@ class StripeAdapter
 
             Payment::create($paymentData);
 
+            Log::info('Payment created from payment intent', [
                 'subscription_id' => $subscription->id,
                 'payment_intent_id' => $paymentIntentId,
             ]);

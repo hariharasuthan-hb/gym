@@ -197,33 +197,16 @@
                         </form>
 
                     @else
-                        {{-- Default create subscription form that starts checkout flow --}}
-                        <form id="subscription-form" action="{{ route('member.subscription.create', $plan->id) }}" method="POST">
-                            @csrf
-                            <input type="hidden" name="gateway" id="selected-gateway" value="{{ !empty($availableGateways) ? array_key_first($availableGateways) : 'stripe' }}" required>
-
-                            @if(isset($availableGateways['stripe']))
-                                <div id="stripe-payment-form" class="payment-form" style="display: {{ (array_key_first($availableGateways) === 'stripe') ? 'block' : 'none' }};">
-                                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                                        <p class="text-sm text-blue-800">Click the button below to set up your payment method. You'll enter your card details on the next step.</p>
-                                    </div>
-                                    <button type="submit" class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors">
-                                        Continue to Payment
-                                    </button>
-                                </div>
-                            @endif
-
-                            @if(isset($availableGateways['razorpay']))
-                                <div id="razorpay-payment-form" class="payment-form" style="display: {{ (array_key_first($availableGateways) === 'razorpay') ? 'block' : 'none' }};">
-                                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                                        <p class="text-sm text-blue-800">Click the button below to proceed with Razorpay payment.</p>
-                                    </div>
-                                    <button type="submit" class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors">
-                                        Continue to Payment
-                                    </button>
-                                </div>
-                            @endif
-                        </form>
+                        {{-- This should rarely show as subscription is created automatically in controller --}}
+                        {{-- If shown, it means there was an error or payment_data wasn't set --}}
+                        <div class="text-center py-12">
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-4">
+                                <p class="text-sm text-yellow-800 mb-4">Payment setup is being initialized. If this message persists, please refresh the page.</p>
+                                <a href="{{ route('member.subscription.checkout', $plan->id) }}" class="inline-block bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                                    Refresh Page
+                                </a>
+                            </div>
+                        </div>
                     @endif
 
                     {{-- Razorpay post-setup/buttons --}}
@@ -234,7 +217,7 @@
 
                         @if(isset($paymentDataSession['payment_link_url']))
                             <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                                <p class="text-sm text-green-800 mb-3">Click the button below to set up your payment method for the trial period.</p>
+                                <p class="text-sm text-green-800 mb-3">Please complete your payment method setup to start your trial period.</p>
                                 <a href="{{ $paymentDataSession['payment_link_url'] }}" target="_blank" class="inline-block bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">
                                     Setup Payment Method
                                 </a>

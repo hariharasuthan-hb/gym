@@ -58,6 +58,92 @@ class CheckoutController extends Controller
         // Get payment settings for Google Pay check
         $paymentSettings = \App\Models\PaymentSetting::getSettings();
 
+        // Auto-create subscription if payment_data doesn't exist (skip button click step)
+        $paymentData = session('payment_data', []);
+        if (empty($paymentData)) {
+            try {
+                // Use the first available gateway
+                $defaultGateway = array_key_first($availableGateways) ?? 'stripe';
+                
+                $result = $this->paymentGatewayService->createSubscription(
+                    $user,
+                    $plan,
+                    $defaultGateway
+                );
+
+                $result['gateway'] = $defaultGateway;
+
+                // Save subscription to database immediately
+                $trialEndAt = null;
+                if (isset($result['trial_end']) && $result['trial_end']) {
+                    try {
+                        $trialEndAt = is_string($result['trial_end']) 
+                            ? \Carbon\Carbon::parse($result['trial_end']) 
+                            : $result['trial_end'];
+                    } catch (\Exception $e) {
+                        Log::warning('Failed to parse trial_end', ['trial_end' => $result['trial_end'] ?? null]);
+                    }
+                }
+
+                // Prepare metadata with payment intent IDs for webhook matching
+                $metadata = $result;
+                if (isset($result['client_secret'])) {
+                    // Extract payment intent or setup intent ID from client secret
+                    $clientSecret = $result['client_secret'];
+                    if (str_starts_with($clientSecret, 'pi_')) {
+                        $paymentIntentId = explode('_secret_', $clientSecret)[0];
+                        $metadata['payment_intent_id'] = $paymentIntentId;
+                    } elseif (str_starts_with($clientSecret, 'seti_')) {
+                        $setupIntentId = explode('_secret_', $clientSecret)[0];
+                        $metadata['setup_intent_id'] = $setupIntentId;
+                    }
+                }
+
+                $subscription = Subscription::create([
+                    'user_id' => $user->id,
+                    'subscription_plan_id' => $plan->id,
+                    'gateway' => $defaultGateway,
+                    'gateway_customer_id' => $result['customer_id'] ?? null,
+                    'gateway_subscription_id' => $result['subscription_id'] ?? null,
+                    'status' => $result['status'] ?? 'pending',
+                    'trial_end_at' => $trialEndAt,
+                    'started_at' => now(),
+                    'metadata' => $metadata,
+                ]);
+
+                session([
+                    'subscription_data' => [
+                        'plan_id' => $plan->id,
+                        'gateway' => $defaultGateway,
+                        'result' => $result,
+                        'subscription_id' => $subscription->id,
+                    ],
+                ]);
+
+                session()->put('payment_data', $result);
+                session()->save();
+                
+                // Update paymentData for view
+                $paymentData = $result;
+            } catch (\Exception $e) {
+                Log::error('Auto subscription creation failed in checkout', [
+                    'user_id' => $user->id,
+                    'plan_id' => $plan->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                
+                // Continue to show checkout page with error
+                return view('frontend.member.subscription.checkout', [
+                    'plan' => $plan,
+                    'availableGateways' => $availableGateways,
+                    'hasTrial' => $plan->hasTrial(),
+                    'trialDays' => $plan->getTrialDays(),
+                    'enableGpay' => $paymentSettings->enable_gpay ?? false,
+                ])->with('error', 'Failed to initialize payment. Please try again.');
+            }
+        }
+
         return view('frontend.member.subscription.checkout', [
             'plan' => $plan,
             'availableGateways' => $availableGateways,
