@@ -7,116 +7,154 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
-use App\Services\VideoConversionService;
+use Illuminate\Support\Facades\Storage;
 
+/**
+ * Convert admin demo videos in the background using FFmpeg.
+ *
+ * Pattern:
+ * - Upload controller stores raw file under workout-plans/demo-videos/raw
+ * - This job converts raw → MP4 into a temp file
+ * - If conversion looks good, we atomically move into final location
+ * - If conversion fails or is tiny, we keep the original file instead
+ */
 class ConvertDemoVideoJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * The number of times the job may be attempted.
+     * Allow long-running conversions.
+     */
+    public $timeout = 0; // No hard timeout, rely on supervisor / process manager
+
+    /**
+     * Number of attempts.
      */
     public $tries = 3;
 
     /**
-     * The number of seconds the job can run before timing out.
-     */
-    public $timeout = 600; // 10 minutes for large videos
-
-    /**
      * Create a new job instance.
+     *
+     * @param string $sourcePath Raw uploaded file path on public disk (e.g. 'workout-plans/demo-videos/raw/foo-123.webm')
+     * @param string|null $outputPath Final MP4 path on public disk (e.g. 'workout-plans/demo-videos/foo-123.mp4')
      */
     public function __construct(
-        public string $sourcePath,  // Path to the original uploaded file (e.g., 'workout-plans/demo-videos/raw/...')
-        public string $outputPath   // Final path where converted MP4 should be saved (e.g., 'workout-plans/demo-videos/...mp4')
+        public string $sourcePath,
+        public ?string $outputPath = null,
     ) {
     }
 
     /**
      * Execute the job.
      */
-    public function handle(VideoConversionService $conversionService): void
+    public function handle(): void
     {
-        try {
-            // Check if source file exists
-            if (!Storage::disk('public')->exists($this->sourcePath)) {
-                Log::error('ConvertDemoVideoJob: Source file not found', [
-                    'source_path' => $this->sourcePath,
-                ]);
-                return;
-            }
+        $disk = Storage::disk('public');
 
-            // Get full path to source file
-            $sourceFullPath = Storage::disk('public')->path($this->sourcePath);
-
-            // Convert video using VideoConversionService
-            $convertedPath = $conversionService->convertToWebFormat(
-                $sourceFullPath,
-                $this->outputPath,
-                config('video.conversion', [])
-            );
-
-            // If conversion succeeded, delete the raw source file
-            if ($convertedPath && Storage::disk('public')->exists($convertedPath)) {
-                // Verify converted file is valid (not tiny/corrupted)
-                $convertedSize = Storage::disk('public')->size($convertedPath);
-                
-                if ($convertedSize > 1024 * 1024) { // At least 1MB
-                    // Delete the raw source file
-                    if (Storage::disk('public')->exists($this->sourcePath)) {
-                        Storage::disk('public')->delete($this->sourcePath);
-                    }
-                    
-                    Log::info('ConvertDemoVideoJob: Video converted successfully', [
-                        'source_path' => $this->sourcePath,
-                        'output_path' => $convertedPath,
-                        'size_bytes' => $convertedSize,
-                    ]);
-                } else {
-                    Log::warning('ConvertDemoVideoJob: Converted file is too small, keeping original', [
-                        'source_path' => $this->sourcePath,
-                        'output_path' => $convertedPath,
-                        'size_bytes' => $convertedSize,
-                    ]);
-                    
-                    // If conversion failed (tiny file), rename source to output path
-                    if ($convertedPath !== $this->sourcePath) {
-                        Storage::disk('public')->move($this->sourcePath, $this->outputPath);
-                    }
-                }
-            } else {
-                // Conversion failed, move source file to output path as fallback
-                Log::warning('ConvertDemoVideoJob: Conversion failed, using original file', [
-                    'source_path' => $this->sourcePath,
-                    'output_path' => $this->outputPath,
-                ]);
-                
-                if (Storage::disk('public')->exists($this->sourcePath)) {
-                    Storage::disk('public')->move($this->sourcePath, $this->outputPath);
-                }
-            }
-        } catch (\Exception $e) {
-            Log::error('ConvertDemoVideoJob: Exception during conversion', [
+        if (!$disk->exists($this->sourcePath)) {
+            Log::warning('ConvertDemoVideoJob: source file missing', [
                 'source_path' => $this->sourcePath,
-                'output_path' => $this->outputPath,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
-            
-            // Fallback: move source to output path
-            try {
-                if (Storage::disk('public')->exists($this->sourcePath)) {
-                    Storage::disk('public')->move($this->sourcePath, $this->outputPath);
-                }
-            } catch (\Exception $moveException) {
-                Log::error('ConvertDemoVideoJob: Failed to move source file as fallback', [
-                    'error' => $moveException->getMessage(),
-                ]);
-            }
-            
-            throw $e; // Re-throw to trigger retry mechanism
+            return;
         }
+
+        $input = $disk->path($this->sourcePath);
+
+        clearstatcache();
+        $inputSize = @filesize($input) ?: 0;
+
+        // Basic safety: don't try to convert obviously broken uploads
+        if ($inputSize < 500 * 1024) { // < 500KB
+            Log::warning('ConvertDemoVideoJob: source file too small, keeping original', [
+                'source_path' => $this->sourcePath,
+                'size_bytes' => $inputSize,
+            ]);
+
+            $finalRel = $this->outputPath ?: str_replace('raw/', '', $this->sourcePath);
+            if ($this->sourcePath !== $finalRel && $disk->exists($this->sourcePath)) {
+                $disk->move($this->sourcePath, $finalRel);
+            }
+            return;
+        }
+
+        // Temp output (never the final path)
+        $tempOutput = storage_path('app/tmp/' . uniqid('video_', true) . '.mp4');
+        if (!is_dir(dirname($tempOutput))) {
+            mkdir(dirname($tempOutput), 0755, true);
+        }
+
+        // Build FFmpeg command (no ffprobe)
+        $ffmpeg = config('video.ffmpeg_path') ?: 'ffmpeg';
+
+        $cmd = sprintf(
+            '%s -y -loglevel error -i %s -c:v libx264 -preset veryfast -crf 23 -c:a aac -b:a 128k %s 2>&1',
+            escapeshellcmd($ffmpeg),
+            escapeshellarg($input),
+            escapeshellarg($tempOutput)
+        );
+
+        $output = [];
+        $status = 0;
+        exec($cmd, $output, $status);
+
+        // If FFmpeg failed or temp file missing → keep original
+        if ($status !== 0 || !file_exists($tempOutput)) {
+            Log::warning('ConvertDemoVideoJob: FFmpeg failed, keeping original', [
+                'source_path' => $this->sourcePath,
+                'status' => $status,
+                'output' => implode("\n", $output),
+            ]);
+
+            $finalRel = $this->outputPath ?: str_replace('raw/', '', $this->sourcePath);
+            if ($this->sourcePath !== $finalRel && $disk->exists($this->sourcePath)) {
+                $disk->move($this->sourcePath, $finalRel);
+            }
+            if (file_exists($tempOutput)) {
+                @unlink($tempOutput);
+            }
+            return;
+        }
+
+        clearstatcache();
+        $outputSize = @filesize($tempOutput) ?: 0;
+
+        // If converted file is suspiciously small (<10% of input), treat as failure
+        if ($outputSize < $inputSize * 0.10) {
+            Log::warning('ConvertDemoVideoJob: converted file too small, keeping original', [
+                'source_bytes' => $inputSize,
+                'output_bytes' => $outputSize,
+                'source_path' => $this->sourcePath,
+            ]);
+
+            $finalRel = $this->outputPath ?: str_replace('raw/', '', $this->sourcePath);
+            if ($this->sourcePath !== $finalRel && $disk->exists($this->sourcePath)) {
+                $disk->move($this->sourcePath, $finalRel);
+            }
+            @unlink($tempOutput);
+            return;
+        }
+
+        // At this point tempOutput looks good – atomically move into final location
+        $finalRel = $this->outputPath ?: str_replace('raw/', '', $this->sourcePath);
+
+        try {
+            $stream = fopen($tempOutput, 'rb');
+            $disk->put($finalRel, $stream);
+            fclose($stream);
+        } finally {
+            @unlink($tempOutput);
+            if ($disk->exists($this->sourcePath)) {
+                $disk->delete($this->sourcePath);
+            }
+        }
+
+        Log::info('ConvertDemoVideoJob: conversion completed', [
+            'source_path' => $this->sourcePath,
+            'final_path' => $finalRel,
+            'input_bytes' => $inputSize,
+            'output_bytes' => $outputSize,
+        ]);
     }
 }
+
