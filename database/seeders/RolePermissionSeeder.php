@@ -136,7 +136,13 @@ class RolePermissionSeeder extends Seeder
         $trainerRole->syncPermissions([
             'view activities',
             'view workout plans',
+            'create workout plans',
+            'edit workout plans',
+            'delete workout plans',
             'view diet plans',
+            'create diet plans',
+            'edit diet plans',
+            'delete diet plans',
             'view reports',
             'export reports',
             'view notifications',
