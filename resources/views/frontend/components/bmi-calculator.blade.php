@@ -224,11 +224,6 @@
 </section>
 
 <style>
-    #needle {
-        transform-origin: 250px 250px;
-        transition: transform 2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
     @keyframes pulse {
         0%, 100% { transform: scale(1); }
         50% { transform: scale(1.05); }
@@ -254,44 +249,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Gauge configuration
     const centerX = 250;
     const centerY = 250;
-    const radius = 180;
     const minBMI = 0;
     const maxBMI = 50;
     const startAngle = -90; // Left side
     const endAngle = 90;    // Right side
     const angleRange = endAngle - startAngle; // 180 degrees
-
-    // BMI category ranges
-    const bmiRanges = [
-        { min: 0, max: 18.5, color: 'url(#underweightGrad)', id: 'gauge-segment-1' },
-        { min: 18.5, max: 24.9, color: 'url(#normalGrad)', id: 'gauge-segment-2' },
-        { min: 25, max: 29.9, color: 'url(#overweightGrad)', id: 'gauge-segment-3' },
-        { min: 30, max: 34.9, color: 'url(#obeseGrad)', id: 'gauge-segment-4' },
-        { min: 35, max: 50, color: 'url(#extremelyObeseGrad)', id: 'gauge-segment-5' }
-    ];
-
-    // Calculate point on circle
-    function getPointOnCircle(angle, centerX, centerY, radius) {
-        const rad = (angle * Math.PI) / 180;
-        return {
-            x: centerX + radius * Math.cos(rad),
-            y: centerY + radius * Math.sin(rad)
-        };
-    }
-
-    // Calculate angle from BMI value
-    function bmiToAngle(bmi) {
-        const clampedBMI = Math.max(minBMI, Math.min(maxBMI, bmi));
-        const normalizedBMI = (clampedBMI - minBMI) / (maxBMI - minBMI);
-        return startAngle + (normalizedBMI * angleRange);
-    }
-
-    // Update gauge segments with accurate calculations (optional enhancement)
-    // The segments are already defined in HTML, but we can enhance them if needed
-
-    function calculateNeedleAngle(bmi) {
-        return bmiToAngle(bmi);
-    }
+    
 
     function getBMICategory(bmi) {
         if (bmi < 18.5) {
@@ -326,6 +289,18 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         }
     }
+    
+    // Calculate angle from BMI value (keeps the needle base fixed at the center
+    // and moves the needle smoothly according to height & weight)
+    function bmiToAngle(bmi) {
+        const clampedBMI = Math.max(minBMI, Math.min(maxBMI, bmi));
+        const normalizedBMI = (clampedBMI - minBMI) / (maxBMI - minBMI);
+        return startAngle + (normalizedBMI * angleRange);
+    }
+
+    function calculateNeedleAngle(bmi) {
+        return bmiToAngle(bmi);
+    }
 
     function animateNeedle(targetAngle) {
         // Reset needle to start position
@@ -359,7 +334,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Get category
         const category = getBMICategory(roundedBmi);
 
-        // Calculate needle angle
+        // Calculate needle angle based on actual BMI value
         const needleAngle = calculateNeedleAngle(roundedBmi);
 
         // Show results
