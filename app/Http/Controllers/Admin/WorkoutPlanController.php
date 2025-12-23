@@ -106,29 +106,29 @@ class WorkoutPlanController extends Controller
         // Remove temporary fields
         unset($validated['exercises_json']);
         
-        // Handle demo video upload
+        // Handle demo video upload (store first, convert via queue)
         if ($request->hasFile('demo_video')) {
             $file = $request->file('demo_video');
             $originalName = $file->getClientOriginalName();
             $fileName = pathinfo($originalName, PATHINFO_FILENAME);
             $uniqueFileName = \Illuminate\Support\Str::slug($fileName) . '-' . time();
-            $outputPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.mp4';
             
-            // Convert video to web-compatible format (H.264 MP4)
-            $conversionService = app(\App\Services\VideoConversionService::class);
-            $convertedPath = $conversionService->convertToWebFormat(
-                $file,
-                $outputPath,
-                config('video.conversion', [])
+            // Store original file in raw directory
+            $extension = $file->getClientOriginalExtension();
+            $sourcePath = $file->storeAs(
+                'workout-plans/demo-videos/raw',
+                $uniqueFileName . '.' . $extension,
+                'public'
             );
             
-            // Use converted path or fallback to original
-            if ($convertedPath) {
-                $validated['demo_video_path'] = $convertedPath;
-            } else {
-                $extension = $file->getClientOriginalExtension();
-                $validated['demo_video_path'] = $file->storeAs('workout-plans/demo-videos', $uniqueFileName . '.' . $extension, 'public');
-            }
+            // Final path where converted MP4 will be saved
+            $finalPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.mp4';
+            
+            // Dispatch background job to convert the video
+            \App\Jobs\ConvertDemoVideoJob::dispatch($sourcePath, $finalPath);
+            
+            // Store the final path (conversion will happen in background)
+            $validated['demo_video_path'] = $finalPath;
         }
         
         WorkoutPlan::create($validated);
@@ -224,23 +224,23 @@ class WorkoutPlanController extends Controller
             $originalName = $file->getClientOriginalName();
             $fileName = pathinfo($originalName, PATHINFO_FILENAME);
             $uniqueFileName = \Illuminate\Support\Str::slug($fileName) . '-' . time();
-            $outputPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.mp4';
             
-            // Convert video to web-compatible format (H.264 MP4)
-            $conversionService = app(\App\Services\VideoConversionService::class);
-            $convertedPath = $conversionService->convertToWebFormat(
-                $file,
-                $outputPath,
-                config('video.conversion', [])
+            // Store original file in raw directory
+            $extension = $file->getClientOriginalExtension();
+            $sourcePath = $file->storeAs(
+                'workout-plans/demo-videos/raw',
+                $uniqueFileName . '.' . $extension,
+                'public'
             );
             
-            // Use converted path or fallback to original
-            if ($convertedPath) {
-                $validated['demo_video_path'] = $convertedPath;
-            } else {
-                $extension = $file->getClientOriginalExtension();
-                $validated['demo_video_path'] = $file->storeAs('workout-plans/demo-videos', $uniqueFileName . '.' . $extension, 'public');
-            }
+            // Final path where converted MP4 will be saved
+            $finalPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.mp4';
+            
+            // Dispatch background job to convert the video
+            \App\Jobs\ConvertDemoVideoJob::dispatch($sourcePath, $finalPath);
+            
+            // Store the final path (conversion will happen in background)
+            $validated['demo_video_path'] = $finalPath;
         } elseif ($request->has('demo_video_path') && !empty($request->input('demo_video_path'))) {
             // Video was pre-uploaded via AJAX
             // Delete old demo video if exists and different from new one
@@ -330,50 +330,29 @@ class WorkoutPlanController extends Controller
                 'demo_video.max' => 'Demo video file size must not exceed 100MB.',
             ]);
 
-            // Convert video to web-compatible format (H.264 MP4)
+            // Store original file in raw directory for queue processing
             $originalName = $file->getClientOriginalName();
             $fileName = pathinfo($originalName, PATHINFO_FILENAME);
             $uniqueFileName = \Illuminate\Support\Str::slug($fileName) . '-' . time();
-            $outputPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.mp4';
-
-            $videoPath = null; // Initialize to ensure it's always set
-
-            try {
-                $conversionService = app(\App\Services\VideoConversionService::class);
-                $convertedPath = $conversionService->convertToWebFormat(
-                    $file,
-                    $outputPath,
-                    config('video.conversion', [])
-                );
-
-                // Use converted path or fallback to original
-                if ($convertedPath) {
-                    $videoPath = $convertedPath;
-                } else {
-                    $extension = $file->getClientOriginalExtension();
-                    $videoPath = $file->storeAs('workout-plans/demo-videos', $uniqueFileName . '.' . $extension, 'public');
-                }
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Direct video upload conversion exception', [
-                    'error' => $e->getMessage(),
-                    'file_name' => $originalName,
-                ]);
-
-                // Fallback: store original file
-                $extension = $file->getClientOriginalExtension();
-                $videoPath = $file->storeAs('workout-plans/demo-videos', $uniqueFileName . '.' . $extension, 'public');
-            }
-
-            // Ensure videoPath is set
-            if (!$videoPath) {
-                throw new \Exception('Failed to store video file - no path returned');
-            }
+            
+            $extension = $file->getClientOriginalExtension();
+            $sourcePath = $file->storeAs(
+                'workout-plans/demo-videos/raw',
+                $uniqueFileName . '.' . $extension,
+                'public'
+            );
+            
+            // Final path where converted MP4 will be saved
+            $finalPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.mp4';
+            
+            // Dispatch background job to convert the video
+            \App\Jobs\ConvertDemoVideoJob::dispatch($sourcePath, $finalPath);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Video uploaded and converted successfully.',
-                'video_path' => $videoPath,
-                'video_url' => file_url($videoPath),
+                'message' => 'Video uploaded successfully. Conversion will continue in the background.',
+                'video_path' => $finalPath,
+                'video_url' => file_url($finalPath),
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             $errors = $e->errors();
@@ -493,52 +472,29 @@ class WorkoutPlanController extends Controller
                     true
                 );
 
-                // Convert video to web-compatible format (H.264 MP4)
+                // Store assembled file in raw directory for queue processing
                 $baseName = pathinfo($fileName, PATHINFO_FILENAME);
                 $uniqueFileName = \Illuminate\Support\Str::slug($baseName) . '-' . time();
-                $outputPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.mp4';
+                $extension = pathinfo($fileName, PATHINFO_EXTENSION);
+                
+                // Move final assembled file to raw directory
+                $sourcePath = 'workout-plans/demo-videos/raw/' . $uniqueFileName . '.' . $extension;
+                \Illuminate\Support\Facades\Storage::disk('public')->put($sourcePath, file_get_contents($finalPath));
+                
+                // Final path where converted MP4 will be saved
+                $finalPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.mp4';
+                
+                // Dispatch background job to convert the video
+                \App\Jobs\ConvertDemoVideoJob::dispatch($sourcePath, $finalPath);
 
-                $videoPath = null; // Initialize to ensure it's always set
-
-                try {
-                    $conversionService = app(\App\Services\VideoConversionService::class);
-                    $convertedPath = $conversionService->convertToWebFormat(
-                        $uploadedFile,
-                        $outputPath,
-                        config('video.conversion', [])
-                    );
-
-                    // Use converted path or fallback to original
-                    if ($convertedPath) {
-                        $videoPath = $convertedPath;
-                    } else {
-                        $extension = pathinfo($fileName, PATHINFO_EXTENSION);
-                        $videoPath = $uploadedFile->storeAs('workout-plans/demo-videos', $uniqueFileName . '.' . $extension, 'public');
-                    }
-                } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::error('Video conversion exception', [
-                        'error' => $e->getMessage(),
-                        'file_name' => $fileName,
-                    ]);
-
-                    // Fallback: store original file
-                    $extension = pathinfo($fileName, PATHINFO_EXTENSION);
-                    $videoPath = $uploadedFile->storeAs('workout-plans/demo-videos', $uniqueFileName . '.' . $extension, 'public');
-                }
-
-                // Ensure videoPath is set
-                if (!$videoPath) {
-                    throw new \Exception('Failed to store video file - no path returned');
-                }
-
-                // Clean up temporary files
+                // Clean up temporary chunk directory
                 \Illuminate\Support\Facades\File::deleteDirectory($tempDir);
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Video uploaded successfully.',
-                    'video_path' => $videoPath,
-                    'video_url' => file_url($videoPath),
+                    'message' => 'Video uploaded successfully. Conversion will continue in the background.',
+                    'video_path' => $finalPath,
+                    'video_url' => file_url($finalPath),
                 ]);
             }
 
@@ -589,6 +545,47 @@ class WorkoutPlanController extends Controller
 
         return redirect()->route('admin.workout-plans.index')
             ->with('success', 'Workout plan deleted successfully.');
+    }
+
+    /**
+     * Check if video conversion is complete.
+     */
+    public function checkVideoConversion(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'video_path' => ['required', 'string'],
+        ]);
+
+        $videoPath = $request->input('video_path');
+        
+        // Check if the final converted file exists
+        $convertedExists = \Illuminate\Support\Facades\Storage::disk('public')->exists($videoPath);
+        
+        // Check if raw file still exists (conversion not done yet)
+        // Extract base filename from final path (e.g., "video-name-1234567890.mp4" -> "video-name-1234567890")
+        $baseName = pathinfo($videoPath, PATHINFO_FILENAME);
+        $rawDir = 'workout-plans/demo-videos/raw';
+        $rawExists = false;
+        
+        // Check if raw directory exists and has files matching the base name
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($rawDir)) {
+            $rawFiles = \Illuminate\Support\Facades\Storage::disk('public')->files($rawDir);
+            foreach ($rawFiles as $file) {
+                if (pathinfo($file, PATHINFO_FILENAME) === $baseName) {
+                    $rawExists = true;
+                    break;
+                }
+            }
+        }
+
+        $isComplete = $convertedExists && !$rawExists;
+
+        return response()->json([
+            'success' => true,
+            'is_complete' => $isComplete,
+            'converted_exists' => $convertedExists,
+            'raw_exists' => $rawExists,
+        ]);
     }
 }
 
