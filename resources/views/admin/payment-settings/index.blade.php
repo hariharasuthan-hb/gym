@@ -8,7 +8,7 @@
     <div class="flex justify-between items-center">
         <div>
             <h1 class="text-lg font-semibold text-gray-900 mb-1">Payment Settings</h1>
-            <p class="text-sm text-gray-600">Configure payment gateway settings for Stripe, Razorpay, and Google Pay</p>
+            <p class="text-sm text-gray-600">Configure payment gateway settings</p>
         </div>
     </div>
 
@@ -99,7 +99,7 @@
             </div>
         </div>
 
-        {{-- Razorpay Settings --}}
+        {{-- Razorpay Settings 
         <div class="admin-card">
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
                 <div class="flex items-center">
@@ -153,9 +153,9 @@
                     <p class="mt-1 text-xs text-gray-500">Your secret key is encrypted and stored securely</p>
                 </div>
             </div>
-        </div>
+        </div> --}}
 
-        {{-- Google Pay Settings --}}
+        {{-- Google Pay Settings 
         <div class="admin-card">
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
                 <div class="flex items-center">
@@ -194,7 +194,7 @@
                     <p class="mt-1 text-xs text-gray-500">Enter your Google Pay UPI ID (e.g., yourname@upi)</p>
                 </div>
             </div>
-        </div>
+        </div> --}}
 
         {{-- Submit Button --}}
         <div class="flex justify-end gap-3">
