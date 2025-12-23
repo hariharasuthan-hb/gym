@@ -80,6 +80,7 @@
 
         // Upload video with optimization
         async function uploadVideo(file) {
+
             const uploadBtn = document.getElementById('start-upload-btn');
             const progressContainer = document.getElementById('upload-progress-container');
             const progressBar = document.getElementById('upload-progress-bar');
@@ -93,6 +94,7 @@
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
                 const uploadUrl = '/admin/workout-plans/upload-demo-video';
                 const chunkedUploadUrl = '/admin/workout-plans/upload-demo-video-chunk';
+
 
                 // Use reusable upload utility
                 const response = await videoUploader.upload(
@@ -116,7 +118,12 @@
                         }
                     }
                 );
-                
+
+                // Validate response has required data
+                if (!response.video_path) {
+                    throw new Error('Server did not return video_path in response. Check server logs for conversion errors.');
+                }
+
                 // Create hidden input with video path
                 let videoPathInput = document.getElementById('demo_video_path');
                 if (!videoPathInput) {
@@ -127,10 +134,10 @@
                     form.appendChild(videoPathInput);
                 }
                 videoPathInput.value = response.video_path;
-                
+
                 // Disable file input since we've uploaded via AJAX
                 demoVideoInput.disabled = true;
-                
+
                 statusContainer.innerHTML = `
                     <div class="bg-green-50 border border-green-200 rounded-lg p-4">
                         <div class="flex items-center text-green-800">
@@ -142,6 +149,8 @@
                     </div>
                 `;
             } catch (error) {
+                console.error('Upload failed with error:', error);
+                console.error('Error stack:', error.stack);
                 showError('Upload failed: ' + error.message);
             } finally {
                 if (uploadBtn) uploadBtn.disabled = false;

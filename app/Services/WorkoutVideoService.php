@@ -34,6 +34,21 @@ class WorkoutVideoService
         UploadedFile $videoFile,
         ?int $durationSeconds = null
     ): WorkoutVideo {
+        // Check for existing video with same exercise name and delete it
+        $existingVideo = WorkoutVideo::where('workout_plan_id', $workoutPlan->id)
+            ->where('user_id', $user->id)
+            ->where('exercise_name', $exerciseName)
+            ->first();
+
+        if ($existingVideo) {
+            // Delete the old video file
+            if ($existingVideo->video_path && Storage::disk('public')->exists($existingVideo->video_path)) {
+                Storage::disk('public')->delete($existingVideo->video_path);
+            }
+            // Delete the database record
+            $existingVideo->delete();
+        }
+
         // Generate unique filename
         $originalName = $videoFile->getClientOriginalName();
         $fileName = pathinfo($originalName, PATHINFO_FILENAME);

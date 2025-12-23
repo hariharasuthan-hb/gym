@@ -14,34 +14,12 @@ class VideoUploadUtils {
     }
 
     /**
-     * Compress video blob
+     * Compress video blob - DISABLED: This method is broken for videos
+     * Client-side video compression doesn't work properly in browsers
+     * Server-side FFmpeg conversion should be used instead
      */
     async compressVideo(file) {
-        return new Promise((resolve) => {
-            const video = document.createElement('video');
-            video.src = URL.createObjectURL(file);
-            video.muted = true;
-            video.playsInline = true;
-
-            video.onloadedmetadata = () => {
-                video.currentTime = 0;
-            };
-
-            video.onseeked = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = Math.min(video.videoWidth, 1280);
-                canvas.height = Math.min(video.videoHeight, 720);
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-                canvas.toBlob((compressedBlob) => {
-                    URL.revokeObjectURL(video.src);
-                    resolve(compressedBlob || file);
-                }, 'video/webm', 0.6); // 60% quality
-            };
-
-            video.onerror = () => resolve(file); // Fallback to original
-        });
+        return file; // Return original file unchanged
     }
 
     /**
@@ -114,6 +92,7 @@ class VideoUploadUtils {
         const totalChunks = Math.ceil(blob.size / chunkSize);
         const uploadId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+
         let uploadedBytes = 0;
 
         for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
@@ -153,7 +132,7 @@ class VideoUploadUtils {
 
                     uploadedBytes += chunk.size;
                     const progress = (uploadedBytes / blob.size) * 100;
-                    
+
                     if (onProgress) {
                         onProgress(progress, uploadedBytes, blob.size);
                     }
@@ -200,12 +179,9 @@ class VideoUploadUtils {
 
         let videoBlob = file;
 
-        // Compress video if larger than threshold
-        if (compress && file.size > this.compressionThreshold) {
-            if (onCompressStart) onCompressStart();
-            videoBlob = await this.compressVideo(file);
-            if (onCompressEnd) onCompressEnd();
-        }
+        // Disable client-side compression entirely - it's broken and creates tiny corrupted files
+        // Server-side FFmpeg conversion handles compression properly
+        videoBlob = file; // Always use original file, let server handle compression
 
         // Use chunked upload for files larger than threshold
         if (videoBlob.size > this.chunkedThreshold && chunkedUploadUrl) {

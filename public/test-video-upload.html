@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="test-csrf-token">
+    <title>Video Upload Test</title>
+</head>
+<body>
+    <h1>Video Upload Test</h1>
+    <input type="file" id="video-input" accept="video/*">
+    <button id="upload-btn">Upload Video</button>
+    <div id="status"></div>
+
+    <script src="js/video-upload-utils.js"></script>
+    <script>
+        const videoUploader = new VideoUploadUtils({
+            chunkSize: 5 * 1024 * 1024, // 5MB chunks
+            compressionThreshold: 20 * 1024 * 1024, // 20MB
+            chunkedThreshold: 10 * 1024 * 1024, // 10MB
+        });
+
+        document.getElementById('upload-btn').addEventListener('click', async () => {
+            const input = document.getElementById('video-input');
+            const file = input.files[0];
+            if (!file) {
+                alert('Please select a video file');
+                return;
+            }
+
+            const status = document.getElementById('status');
+            status.textContent = 'Starting upload...';
+
+            try {
+                const response = await videoUploader.upload(
+                    file,
+                    '/admin/workout-plans/upload-demo-video',
+                    '/admin/workout-plans/upload-demo-video-chunk',
+                    'test-csrf-token',
+                    {
+                        onProgress: (percent, loaded, total) => {
+                            status.textContent = `Upload progress: ${Math.round(percent)}% (${(loaded/1024/1024).toFixed(2)}MB / ${(total/1024/1024).toFixed(2)}MB)`;
+                        },
+                        compress: false // Disable compression for testing
+                    }
+                );
+
+                status.textContent = `Upload completed! Video path: ${response.video_path}`;
+                console.log('Upload response:', response);
+            } catch (error) {
+                status.textContent = `Upload failed: ${error.message}`;
+                console.error('Upload error:', error);
+            }
+        });
+    </script>
+</body>
+</html>

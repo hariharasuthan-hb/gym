@@ -335,20 +335,38 @@ class WorkoutPlanController extends Controller
             $fileName = pathinfo($originalName, PATHINFO_FILENAME);
             $uniqueFileName = \Illuminate\Support\Str::slug($fileName) . '-' . time();
             $outputPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.mp4';
-            
-            $conversionService = app(\App\Services\VideoConversionService::class);
-            $convertedPath = $conversionService->convertToWebFormat(
-                $file,
-                $outputPath,
-                config('video.conversion', [])
-            );
-            
-            // Use converted path or fallback to original
-            if ($convertedPath) {
-                $videoPath = $convertedPath;
-            } else {
+
+            $videoPath = null; // Initialize to ensure it's always set
+
+            try {
+                $conversionService = app(\App\Services\VideoConversionService::class);
+                $convertedPath = $conversionService->convertToWebFormat(
+                    $file,
+                    $outputPath,
+                    config('video.conversion', [])
+                );
+
+                // Use converted path or fallback to original
+                if ($convertedPath) {
+                    $videoPath = $convertedPath;
+                } else {
+                    $extension = $file->getClientOriginalExtension();
+                    $videoPath = $file->storeAs('workout-plans/demo-videos', $uniqueFileName . '.' . $extension, 'public');
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Direct video upload conversion exception', [
+                    'error' => $e->getMessage(),
+                    'file_name' => $originalName,
+                ]);
+
+                // Fallback: store original file
                 $extension = $file->getClientOriginalExtension();
                 $videoPath = $file->storeAs('workout-plans/demo-videos', $uniqueFileName . '.' . $extension, 'public');
+            }
+
+            // Ensure videoPath is set
+            if (!$videoPath) {
+                throw new \Exception('Failed to store video file - no path returned');
             }
 
             return response()->json([
@@ -408,14 +426,15 @@ class WorkoutPlanController extends Controller
                 'upload_id' => ['required', 'string'],
                 'file_name' => ['required', 'string'],
                 'file_size' => ['required', 'integer'],
+                '_videoFieldName' => ['nullable', 'string'], // Allow additional data
             ]);
 
             $chunk = $request->file('video_chunk');
-            $chunkIndex = $request->input('chunk_index');
-            $totalChunks = $request->input('total_chunks');
+            $chunkIndex = (int) $request->input('chunk_index');
+            $totalChunks = (int) $request->input('total_chunks');
             $uploadId = $request->input('upload_id');
             $fileName = $request->input('file_name');
-            $fileSize = $request->input('file_size');
+            $fileSize = (int) $request->input('file_size');
 
             // Store chunk in temporary directory
             $tempDir = storage_path('app/temp/demo-video-uploads/' . $uploadId);
@@ -428,15 +447,39 @@ class WorkoutPlanController extends Controller
 
             // If this is the last chunk, combine all chunks and save
             if ($chunkIndex === $totalChunks - 1) {
+
+                // Check if all chunks exist before assembly
+                $missingChunks = [];
+                for ($i = 0; $i < $totalChunks; $i++) {
+                    $chunkFile = $tempDir . '/chunk_' . $i;
+                    if (!file_exists($chunkFile)) {
+                        $missingChunks[] = $i;
+                    }
+                }
+
+                if (!empty($missingChunks)) {
+                    \Illuminate\Support\Facades\Log::error('Missing chunks before assembly', [
+                        'upload_id' => $uploadId,
+                        'missing_chunks' => $missingChunks,
+                        'total_chunks' => $totalChunks,
+                    ]);
+
+                    // Clean up and return error
+                    \Illuminate\Support\Facades\File::deleteDirectory($tempDir);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Upload failed: Missing chunks ' . implode(', ', $missingChunks),
+                    ], 422);
+                }
+
                 $finalPath = storage_path('app/temp/demo-video-uploads/' . $uploadId . '/final.' . pathinfo($fileName, PATHINFO_EXTENSION));
                 $finalFile = fopen($finalPath, 'wb');
 
+                $totalWritten = 0;
                 for ($i = 0; $i < $totalChunks; $i++) {
                     $chunkFile = $tempDir . '/chunk_' . $i;
-                    if (file_exists($chunkFile)) {
-                        $chunkContent = file_get_contents($chunkFile);
-                        fwrite($finalFile, $chunkContent);
-                    }
+                    $chunkContent = file_get_contents($chunkFile);
+                    fwrite($finalFile, $chunkContent);
                 }
 
                 fclose($finalFile);
@@ -454,20 +497,38 @@ class WorkoutPlanController extends Controller
                 $baseName = pathinfo($fileName, PATHINFO_FILENAME);
                 $uniqueFileName = \Illuminate\Support\Str::slug($baseName) . '-' . time();
                 $outputPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.mp4';
-                
-                $conversionService = app(\App\Services\VideoConversionService::class);
-                $convertedPath = $conversionService->convertToWebFormat(
-                    $uploadedFile,
-                    $outputPath,
-                    config('video.conversion', [])
-                );
-                
-                // Use converted path or fallback to original
-                if ($convertedPath) {
-                    $videoPath = $convertedPath;
-                } else {
+
+                $videoPath = null; // Initialize to ensure it's always set
+
+                try {
+                    $conversionService = app(\App\Services\VideoConversionService::class);
+                    $convertedPath = $conversionService->convertToWebFormat(
+                        $uploadedFile,
+                        $outputPath,
+                        config('video.conversion', [])
+                    );
+
+                    // Use converted path or fallback to original
+                    if ($convertedPath) {
+                        $videoPath = $convertedPath;
+                    } else {
+                        $extension = pathinfo($fileName, PATHINFO_EXTENSION);
+                        $videoPath = $uploadedFile->storeAs('workout-plans/demo-videos', $uniqueFileName . '.' . $extension, 'public');
+                    }
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Video conversion exception', [
+                        'error' => $e->getMessage(),
+                        'file_name' => $fileName,
+                    ]);
+
+                    // Fallback: store original file
                     $extension = pathinfo($fileName, PATHINFO_EXTENSION);
                     $videoPath = $uploadedFile->storeAs('workout-plans/demo-videos', $uniqueFileName . '.' . $extension, 'public');
+                }
+
+                // Ensure videoPath is set
+                if (!$videoPath) {
+                    throw new \Exception('Failed to store video file - no path returned');
                 }
 
                 // Clean up temporary files

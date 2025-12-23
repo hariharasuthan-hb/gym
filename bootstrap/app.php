@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\SendDailyDietPlanNotificationsJob;
+use App\Jobs\CleanupWorkoutPlanVideosJob;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Console\Scheduling\Schedule;
@@ -30,6 +31,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->job(new SendDailyDietPlanNotificationsJob(), 'notifications')
             ->name('daily-diet-plan-notifications')
             ->dailyAt('05:00')
+            ->withoutOverlapping();
+
+        $schedule->job(new CleanupWorkoutPlanVideosJob(), 'cleanup')
+            ->name('cleanup-workout-plan-videos')
+            ->dailyAt('02:00')
             ->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {
