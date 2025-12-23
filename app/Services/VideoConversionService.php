@@ -132,7 +132,43 @@ class VideoConversionService
     protected function getInputFilePath($videoFile): ?string
     {
         if ($videoFile instanceof UploadedFile) {
-            return $videoFile->getRealPath();
+            // IMPORTANT:
+            // Do NOT pass the raw PHP temp file (e.g. /tmp/phpXXXXX) directly to FFmpeg.
+            // These temp files are managed by PHP and may be deleted or truncated,
+            // which can cause FFmpeg to produce tiny, corrupted MP4 outputs.
+
+            $originalPath = $videoFile->getRealPath();
+
+            if (!$originalPath || !file_exists($originalPath)) {
+                Log::error('VideoConversionService: UploadedFile temp path not found', [
+                    'real_path' => $originalPath,
+                    'file_exists' => $originalPath ? file_exists($originalPath) : false,
+                ]);
+
+                return null;
+            }
+
+            // Copy the uploaded file into our own persistent tmp directory under storage/.
+            $tmpDir = storage_path('app/tmp/video-conversion');
+            if (!File::exists($tmpDir)) {
+                File::makeDirectory($tmpDir, 0755, true);
+            }
+
+            $extension = $videoFile->getClientOriginalExtension() ?: 'mp4';
+            $tmpPath = $tmpDir . '/' . uniqid('video_', true) . '.' . $extension;
+
+            // Copy instead of move so PHP can continue to manage its temp file lifecycle.
+            if (!@copy($originalPath, $tmpPath)) {
+                Log::error('VideoConversionService: Failed to copy uploaded file to tmp directory', [
+                    'source' => $originalPath,
+                    'destination' => $tmpPath,
+                ]);
+
+                // As a last resort, fall back to the original temp path (may still fail, but logged).
+                return $originalPath;
+            }
+
+            return $tmpPath;
         }
 
         if (is_string($videoFile)) {
