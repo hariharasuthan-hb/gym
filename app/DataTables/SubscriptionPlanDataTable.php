@@ -23,7 +23,7 @@ class SubscriptionPlanDataTable extends BaseDataTable
                 return '$' . number_format($plan->price, 2);
             })
             ->addColumn('formatted_duration', function ($plan) {
-                return $plan->duration . ' ' . ucfirst($plan->duration_type) . ($plan->duration > 1 ? 's' : '');
+                return $plan->duration . ' ' . ucfirst($plan->duration_type) . ($plan->duration > 1 ? '' : '');
             })
             ->addColumn('status', function ($plan) {
                 if ($plan->is_active) {
