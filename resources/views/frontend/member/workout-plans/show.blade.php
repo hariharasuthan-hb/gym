@@ -484,15 +484,15 @@ async function checkInWorkout() {
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {{-- Plan Header Card --}}
-        <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-lg p-8 mb-6 text-white">
-            <div class="flex items-start justify-between">
-                <div class="flex-1">
+        <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-lg p-6 sm:p-8 mb-6 text-white">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div class="flex-1 min-w-0">
                     <h1 class="text-3xl font-bold mb-2">{{ $workoutPlan->plan_name ?? 'Untitled Plan' }}</h1>
                     @if($workoutPlan->description)
-                        <p class="text-green-100 text-lg">{{ $workoutPlan->description }}</p>
+                        <p class="text-green-100 text-base sm:text-lg break-words">{{ $workoutPlan->description }}</p>
                     @endif
                 </div>
-                <div class="flex items-center gap-4">
+                <div class="flex flex-wrap items-center gap-3 sm:gap-4">
                     @if(!($attendanceMarkedToday ?? false))
                     <button id="check-in-btn-workout" onclick="checkInWorkout()" class="px-6 py-3 bg-white text-green-600 rounded-lg hover:bg-green-50 transition-colors font-semibold flex items-center shadow-md">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
