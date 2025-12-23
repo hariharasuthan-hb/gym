@@ -100,7 +100,8 @@ class ActivityLog extends Model
     public static function todayForUser(int $userId): ?self
     {
         return static::forUser($userId)
-            ->forDate(now()->toDateString())
+            ->where('date', now()->toDateString())
+            ->whereNotNull('check_in_time')
             ->latest('check_in_time')
             ->first();
     }
