@@ -42,28 +42,13 @@ class ActivityLogDataTable extends BaseDataTable
             ->addColumn('duration_formatted', function ($log) {
                 return $log->duration_minutes ? $log->duration_minutes . ' min' : '-';
             })
-            ->addColumn('calories_formatted', function ($log) {
-                return $log->calories_burned ? number_format($log->calories_burned, 0) . ' cal' : '-';
-            })
-            ->addColumn('check_in_method_badge', function ($log) {
-                if (!$log->check_in_method) {
-                    return '-';
-                }
-                $methodColors = [
-                    'qr_code' => 'bg-blue-100 text-blue-800',
-                    'rfid' => 'bg-purple-100 text-purple-800',
-                    'manual' => 'bg-orange-100 text-orange-800',
-                ];
-                $color = $methodColors[$log->check_in_method] ?? 'bg-gray-100 text-gray-800';
-                return '<span class="px-2 py-1 text-xs font-semibold rounded-full ' . $color . '">' . ucfirst(str_replace('_', ' ', $log->check_in_method)) . '</span>';
-            })
             ->addColumn('actions', function ($log) {
                 return view('admin.activities.partials.actions', [
                     'log' => $log,
                     'canReviewVideos' => auth()->user()->hasAnyRole(['admin', 'trainer'])
                 ])->render();
             })
-            ->rawColumns(['check_in_method_badge', 'actions']);
+            ->rawColumns(['actions']);
     }
 
     /**
@@ -146,8 +131,6 @@ class ActivityLogDataTable extends BaseDataTable
             Column::make('check_in_time_formatted')->title('Check In')->width('10%')->orderable(false)->searchable(false)->addClass('text-right'),
             Column::make('check_out_time_formatted')->title('Check Out')->width('10%')->orderable(false)->searchable(false)->addClass('text-right'),
             Column::make('duration_formatted')->title('Duration')->width('10%')->orderable(false)->searchable(false)->addClass('text-right'),
-            Column::make('calories_formatted')->title('Calories')->width('10%')->orderable(false)->searchable(false)->addClass('text-right'),
-            Column::make('check_in_method_badge')->title('Method')->width('12%')->orderable(false)->searchable(false)->addClass('text-center'),
             Column::make('created_at_formatted')->title('Created At')->width('16%')->orderable(false)->searchable(false)->addClass('text-right'),
             Column::computed('actions')
                 ->title('Actions')
