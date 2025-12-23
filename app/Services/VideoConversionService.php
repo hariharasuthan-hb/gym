@@ -87,8 +87,23 @@ class VideoConversionService
             }
 
             // Verify the converted file is valid
-            if (filesize($fullOutputPath) === 0) {
+            $convertedSize = filesize($fullOutputPath);
+            if ($convertedSize === 0) {
                 Log::error('VideoConversionService: Converted file is empty');
+                return $this->storeOriginalFile($videoFile, $outputPath);
+            }
+
+            // Extra safety: if converted file is suspiciously small (e.g. < 1MB),
+            // treat it as a failed conversion and fall back to the original.
+            // This protects against cases where FFmpeg writes a tiny, corrupted MP4.
+            if ($convertedSize < 1024 * 1024) {
+                Log::warning('VideoConversionService: Converted file is too small, falling back to original', [
+                    'converted_size_bytes' => $convertedSize,
+                    'input_path' => $inputPath,
+                    'output_path' => $fullOutputPath,
+                ]);
+
+                // Attempt to store the original file instead
                 return $this->storeOriginalFile($videoFile, $outputPath);
             }
 
