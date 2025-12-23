@@ -94,6 +94,19 @@
         transition: width 0.3s ease-in-out;
     }
     
+    /* Collapsed sidebar state (desktop) */
+    @media (min-width: 1024px) {
+        .admin-sidebar.sidebar-collapsed {
+            width: 4rem;
+        }
+
+        .admin-sidebar.sidebar-collapsed .admin-sidebar-footer {
+            width: 4rem;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+    }
+    
     .admin-sidebar-item {
         @apply flex items-center px-4 py-2 rounded-lg;
         @apply text-gray-300 transition-all duration-200;

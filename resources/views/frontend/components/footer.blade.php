@@ -141,7 +141,7 @@
     @if (!empty($siteSettings->footer_partner))
         {{ $siteSettings->footer_partner }}
     @endif
-    .
+.
         </p>        
         </div>
     </div>

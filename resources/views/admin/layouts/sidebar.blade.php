@@ -2,7 +2,7 @@
 <aside class="w-64 lg:w-64 admin-sidebar text-white h-screen flex flex-col custom-scrollbar transition-all duration-300" 
        x-data="sidebarMenu()"
        x-init="init()"
-       :class="{ 'lg:w-16': $root.sidebarCollapsed, 'lg:w-64': !$root.sidebarCollapsed }">
+       :class="{ 'sidebar-collapsed': $root.sidebarCollapsed }">
     <div class="p-4 lg:p-3 flex-1 overflow-y-auto" 
          :class="{ 'lg:px-2': $root.sidebarCollapsed }">
         @php
@@ -594,8 +594,7 @@
     </div>
 
     {{-- User Info at Bottom --}}
-    <div class="w-64 p-3 border-t border-gray-700/50 bg-gray-900/50 backdrop-blur-sm flex-shrink-0 transition-all duration-300"
-         :class="{ 'lg:w-16 lg:px-2': $root.sidebarCollapsed, 'lg:w-64': !$root.sidebarCollapsed }">
+    <div class="admin-sidebar-footer w-64 p-3 border-t border-gray-700/50 bg-gray-900/50 backdrop-blur-sm flex-shrink-0 transition-all duration-300">
         <div class="flex items-center" :class="{ 'lg:justify-center': $root.sidebarCollapsed }">
             <div class="flex-1 min-w-0" :class="{ 'lg:hidden': $root.sidebarCollapsed }">
                 <p class="text-sm font-semibold text-white truncate">{{ Auth::user()->name }}</p>

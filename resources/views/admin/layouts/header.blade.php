@@ -3,26 +3,46 @@
     <div class="px-4 py-4">
         <div class="flex justify-between items-center">
             <div class="flex items-center gap-4">
-                {{-- Sidebar Toggle Button --}}
-                <button @click="sidebarOpen = !sidebarOpen" 
-                        class="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all duration-200 hover-lift focus-ring">
+                {{-- Sidebar Toggle Button (Mobile - open/close drawer) --}}
+                <button
+                    type="button"
+                    @click="$root.sidebarOpen = !$root.sidebarOpen"
+                    class="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all duration-200 hover-lift focus-ring"
+                    title="Toggle Sidebar"
+                >
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                 </button>
-                
-                {{-- Collapse Toggle Button (Desktop) --}}
-                <button @click="sidebarCollapsed = !sidebarCollapsed" 
-                        class="hidden lg:flex p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all duration-200 hover-lift focus-ring"
-                        title="Toggle Sidebar">
-                    <svg x-show="!sidebarCollapsed" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                {{-- Collapse Toggle Button (Desktop - shrink/expand sidebar) --}}
+                <button
+                    type="button"
+                    @click="$root.sidebarCollapsed = !$root.sidebarCollapsed"
+                    class="hidden lg:flex p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all duration-200 hover-lift focus-ring"
+                    title="Toggle Sidebar Width"
+                >
+                    <svg x-show="!$root.sidebarCollapsed" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
                     </svg>
-                    <svg x-show="sidebarCollapsed" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg x-show="$root.sidebarCollapsed" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
                     </svg>
                 </button>
-                
+
+                {{-- Back Button (after toggle buttons) --}}
+                <button 
+                    type="button"
+                    onclick="window.history.back();"
+                    class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all duration-200 hover-lift focus-ring"
+                    title="Go Back"
+                >
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    <span>Back</span>
+                </button>
+
                 <div class="page-header">
                     <h1 class="page-title">
                         @yield('page-title', 'Admin Dashboard')

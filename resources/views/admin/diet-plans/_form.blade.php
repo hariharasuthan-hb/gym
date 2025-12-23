@@ -212,7 +212,7 @@
             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
         @enderror
         
-        <p class="text-xs text-gray-500 mt-3">Add meals one by one. They will be automatically saved as JSON format.</p>
+        <p class="text-xs text-gray-500 mt-3">Add meals one by one. </p>
         
         {{-- Hidden field to store JSON --}}
         <input type="hidden" name="meal_plan_json" id="meal_plan_json" value="">
