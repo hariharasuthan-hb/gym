@@ -90,7 +90,7 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Duration</p>
-                        <p class="text-sm text-gray-900 font-medium">{{ $subscriptionPlan->duration }} {{ ucfirst($subscriptionPlan->duration_type) }}{{ $subscriptionPlan->duration > 1 ? 's' : '' }}</p>
+                        <p class="text-sm text-gray-900 font-medium">{{ $subscriptionPlan->duration }} {{ ucfirst($subscriptionPlan->duration_type) }}{{ $subscriptionPlan->duration > 1 ? '' : '' }}</p>
                     </div>
                 </div>
                 

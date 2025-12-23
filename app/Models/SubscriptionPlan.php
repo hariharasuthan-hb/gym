@@ -81,7 +81,7 @@ class SubscriptionPlan extends Model
      */
     public function getFormattedDurationAttribute(): string
     {
-        return $this->duration . ' ' . ucfirst($this->duration_type) . ($this->duration > 1 ? 's' : '');
+        return $this->duration . ' ' . ucfirst($this->duration_type) . ($this->duration > 1 ? '' : '');
     }
 
     /**
