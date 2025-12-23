@@ -92,7 +92,7 @@
                     <div class="border-t border-gray-200 pt-6">
                         <div class="flex justify-between items-center mb-4">
                             <span class="text-gray-600">Price</span>
-                            <span class="text-3xl font-bold text-gray-900">₹{{ number_format($plan->price, 2) }}</span>
+                            <span class="text-3xl font-bold text-gray-900">{{ format_price($plan->price) }}</span>
                         </div>
                         <div class="flex justify-between items-center mb-4">
                             <span class="text-gray-600">Duration</span>
@@ -191,7 +191,7 @@
                                 @if(!empty($hasTrial) && $hasTrial && !empty($trialDays) && $trialDays > 0)
                                     Start {{ $trialDays }}-Day Free Trial
                                 @else
-                                    Subscribe Now - ₹{{ number_format($plan->price, 2) }}
+                                    Subscribe Now - {{ format_price($plan->price) }}
                                 @endif
                             </button>
                         </form>
@@ -225,7 +225,7 @@
                         @elseif(isset($paymentDataSession['order_id']))
                             <div id="razorpay-checkout">
                                 <button type="button" id="razorpay-btn" class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors">
-                                    Pay with Razorpay - ₹{{ number_format($paymentDataSession['amount'] ?? $plan->price, 2) }}
+                                    Pay with Razorpay - {{ format_price($paymentDataSession['amount'] ?? $plan->price) }}
                                 </button>
                             </div>
                         @endif
@@ -234,7 +234,7 @@
                     @if(!empty($hasTrial) && $hasTrial && !empty($trialDays) && $trialDays > 0)
                         <div class="mt-6 p-4 bg-gray-50 rounded-lg">
                             <p class="text-sm text-gray-600">
-                                <strong>Free for {{ $trialDays }} days</strong>, then auto-renews at <strong>₹{{ number_format($plan->price, 2) }}</strong> per {{ $plan->duration_type }}.
+                                <strong>Free for {{ $trialDays }} days</strong>, then auto-renews at <strong>{{ format_price($plan->price) }}</strong> per {{ $plan->duration_type }}.
                                 You can cancel anytime before the trial ends.
                             </p>
                         </div>

@@ -53,7 +53,7 @@
                     </div>
                     <div>
                         <p class="text-sm text-gray-500 mb-1">Price</p>
-                        <p class="text-lg font-semibold text-gray-900">₹{{ number_format($activeSubscription->subscriptionPlan->price, 2) }}</p>
+                        <p class="text-lg font-semibold text-gray-900">{{ format_price($activeSubscription->subscriptionPlan->price) }}</p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-500 mb-1">Payment Gateway</p>
@@ -69,7 +69,7 @@
                             </svg>
                             <p class="text-sm text-blue-800">
                                 <strong>Trial Period Active</strong> - Your trial ends on {{ format_date_smart($activeSubscription->trial_end_at) }}.
-                                After that, you'll be charged ₹{{ number_format($activeSubscription->subscriptionPlan->price, 2) }}.
+                                After that, you'll be charged {{ format_price($activeSubscription->subscriptionPlan->price) }}.
                             </p>
                         </div>
                     </div>
@@ -125,7 +125,7 @@
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm font-medium text-gray-900">{{ $subscription->subscriptionPlan->plan_name }}</div>
-                                        <div class="text-sm text-gray-500">₹{{ number_format($subscription->subscriptionPlan->price, 2) }}</div>
+                                        <div class="text-sm text-gray-500">{{ format_price($subscription->subscriptionPlan->price) }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center space-x-2">

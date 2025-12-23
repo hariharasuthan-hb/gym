@@ -811,3 +811,70 @@ if (!function_exists('format_time_frontend')) {
     }
 }
 
+if (!function_exists('get_payment_currency')) {
+    /**
+     * Get the currency symbol and code based on the configured payment gateway.
+     * Returns currency details for the primary enabled gateway.
+     *
+     * @return array{symbol: string, code: string, name: string}
+     */
+    function get_payment_currency(): array
+    {
+        $paymentSettings = \App\Models\PaymentSetting::getSettings();
+
+        // Check enabled gateways in priority order
+        if ($paymentSettings->enable_stripe) {
+            return [
+                'symbol' => '$',
+                'code' => 'USD',
+                'name' => 'US Dollar'
+            ];
+        }
+
+        if ($paymentSettings->enable_razorpay) {
+            return [
+                'symbol' => '₹',
+                'code' => 'INR',
+                'name' => 'Indian Rupee'
+            ];
+        }
+
+        // Fallback if no gateways are enabled
+        return [
+            'symbol' => '₹',
+            'code' => 'INR',
+            'name' => 'Indian Rupee'
+        ];
+    }
+}
+
+if (!function_exists('format_price')) {
+    /**
+     * Format a price with the appropriate currency symbol based on configured gateway.
+     *
+     * @param float|int|string $price
+     * @param bool $include_symbol Include currency symbol (default: true)
+     * @param bool $include_code Include currency code (default: false)
+     * @return string
+     */
+    function format_price($price, bool $include_symbol = true, bool $include_code = false): string
+    {
+        $currency = get_payment_currency();
+        $formatted = number_format((float)$price, 2);
+
+        $result = '';
+
+        if ($include_symbol) {
+            $result .= $currency['symbol'];
+        }
+
+        $result .= $formatted;
+
+        if ($include_code) {
+            $result .= ' ' . $currency['code'];
+        }
+
+        return $result;
+    }
+}
+
