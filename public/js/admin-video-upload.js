@@ -10,7 +10,11 @@
     const videoUploader = new VideoUploadUtils({
         chunkSize: 5 * 1024 * 1024, // 5MB chunks
         compressionThreshold: 20 * 1024 * 1024, // 20MB
-        chunkedThreshold: 10 * 1024 * 1024, // 10MB
+        // For admin demo videos we want a simple, reliable flow.
+        // Disable chunked uploads for normal sizes so a 40–50MB file
+        // is sent as a single request, avoiding partial chunk assembly.
+        // Our PHP/nginx limits are 200M, so this is safe.
+        chunkedThreshold: 500 * 1024 * 1024, // effectively "no chunking" under 200M
     });
 
     // Initialize when DOM is ready
