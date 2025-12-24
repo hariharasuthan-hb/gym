@@ -79,8 +79,20 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             ->name('payment-settings.index');
         Route::put('/payment-settings', [\App\Http\Controllers\Admin\PaymentSettingController::class, 'update'])
             ->name('payment-settings.update');
+
+        // Orphaned Videos Management
+        Route::get('/orphaned-videos', [\App\Http\Controllers\Admin\OrphanedVideosController::class, 'index'])
+            ->middleware('permission:view orphaned videos')
+            ->name('orphaned-videos.index');
+        Route::delete('/orphaned-videos', [\App\Http\Controllers\Admin\OrphanedVideosController::class, 'destroy'])
+            ->middleware('permission:delete orphaned videos')
+            ->name('orphaned-videos.destroy');
+        Route::delete('/orphaned-videos/multiple', [\App\Http\Controllers\Admin\OrphanedVideosController::class, 'destroyMultiple'])
+            ->middleware('permission:delete orphaned videos')
+            ->name('orphaned-videos.destroy-multiple');
+
     });
-    
+
     // Routes accessible by both admin and trainer (permission-based)
     Route::middleware(['role:admin,trainer'])->group(function () {
         // Announcements management (admin & trainer, permission-based)

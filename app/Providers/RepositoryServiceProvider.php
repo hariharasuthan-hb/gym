@@ -37,6 +37,8 @@ use App\Repositories\Interfaces\PaymentSettingRepositoryInterface;
 use App\Repositories\Interfaces\SubscriptionPlanRepositoryInterface;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Repositories\Interfaces\WorkoutVideoRepositoryInterface;
+use App\Repositories\Interfaces\OrphanedVideoRepositoryInterface;
+use App\Repositories\Eloquent\OrphanedVideoRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -139,6 +141,14 @@ class RepositoryServiceProvider extends ServiceProvider
             ActivityRepositoryInterface::class,
             function ($app) {
                 return new ActivityRepository();
+            }
+        );
+
+        // Bind Orphaned Video Repository
+        $this->app->bind(
+            OrphanedVideoRepositoryInterface::class,
+            function ($app) {
+                return new OrphanedVideoRepository();
             }
         );
     }

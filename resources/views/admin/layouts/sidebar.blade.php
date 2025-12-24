@@ -381,7 +381,7 @@
             @endcan
 
             {{-- CMS Management Group --}}
-            @canany(['view cms pages', 'view cms content', 'view landing page', 'view site settings', 'view payment settings', 'view banners'])
+            @canany(['view cms pages', 'view cms content', 'view landing page', 'view site settings', 'view payment settings', 'view banners', 'view orphaned videos'])
             <div class="pt-1">
                 <button @click="toggleGroup('cms')" 
                         class="w-full flex items-center justify-between px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
@@ -467,6 +467,19 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                         </svg>
                         <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Banners</span>
+                    </a>
+                    @endcan
+                    @can('view orphaned videos')
+                    <a href="{{ route('admin.orphaned-videos.index') }}" 
+                       class="admin-sidebar-item {{ request()->routeIs('admin.orphaned-videos.*') ? 'active' : '' }}"
+                       :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                       :title="$root.sidebarCollapsed ? 'Orphaned Videos' : ''">
+                        <svg class="w-4 h-4 transition-all duration-300" 
+                             :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Orphaned Videos</span>
                     </a>
                     @endcan
                 </div>
@@ -624,7 +637,7 @@ function sidebarMenu() {
             plans: {{ request()->routeIs('admin.workout-plans.*') || request()->routeIs('admin.diet-plans.*') ? 'true' : 'false' }},
             communications: {{ request()->routeIs('admin.notification-center.*') || request()->routeIs('admin.announcements.*') || request()->routeIs('admin.notifications.*') ? 'true' : 'false' }},
             financial: {{ request()->routeIs('admin.payments.*') || request()->routeIs('admin.invoices.*') || request()->routeIs('admin.finances.*') || request()->routeIs('admin.expenses.*') || request()->routeIs('admin.incomes.*') ? 'true' : 'false' }},
-            cms: {{ request()->routeIs('admin.cms.*') || request()->routeIs('admin.landing-page.*') || request()->routeIs('admin.site-settings.*') || request()->routeIs('admin.payment-settings.*') || request()->routeIs('admin.banners.*') ? 'true' : 'false' }},
+            cms: {{ request()->routeIs('admin.cms.*') || request()->routeIs('admin.landing-page.*') || request()->routeIs('admin.site-settings.*') || request()->routeIs('admin.payment-settings.*') || request()->routeIs('admin.banners.*') || request()->routeIs('admin.orphaned-videos.*') ? 'true' : 'false' }},
             reports: {{ request()->routeIs('admin.payments.*') || request()->routeIs('admin.invoices.*') || request()->routeIs('admin.expenses.*') || request()->routeIs('admin.incomes.*') || request()->routeIs('admin.subscriptions.*') || request()->routeIs('admin.activities.*') || request()->routeIs('admin.finances.*') || request()->routeIs('admin.reports.*') ? 'true' : 'false' }},
         },
         toggleGroup(group) {
