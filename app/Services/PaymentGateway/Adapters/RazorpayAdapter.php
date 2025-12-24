@@ -303,11 +303,19 @@ class RazorpayAdapter
         $subscription = Subscription::where('gateway_subscription_id', $data['id'])->first();
         
         if ($subscription) {
+            $oldStatus = $subscription->status;
+            
             $subscription->update([
                 'status' => 'active',
                 'started_at' => isset($data['start_at']) ? date('Y-m-d H:i:s', $data['start_at']) : now(),
                 'next_billing_at' => isset($data['current_end']) ? date('Y-m-d H:i:s', $data['current_end']) : null,
             ]);
+            
+            // Dispatch notification if subscription was just activated
+            if (in_array($oldStatus, ['pending', 'trialing'])) {
+                $subscription = $subscription->fresh()->load(['subscriptionPlan', 'user']);
+                \App\Events\UserSubscribed::dispatch($subscription);
+            }
         }
     }
 
@@ -325,6 +333,10 @@ class RazorpayAdapter
                 $subscription->update([
                     'status' => 'active',
                 ]);
+                
+                // Dispatch notification when trial converts to active
+                $subscription = $subscription->fresh()->load(['subscriptionPlan', 'user']);
+                \App\Events\UserSubscribed::dispatch($subscription);
             }
 
             // Update next billing date

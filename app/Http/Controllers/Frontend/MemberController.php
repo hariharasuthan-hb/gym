@@ -15,6 +15,7 @@ use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Auth\Events\Registered;
 use Spatie\Permission\Models\Role;
 
 class MemberController extends Controller
@@ -59,7 +60,10 @@ class MemberController extends Controller
         $validated['role'] = $memberRole->id;
 
         // Create user with member role using repository
-        $this->userRepository->createWithRole($validated);
+        $user = $this->userRepository->createWithRole($validated);
+        
+        // Fire Registered event to trigger notification (only once)
+        event(new \Illuminate\Auth\Events\Registered($user));
 
         return redirect()->route('login')
 ->with('success', 'Registration successful! Please login.');
@@ -167,6 +171,21 @@ class MemberController extends Controller
             $recentActivities = [];
         }
         
+        // Get notification counts
+        try {
+            $inAppNotificationRepository = app(\App\Repositories\Interfaces\InAppNotificationRepositoryInterface::class);
+            $dbNotificationRepository = app(\App\Repositories\Interfaces\NotificationRepositoryInterface::class);
+            $inAppUnreadCount = $inAppNotificationRepository->getUnreadCountForUser($user);
+            $dbUnreadCount = $dbNotificationRepository->getUnreadCountForUser($user);
+            $totalUnreadNotifications = $inAppUnreadCount + $dbUnreadCount;
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to get notification counts', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            $totalUnreadNotifications = 0;
+        }
+        
         return view('frontend.member.dashboard', compact(
             'activeSubscription', 
             'subscriptionPlans',
@@ -184,7 +203,8 @@ class MemberController extends Controller
             'hasActiveWorkoutPlan',
             'hasActiveSubscription',
             'canTrackAttendance',
-            'recentActivities'
+            'recentActivities',
+            'totalUnreadNotifications'
         ));
     }
 

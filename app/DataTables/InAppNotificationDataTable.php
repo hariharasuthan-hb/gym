@@ -15,42 +15,40 @@ class InAppNotificationDataTable extends BaseDataTable
 
     public function dataTable($query)
     {
-        $dataTable = datatables()->eloquent($query);
+        $dataTable = datatables()->of($query);
 
-        $this->autoFormatDates($dataTable, ['created_at', 'updated_at', 'published_at', 'scheduled_for']);
+        $this->autoFormatDates($dataTable, ['created_at', 'updated_at']);
 
         return $dataTable
-            ->editColumn('audience_type', fn ($notification) => ucfirst($notification->audience_type))
-            ->editColumn('status', fn ($notification) => ucfirst($notification->status))
-            ->addColumn('target', function ($notification) {
-                return $notification->audience_type === InAppNotification::AUDIENCE_USER
-                    ? ($notification->targetUser?->name ?? 'Unknown')
-                    : '—';
+            ->addColumn('title', function ($notification) {
+                $data = json_decode($notification->data, true);
+                return $data['title'] ?? 'Notification';
             })
-            ->addColumn('creator_name', fn ($notification) => $notification->creator?->name ?? 'System')
+            ->addColumn('type', function ($notification) {
+                $data = json_decode($notification->data, true);
+                return isset($data['type']) ? ucfirst(str_replace('_', ' ', $data['type'])) : '—';
+            })
+            ->addColumn('message', function ($notification) {
+                $data = json_decode($notification->data, true);
+                return \Illuminate\Support\Str::limit($data['message'] ?? '', 50);
+            })
+            ->addColumn('status', function ($notification) {
+                return $notification->read_at ? 'Read' : 'Unread';
+            })
+            ->addColumn('user_name', function ($notification) {
+                $user = \App\Models\User::find($notification->notifiable_id);
+                return $user ? $user->name : 'Unknown';
+            })
             ->addColumn('action', function ($notification) {
-                $editUrl = route('admin.notifications.edit', $notification);
-                $deleteUrl = route('admin.notifications.destroy', $notification);
-
-                $html = '<div class="flex justify-end space-x-2">';
-                if (auth()->user()->can('edit notifications')) {
-                    $html .= '<a href="' . $editUrl . '" class="btn btn-xs btn-secondary">Edit</a>';
-                }
-                if (auth()->user()->can('delete notifications')) {
-                    $html .= '<form action="' . $deleteUrl . '" method="POST" onsubmit="return confirm(\'Delete this notification?\');">';
-                    $html .= csrf_field();
-                    $html .= method_field('DELETE');
-                    $html .= '<button type="submit" class="btn btn-xs btn-danger">Delete</button>';
-                    $html .= '</form>';
-                }
-                $html .= '</div>';
-
-                return $html;
+                // Notifications from notifications table are read-only, no edit/delete
+                return '<div class="flex justify-end space-x-2">
+                    <span class="text-xs text-gray-500">System Notification</span>
+                </div>';
             })
             ->rawColumns(['action']);
     }
 
-    public function query(InAppNotification $model)
+    public function query($model = null)
     {
         $filters = request()->only([
             'status',
@@ -80,18 +78,17 @@ class InAppNotificationDataTable extends BaseDataTable
     {
         return [
             Column::make('id')->title('ID')->width('5%')->addClass('text-right'),
-            Column::make('title')->title('Title')->width('20%')->addClass('text-left'),
-            Column::make('audience_type')->title('Audience')->width('10%')->addClass('text-left'),
-            Column::make('target')->title('Target User')->orderable(false)->searchable(false)->width('15%')->addClass('text-left'),
-            Column::make('status')->title('Status')->width('10%')->addClass('text-center'),
-            Column::make('scheduled_for')->title('Scheduled For')->width('15%')->addClass('text-right'),
-            Column::make('published_at')->title('Published At')->width('15%')->addClass('text-right'),
-            Column::make('creator_name')->title('Created By')->orderable(false)->searchable(false)->width('10%')->addClass('text-left'),
+            Column::make('title')->title('Title')->orderable(false)->searchable(false)->width('20%')->addClass('text-left'),
+            Column::make('type')->title('Type')->orderable(false)->searchable(false)->width('15%')->addClass('text-left'),
+            Column::make('message')->title('Message')->orderable(false)->searchable(false)->width('25%')->addClass('text-left'),
+            Column::make('user_name')->title('User')->orderable(false)->searchable(false)->width('15%')->addClass('text-left'),
+            Column::make('status')->title('Status')->orderable(false)->searchable(false)->width('10%')->addClass('text-center'),
+            Column::make('created_at')->title('Created At')->width('15%')->addClass('text-right'),
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)
                 ->title('Actions')
-                ->width('15%')
+                ->width('10%')
                 ->addClass('text-right'),
         ];
     }

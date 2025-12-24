@@ -39,6 +39,8 @@ use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Repositories\Interfaces\WorkoutVideoRepositoryInterface;
 use App\Repositories\Interfaces\OrphanedVideoRepositoryInterface;
 use App\Repositories\Eloquent\OrphanedVideoRepository;
+use App\Repositories\Interfaces\NotificationRepositoryInterface;
+use App\Repositories\Eloquent\NotificationRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -149,6 +151,14 @@ class RepositoryServiceProvider extends ServiceProvider
             OrphanedVideoRepositoryInterface::class,
             function ($app) {
                 return new OrphanedVideoRepository();
+            }
+        );
+
+        // Bind Notification Repository
+        $this->app->bind(
+            NotificationRepositoryInterface::class,
+            function ($app) {
+                return new NotificationRepository();
             }
         );
     }

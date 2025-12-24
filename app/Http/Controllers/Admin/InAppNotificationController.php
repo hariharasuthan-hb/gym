@@ -31,7 +31,7 @@ class InAppNotificationController extends Controller
     public function index(InAppNotificationDataTable $dataTable)
     {
         if (request()->ajax() || request()->wantsJson()) {
-            return $dataTable->dataTable($dataTable->query(new InAppNotification()))->toJson();
+            return $dataTable->dataTable($dataTable->query())->toJson();
         }
 
         return view('admin.notifications.index', [

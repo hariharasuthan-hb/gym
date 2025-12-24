@@ -2,6 +2,8 @@
 
 use App\Jobs\SendDailyDietPlanNotificationsJob;
 use App\Jobs\CleanupWorkoutPlanVideosJob;
+use App\Console\Commands\SendSubscriptionExpiryReminders;
+use App\Console\Commands\SendDailyWorkoutDietPlanNotifications;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Console\Scheduling\Schedule;
@@ -37,7 +39,21 @@ return Application::configure(basePath: dirname(__DIR__))
             ->name('cleanup-workout-plan-videos')
             ->dailyAt('02:00')
             ->withoutOverlapping();
+
+        $schedule->command(SendSubscriptionExpiryReminders::class)
+            ->name('subscription-expiry-reminders')
+            ->dailyAt('09:00')
+            ->withoutOverlapping();
+
+        $notificationTime = config('notifications.daily_notification_time', '08:00');
+        $schedule->command(SendDailyWorkoutDietPlanNotifications::class)
+            ->name('daily-workout-diet-plan-notifications')
+            ->dailyAt($notificationTime)
+            ->withoutOverlapping();
     })
+    ->withProviders([
+        \App\Providers\EventServiceProvider::class,
+    ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,

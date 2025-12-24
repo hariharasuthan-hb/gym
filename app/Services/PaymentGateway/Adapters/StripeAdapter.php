@@ -588,6 +588,11 @@ class StripeAdapter
                 // Create payment record
                 $this->createPaymentFromInvoiceData($subscription, $data);
                 
+                if ($oldStatus === 'pending') {
+                    $subscription = $subscription->fresh()->load(['subscriptionPlan', 'user']);
+                    \App\Events\UserSubscribed::dispatch($subscription);
+                }
+                
                 Log::info('Subscription activated from pending status', [
                     'subscription_id' => $subscription->id,
                     'stripe_subscription_id' => $subscriptionId,
@@ -601,6 +606,11 @@ class StripeAdapter
                 
                 // Create payment record for renewal
                 $this->createPaymentFromInvoiceData($subscription, $data);
+                
+                if ($oldStatus === 'trialing') {
+                    $subscription = $subscription->fresh()->load(['subscriptionPlan', 'user']);
+                    \App\Events\UserSubscribed::dispatch($subscription);
+                }
                 
                 Log::info('Subscription activated from trialing status', [
                     'subscription_id' => $subscription->id,
@@ -663,6 +673,7 @@ class StripeAdapter
                 $plan = $subscription->subscriptionPlan;
                 $status = ($plan && $plan->hasTrial()) ? 'trialing' : 'active';
                 
+                $oldStatus = $subscription->status;
                 $subscription->update([
                     'status' => $status,
                     'started_at' => now(),
@@ -671,6 +682,11 @@ class StripeAdapter
                 // Create payment record if it doesn't exist
                 if (!$hasPayment) {
                     $this->createPaymentFromPaymentIntent($subscription, $data);
+                }
+                
+                if ($oldStatus === 'pending') {
+                    $subscription = $subscription->fresh()->load(['subscriptionPlan', 'user']);
+                    \App\Events\UserSubscribed::dispatch($subscription);
                 }
                 
                 Log::info('Subscription activated from payment intent', [

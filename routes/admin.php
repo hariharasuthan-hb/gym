@@ -192,6 +192,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::middleware(['role:admin,trainer,member', 'permission:mark notifications read'])->group(function () {
         Route::post('/notification-center/{notification}/read', [\App\Http\Controllers\Admin\NotificationCenterController::class, 'markAsRead'])
             ->name('notification-center.read');
+        Route::post('/notification-center/db/{notificationId}/read', [\App\Http\Controllers\Admin\NotificationCenterController::class, 'markDbAsRead'])
+            ->name('notification-center.db.read');
+        Route::post('/notification-center/read-all', [\App\Http\Controllers\Admin\NotificationCenterController::class, 'markAllAsRead'])
+            ->name('notification-center.read-all');
     });
 
     Route::middleware(['role:admin,trainer', 'permission:view reports|export reports'])->group(function () {

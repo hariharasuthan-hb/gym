@@ -54,9 +54,17 @@
                 {{-- Notifications (only show if user can access notification center) --}}
                 @canany(['view announcements', 'view notifications'])
                     @php
-                        $notificationRepository = app(\App\Repositories\Interfaces\InAppNotificationRepositoryInterface::class);
-                        $notificationCount = $notificationRepository->getUnreadCountForUser(Auth::user());
+                        try {
+                            $inAppNotificationRepository = app(\App\Repositories\Interfaces\InAppNotificationRepositoryInterface::class);
+                            $dbNotificationRepository = app(\App\Repositories\Interfaces\NotificationRepositoryInterface::class);
+                            $inAppCount = $inAppNotificationRepository->getUnreadCountForUser(Auth::user());
+                            $dbCount = $dbNotificationRepository->getUnreadCountForUser(Auth::user());
+                            $notificationCount = $inAppCount + $dbCount;
                         $notificationBadge = $notificationCount > 99 ? '99+' : $notificationCount;
+                        } catch (\Exception $e) {
+                            $notificationCount = 0;
+                            $notificationBadge = 0;
+                        }
                     @endphp
                     <a href="{{ route('admin.notification-center.index') }}"
                        class="relative p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all duration-200 hover-lift focus-ring"
