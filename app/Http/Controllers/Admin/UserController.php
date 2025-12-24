@@ -17,7 +17,8 @@ use App\Services\EntityIntegrityService;
  * Controller for managing users in the admin panel.
  * 
  * Handles CRUD operations for users including creation, updating, deletion,
- * and role assignment. Accessible only to admin users.
+ * and role assignment. Admins have full access, trainers have read-only access
+ * to their assigned members.
  */
 class UserController extends Controller
 {
@@ -29,6 +30,8 @@ class UserController extends Controller
 
     /**
      * Display a listing of the resource.
+     * For trainers: shows only their assigned members
+     * For admins: shows all users
      */
     public function index(UserDataTable $dataTable)
     {
@@ -65,9 +68,23 @@ class UserController extends Controller
 
     /**
      * Display the specified resource.
+     * For trainers: can only view their assigned members
+     * For admins: can view any user
      */
     public function show(User $user): View
     {
+        // Check if trainer is trying to view a member they're not assigned to
+        if (auth()->user()->hasRole('trainer') && !auth()->user()->hasRole('admin')) {
+            $memberIds = \App\Models\WorkoutPlan::where('trainer_id', auth()->id())
+                ->pluck('member_id')
+                ->unique()
+                ->toArray();
+            
+            if (!in_array($user->id, $memberIds) && !$user->hasRole('member')) {
+                abort(403, 'Unauthorized. You can only view your assigned members.');
+            }
+        }
+        
         $user->load('roles');
         return view('admin.users.show', compact('user'));
     }

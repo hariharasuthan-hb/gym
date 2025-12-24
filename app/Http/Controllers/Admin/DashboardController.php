@@ -39,6 +39,9 @@ class DashboardController extends Controller
      */
     private function trainerDashboard($trainer): View
     {
+        // Auto-complete expired diet plans
+        \App\Models\DietPlan::autoCompleteExpired();
+        
         // Get trainer's assigned members
         $memberIds = \App\Models\WorkoutPlan::where('trainer_id', $trainer->id)
             ->pluck('member_id')
@@ -72,13 +75,30 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
         
+        // Active diet plans
+        $activeDietPlans = \App\Models\DietPlan::where('trainer_id', $trainer->id)
+            ->where('status', 'active')
+            ->with(['member'])
+            ->latest()
+            ->limit(5)
+            ->get();
+        
+        // Get trainer's assigned members
+        $members = \App\Models\User::whereIn('id', $memberIds->toArray())
+            ->with(['roles'])
+            ->latest()
+            ->limit(5)
+            ->get();
+        
         return view('admin.dashboard.trainer', compact(
             'totalMembers',
             'activePlans',
             'todayCheckIns',
             'thisWeekCheckIns',
             'recentActivities',
-            'activeWorkoutPlans'
+            'activeWorkoutPlans',
+            'activeDietPlans',
+            'members'
         ));
     }
     

@@ -285,23 +285,41 @@
                 $subscriptionAnchor = route('member.dashboard') . '#subscription-plans';
             @endphp
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <a href="{{ $hasActiveSubscription ? route('member.workout-plans') : $subscriptionAnchor }}" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                <a 
+                    href="{{ $hasActiveSubscription ? route('member.workout-plans') : $subscriptionAnchor }}" 
+                    class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors quick-action-link"
+                    data-action-label="Workout Plans"
+                    data-requires-subscription="true"
+                    data-has-active-subscription="{{ $hasActiveSubscription ? '1' : '0' }}"
+                >
                     <svg class="w-5 h-5 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                     </svg>
                     <span class="font-medium text-gray-900">View Workout Plans</span>
                 </a>
-                <a href="{{ $hasActiveSubscription ? route('member.workout-videos') : $subscriptionAnchor }}" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                    <svg class="w-5 h-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                    </svg>
-                    <span class="font-medium text-gray-900">Video Reviews</span>
-                </a>
-                <a href="{{ $hasActiveSubscription ? route('member.diet-plans') : $subscriptionAnchor }}" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                <a 
+                    href="{{ $hasActiveSubscription ? route('member.diet-plans') : $subscriptionAnchor }}" 
+                    class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors quick-action-link"
+                    data-action-label="Diet Plans"
+                    data-requires-subscription="true"
+                    data-has-active-subscription="{{ $hasActiveSubscription ? '1' : '0' }}"
+                >
                     <svg class="w-5 h-5 text-purple-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                     </svg>
                     <span class="font-medium text-gray-900">View Diet Plans</span>
+                </a>
+                <a 
+                    href="{{ $hasActiveSubscription ? route('member.workout-videos') : $subscriptionAnchor }}" 
+                    class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors quick-action-link"
+                    data-action-label="Video Reviews"
+                    data-requires-subscription="true"
+                    data-has-active-subscription="{{ $hasActiveSubscription ? '1' : '0' }}"
+                >
+                    <svg class="w-5 h-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    <span class="font-medium text-gray-900">Video Reviews</span>
                 </a>
                 <a href="{{ route('member.profile') }}" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                     <svg class="w-5 h-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -369,6 +387,37 @@
 
 @push('scripts')
 <script>
+// Handle Quick Actions for members without active subscription
+document.addEventListener('DOMContentLoaded', function () {
+    const quickActionLinks = document.querySelectorAll('.quick-action-link');
+
+    quickActionLinks.forEach(link => {
+        link.addEventListener('click', function (e) {
+            const hasActiveSub = this.dataset.hasActiveSubscription === '1';
+            const label = this.dataset.actionLabel || 'this section';
+
+            if (!hasActiveSub) {
+                e.preventDefault();
+
+                if (typeof SwalHelper !== 'undefined') {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'info',
+                        title: 'You need an active subscription',
+                        text: `You need an active subscription to view the ${label}.`,
+                        showConfirmButton: false,
+                        timer: 4000,
+                        timerProgressBar: true,
+                    });
+                } else {
+                    alert(`You need an active subscription to view the ${label}.`);
+                }
+            }
+        });
+    });
+});
+
 async function checkIn() {
     const btn = document.getElementById('check-in-btn');
     if (!btn) return;

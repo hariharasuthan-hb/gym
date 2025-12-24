@@ -134,6 +134,7 @@ class RolePermissionSeeder extends Seeder
 
         $trainerRole = Role::firstOrCreate(['name' => 'trainer']);
         $trainerRole->syncPermissions([
+            'view users', // Allow trainers to view their assigned members
             'view activities',
             'view workout plans',
             'create workout plans',
