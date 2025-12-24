@@ -37,7 +37,7 @@
             if (!file) return;
 
             // Validate file using utility
-            const validation = videoUploader.validateFile(file, 100 * 1024 * 1024);
+            const validation = videoUploader.validateFile(file, 25 * 1024 * 1024);
             if (!validation.valid) {
                 showError(validation.error);
                 return;

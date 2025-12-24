@@ -31,7 +31,7 @@ class StoreWorkoutPlanRequest extends FormRequest
             'exercises' => ['nullable', 'array'],
             'exercises.*' => ['nullable', 'string', 'max:255'],
             'exercises_json' => ['nullable', 'string'],
-            'demo_video' => ['nullable', 'file', 'mimes:mp4,webm,mov', 'max:102400'], // Max 100MB
+            'demo_video' => ['nullable', 'file', 'mimes:mp4,webm,mov', 'max:25600'], // Max 25MB
         ];
         
         // Trainer ID is required for admins, auto-set for trainers
@@ -79,7 +79,7 @@ class StoreWorkoutPlanRequest extends FormRequest
             'status.in' => 'The status must be one of: active, completed, paused, cancelled.',
             'demo_video.file' => 'The demo video must be a valid file.',
             'demo_video.mimes' => 'Demo video must be in mp4, webm, or mov format.',
-            'demo_video.max' => 'Demo video file size must not exceed 100MB.',
+            'demo_video.max' => 'Demo video file size must not exceed 25MB.',
         ];
     }
 

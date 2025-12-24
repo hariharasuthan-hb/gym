@@ -261,7 +261,7 @@
                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
             @enderror
             <p class="text-xs text-gray-500 mt-2">
-                Max size: 100MB. Formats: MP4, WebM, MOV. Recommended: 1 minute duration.
+                Max size: 25MB. Formats: MP4, WebM, MOV. Recommended: 1 minute duration.
             </p>
         </div>
     </div>

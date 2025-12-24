@@ -324,10 +324,10 @@ class WorkoutPlanController extends Controller
                             $fail('The demo video must be a file of type: mp4, webm, or mov. Detected MIME type: ' . $mimeType);
                         }
                     },
-                    'max:102400', // Max 100MB
+                    'max:25600', // Max 25MB
                 ],
             ], [
-                'demo_video.max' => 'Demo video file size must not exceed 100MB.',
+                'demo_video.max' => 'Demo video file size must not exceed 25MB.',
             ]);
 
             // Store original file in raw directory for queue processing
@@ -335,7 +335,7 @@ class WorkoutPlanController extends Controller
             $fileName = pathinfo($originalName, PATHINFO_FILENAME);
             $uniqueFileName = \Illuminate\Support\Str::slug($fileName) . '-' . time();
             
-            $extension = $file->getClientOriginalExtension();
+                    $extension = $file->getClientOriginalExtension();
             $sourcePath = $file->storeAs(
                 'workout-plans/demo-videos/raw',
                 $uniqueFileName . '.' . $extension,
@@ -475,12 +475,12 @@ class WorkoutPlanController extends Controller
                 // Store assembled file in raw directory for queue processing
                 $baseName = pathinfo($fileName, PATHINFO_FILENAME);
                 $uniqueFileName = \Illuminate\Support\Str::slug($baseName) . '-' . time();
-                $extension = pathinfo($fileName, PATHINFO_EXTENSION);
+                        $extension = pathinfo($fileName, PATHINFO_EXTENSION);
                 
                 // Move final assembled file to raw directory
                 $sourcePath = 'workout-plans/demo-videos/raw/' . $uniqueFileName . '.' . $extension;
                 \Illuminate\Support\Facades\Storage::disk('public')->put($sourcePath, file_get_contents($finalPath));
-                
+
                 // Final path where converted MP4 will be saved
                 $finalPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.mp4';
                 
