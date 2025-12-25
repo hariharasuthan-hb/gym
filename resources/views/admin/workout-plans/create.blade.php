@@ -50,6 +50,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const startDate = startDateInput.value;
         const durationWeeks = parseInt(durationWeeksInput.value) || 0;
         
+        // Update minimum date for end date based on start date
+        if (startDate) {
+            // Set minimum date to start date
+            endDateInput.setAttribute('min', startDate);
+            
+            // If end date is set and is before start date, clear it
+            if (endDateInput.value && endDateInput.value < startDate) {
+                endDateInput.value = '';
+            }
+        } else {
+            // Remove min restriction if start date is cleared
+            endDateInput.removeAttribute('min');
+        }
+        
         if (startDate && durationWeeks > 0) {
             // Parse the start date string (YYYY-MM-DD format)
             const start = new Date(startDate + 'T00:00:00'); // Add time to avoid timezone issues
@@ -105,6 +119,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Calculate on page load if values exist
     if (startDateInput && durationWeeksInput && startDateInput.value && durationWeeksInput.value) {
+        calculateEndDate();
+    } else if (startDateInput && startDateInput.value) {
+        // Initialize min date even if duration is not set
         calculateEndDate();
     }
     

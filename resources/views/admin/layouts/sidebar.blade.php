@@ -52,7 +52,13 @@
                              fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                         </svg>
-                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="text-sm font-semibold transition-all duration-300">User Management</span>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="text-sm font-semibold transition-all duration-300">
+                            @if(auth()->user()->hasRole('trainer') && !auth()->user()->hasRole('admin'))
+                                My Members
+                            @else
+                                User Management
+                            @endif
+                        </span>
                     </div>
                     <svg :class="{ 'lg:hidden': $root.sidebarCollapsed }" 
                          class="w-4 h-4 transition-transform transition-all duration-300" 
@@ -65,13 +71,19 @@
                     <a href="{{ route('admin.users.index') }}" 
                        class="admin-sidebar-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"
                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
-                       :title="$root.sidebarCollapsed ? 'Users' : ''">
+                       :title="$root.sidebarCollapsed ? (@if(auth()->user()->hasRole('trainer') && !auth()->user()->hasRole('admin')) 'My Members' @else 'Users' @endif) : ''">
                         <svg class="w-4 h-4 transition-all duration-300" 
                              :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
                              fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                         </svg>
-                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Users</span>
+                        <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">
+                            @if(auth()->user()->hasRole('trainer') && !auth()->user()->hasRole('admin'))
+                                My Members
+                            @else
+                                Users
+                            @endif
+                        </span>
                     </a>
                 </div>
             </div>

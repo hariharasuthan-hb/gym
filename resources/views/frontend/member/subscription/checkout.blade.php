@@ -77,7 +77,9 @@
                 <div class="bg-white rounded-lg shadow-lg p-6 lg:p-8 sticky top-8">
                     <div class="text-center mb-6">
                         @if($plan->image)
+                            <div class="subscription-image-container mx-auto w-32 h-32 mb-4">
                             <img src="{{ asset('storage/' . $plan->image) }}" alt="{{ $plan->plan_name }}" class="w-full max-w-xs mx-auto rounded-lg object-contain mb-4">
+                            </div>
                         @else
                             <div class="w-full max-w-xs mx-auto aspect-square bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mb-4">
                                 <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

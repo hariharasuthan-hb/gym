@@ -40,6 +40,40 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('form');
     const mealPlanJsonInput = document.getElementById('meal_plan_json');
     
+    // Date validation: Update end date min based on start date
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    function updateEndDateMin() {
+        if (!startDateInput || !endDateInput) return;
+        
+        const startDate = startDateInput.value;
+        
+        if (startDate) {
+            // Set minimum date to start date
+            endDateInput.setAttribute('min', startDate);
+            
+            // If end date is set and is before start date, clear it
+            if (endDateInput.value && endDateInput.value < startDate) {
+                endDateInput.value = '';
+            }
+        } else {
+            // Remove min restriction if start date is cleared
+            endDateInput.removeAttribute('min');
+        }
+    }
+    
+    // Update end date min restriction on start date change
+    if (startDateInput) {
+        startDateInput.addEventListener('change', updateEndDateMin);
+        startDateInput.addEventListener('input', updateEndDateMin);
+    }
+    
+    // Initialize on page load
+    if (startDateInput) {
+        updateEndDateMin();
+    }
+    
     // Add meal field
     addButton.addEventListener('click', function() {
         const mealItem = document.createElement('div');
