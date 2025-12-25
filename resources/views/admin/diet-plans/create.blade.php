@@ -21,6 +21,7 @@
                     Cancel
                 </a>
                 <button type="submit"
+                        id="create-plan-btn"
                         class="btn btn-primary {{ auth()->user()->hasRole('admin') && collect($trainers ?? [])->isEmpty() ? 'opacity-50 cursor-not-allowed' : '' }}"
                         {{ auth()->user()->hasRole('admin') && collect($trainers ?? [])->isEmpty() ? 'disabled' : '' }}>
                     Create Plan
@@ -115,10 +116,56 @@ document.addEventListener('DOMContentLoaded', function() {
         mealPlanJsonInput.value = JSON.stringify(meals);
     }
     
-    // Update JSON on input change
+    // Function to check if nutritional goals, meals, and notes are filled and enable/disable submit button
+    function checkRequirementsAndToggleButton() {
+        const submitButton = document.getElementById('create-plan-btn');
+        if (!submitButton) return;
+        
+        // Check nutritional goals
+        const nutritionalGoalsInput = document.querySelector('textarea[name="nutritional_goals"]');
+        const hasNutritionalGoals = nutritionalGoalsInput && nutritionalGoalsInput.value.trim() !== '';
+        
+        // Check meals
+        const mealInputs = container.querySelectorAll('input[name="meals[]"]');
+        const hasMeals = Array.from(mealInputs).some(input => input.value.trim() !== '');
+        
+        // Check additional notes
+        const notesInput = document.querySelector('textarea[name="notes"]');
+        const hasNotes = notesInput && notesInput.value.trim() !== '';
+        
+        // Check if trainer requirement is met (for admin)
+        const isAdmin = {{ auth()->user()->hasRole('admin') ? 'true' : 'false' }};
+        const hasTrainers = {{ collect($trainers ?? [])->isNotEmpty() ? 'true' : 'false' }};
+        const trainerRequirementMet = !isAdmin || hasTrainers;
+        
+        if (hasNutritionalGoals && hasMeals && hasNotes && trainerRequirementMet) {
+            submitButton.disabled = false;
+            submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        } else {
+            submitButton.disabled = true;
+            submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    }
+    
+    // Check notes on input change
+    const notesInput = document.querySelector('textarea[name="notes"]');
+    if (notesInput) {
+        notesInput.addEventListener('input', checkRequirementsAndToggleButton);
+        notesInput.addEventListener('change', checkRequirementsAndToggleButton);
+    }
+    
+    // Check nutritional goals on input change
+    const nutritionalGoalsInput = document.querySelector('textarea[name="nutritional_goals"]');
+    if (nutritionalGoalsInput) {
+        nutritionalGoalsInput.addEventListener('input', checkRequirementsAndToggleButton);
+        nutritionalGoalsInput.addEventListener('change', checkRequirementsAndToggleButton);
+    }
+    
+    // Update JSON on input change and check requirements
     container.addEventListener('input', function(e) {
         if (e.target.name === 'meals[]') {
             updateMealPlanJson();
+            checkRequirementsAndToggleButton();
         }
     });
     
@@ -127,8 +174,27 @@ document.addEventListener('DOMContentLoaded', function() {
         updateMealPlanJson();
     });
     
-    // Initial JSON update
+    // Check when meals are added
+    if (addButton) {
+        addButton.addEventListener('click', function() {
+            setTimeout(() => {
+                checkRequirementsAndToggleButton();
+            }, 100);
+        });
+    }
+    
+    // Check when meal is removed
+    container.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-meal')) {
+            setTimeout(() => {
+                checkRequirementsAndToggleButton();
+            }, 100);
+        }
+    });
+    
+    // Initial JSON update and check
     updateMealPlanJson();
+    checkRequirementsAndToggleButton();
 });
 </script>
 @endpush

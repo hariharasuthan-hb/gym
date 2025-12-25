@@ -80,15 +80,67 @@
                     </a>
                 @endcanany
 
-                {{-- User Menu --}}
-                <div class="relative">
-                    <div class="flex items-center space-x-3">
+                {{-- User Menu Dropdown --}}
+                <div class="relative" x-data="{ open: false }" @click.away="open = false">
+                    <button 
+                        @click="open = !open"
+                        class="flex items-center space-x-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-xl p-1 transition-all duration-200"
+                    >
                         <div class="text-right hidden sm:block">
                             <p class="text-sm font-semibold text-gray-900">{{ Auth::user()->name }}</p>
                             <p class="text-xs text-gray-500">{{ Auth::user()->email }}</p>
                         </div>
                         <div class="h-11 w-11 rounded-xl bg-gradient-to-br from-primary-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-primary-500/30 hover:shadow-xl transition-shadow duration-200">
                             {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                        </div>
+                        <svg class="w-4 h-4 text-gray-600 transition-transform duration-200" 
+                             :class="{ 'rotate-180': open }"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+
+                    {{-- Dropdown Menu --}}
+                    <div x-show="open"
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="transform opacity-0 scale-95"
+                         x-transition:enter-end="transform opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="transform opacity-100 scale-100"
+                         x-transition:leave-end="transform opacity-0 scale-95"
+                         class="absolute right-0 mt-2 w-56 rounded-xl shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 overflow-hidden"
+                         style="display: none;">
+                        <div class="py-1">
+                            {{-- User Info Header --}}
+                            <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                                <p class="text-sm font-semibold text-gray-900 leading-tight">{{ Auth::user()->name }}</p>
+                                <p class="text-xs text-gray-500 truncate mt-0.5">{{ Auth::user()->email }}</p>
+                            </div>
+
+                            {{-- Profile Link --}}
+                            <a href="{{ route('admin.profile.edit') }}" 
+                               @click="open = false"
+                               class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                                <svg class="w-5 h-5 mr-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                <span class="flex-1">My Profile</span>
+                            </a>
+
+                            {{-- Divider --}}
+                            <div class="border-t border-gray-200 my-1"></div>
+
+                            {{-- Logout Button --}}
+                            <form method="POST" action="{{ route('logout') }}" class="m-0">
+                                @csrf
+                                <button type="submit" 
+                                        class="w-full flex items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200 text-left">
+                                    <svg class="w-5 h-5 mr-3 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                    </svg>
+                                    <span class="flex-1">Logout</span>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>

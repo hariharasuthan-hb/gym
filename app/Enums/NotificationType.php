@@ -14,6 +14,7 @@ enum NotificationType: string
     case ADMIN_REJECTION = 'admin_rejection';
     case SUBSCRIPTION_EXPIRY_REMINDER = 'subscription_expiry_reminder';
     case DAILY_WORKOUT_DIET_PLAN = 'daily_workout_diet_plan';
+    case WORKOUT_PLAN_CREATED = 'workout_plan_created';
 
     public function getTitle(): string
     {
@@ -28,6 +29,7 @@ enum NotificationType: string
             self::ADMIN_REJECTION => 'Rejected',
             self::SUBSCRIPTION_EXPIRY_REMINDER => 'Subscription Expiring Soon',
             self::DAILY_WORKOUT_DIET_PLAN => 'Daily Workout & Diet Plan',
+            self::WORKOUT_PLAN_CREATED => 'Workout Plan Created',
         };
     }
 
@@ -44,6 +46,7 @@ enum NotificationType: string
             self::ADMIN_REJECTION => 'x-circle',
             self::SUBSCRIPTION_EXPIRY_REMINDER => 'alert-circle',
             self::DAILY_WORKOUT_DIET_PLAN => 'calendar',
+            self::WORKOUT_PLAN_CREATED => 'dumbbell',
         };
     }
 }

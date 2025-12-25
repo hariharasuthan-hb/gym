@@ -201,6 +201,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'prevent-back-histor
             ->name('user-activity.index');
     });
 
+    // Profile routes (accessible by all authenticated admin users)
+    Route::middleware(['role:admin,trainer'])->group(function () {
+        Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+        Route::patch('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    });
+
     Route::middleware(['role:admin,trainer,member', 'permission:view announcements|view notifications'])->group(function () {
         Route::get('/notification-center', [\App\Http\Controllers\Admin\NotificationCenterController::class, 'index'])
             ->name('notification-center.index');
