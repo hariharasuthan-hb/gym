@@ -27,16 +27,20 @@ class SendTrainerStatusNotification
             ? "Trainer {$event->trainer->name} has been approved."
             : "Trainer {$event->trainer->name} has been rejected." . ($event->reason ? " Reason: {$event->reason}" : "");
 
-        // Send to trainer
+        // Send to trainer with user_id for duplicate prevention
         $this->notificationService->send(
             $event->trainer,
             $type,
             $trainerMessage,
             '/dashboard',
-            ['status' => $event->status, 'reason' => $event->reason]
+            [
+                'status' => $event->status,
+                'reason' => $event->reason,
+                'user_id' => $event->trainer->id, // For duplicate prevention
+            ]
         );
         
-        // Send to admins (excluding the admin who made the change if needed)
+        // Send to admins with user_id for duplicate prevention
         $admins = $this->notificationService->getAdmins();
         if ($admins->isNotEmpty()) {
             $this->notificationService->sendToMany(
@@ -44,7 +48,11 @@ class SendTrainerStatusNotification
                 $type,
                 $adminMessage,
                 '/admin/trainers',
-                ['status' => $event->status, 'reason' => $event->reason, 'trainer_id' => $event->trainer->id]
+                [
+                    'status' => $event->status,
+                    'reason' => $event->reason,
+                    'user_id' => $event->trainer->id, // For duplicate prevention
+                ]
             );
         }
     }
