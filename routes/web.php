@@ -71,7 +71,7 @@ Route::post('/timezone/set', function (Illuminate\Http\Request $request) {
 })->middleware('web');
 
 // Dashboard route - redirects based on user role
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'prevent-back-history'])->group(function () {
     Route::get('/dashboard', function () {
         $user = auth()->user();
         

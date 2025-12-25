@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'prevent-back-history'])->group(function () {
     
     // Dashboard - accessible by both admin and trainer
     Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])
