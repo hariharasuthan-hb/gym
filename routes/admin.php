@@ -147,9 +147,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'prevent-back-histor
         Route::post('/workout-plans/upload-demo-video-chunk', [\App\Http\Controllers\Admin\WorkoutPlanController::class, 'uploadDemoVideoChunk'])
             ->middleware('permission:create workout plans|edit workout plans')
             ->name('workout-plans.upload-demo-video-chunk');
-        Route::get('/workout-plans/check-video-conversion', [\App\Http\Controllers\Admin\WorkoutPlanController::class, 'checkVideoConversion'])
-            ->middleware('permission:create workout plans|edit workout plans')
-            ->name('workout-plans.check-video-conversion');
+        // Video conversion polling endpoint removed: admin demo videos are stored directly (no queue conversion)
         
         // Parameterized routes (must come after non-parameterized routes)
         Route::get('/workout-plans/{workoutPlan}', [\App\Http\Controllers\Admin\WorkoutPlanController::class, 'show'])
