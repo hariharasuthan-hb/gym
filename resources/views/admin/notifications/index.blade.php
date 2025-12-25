@@ -35,8 +35,8 @@
             <form id="notifications-filter-form"
                   method="GET"
                   action="{{ route('admin.notifications.index') }}"
-                  class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                <div class="md:col-span-2">
+                  class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                     <label class="form-label" for="search">Search</label>
                     <input type="text"
                            name="search"
@@ -46,64 +46,15 @@
                            placeholder="Search by title or message">
                 </div>
                 <div>
-                    <label class="form-label" for="status">Status</label>
+                    <label class="form-label" for="status">Read Status</label>
                     <select name="status" id="status" class="form-select w-full">
                         <option value="">All statuses</option>
-                        @foreach($statusOptions as $value => $label)
+                        @foreach($readStatusOptions as $value => $label)
                             <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div>
-                    <label class="form-label" for="audience_type">Audience</label>
-                    <select name="audience_type" id="audience_type" class="form-select w-full">
-                        <option value="">All audiences</option>
-                        @foreach($audienceOptions as $value => $label)
-                            <option value="{{ $value }}" @selected(($filters['audience_type'] ?? '') === $value)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="form-label" for="requires_acknowledgement">Requires Acknowledgement</label>
-                    <select name="requires_acknowledgement" id="requires_acknowledgement" class="form-select w-full">
-                        <option value="">Any</option>
-                        <option value="1" @selected(($filters['requires_acknowledgement'] ?? '') === '1')>Yes</option>
-                        <option value="0" @selected(($filters['requires_acknowledgement'] ?? '') === '0')>No</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="form-label" for="scheduled_from">Scheduled From</label>
-                    <input type="date"
-                           name="scheduled_from"
-                           id="scheduled_from"
-                           value="{{ $filters['scheduled_from'] ?? '' }}"
-                           class="form-input w-full">
-                </div>
-                <div>
-                    <label class="form-label" for="scheduled_to">Scheduled To</label>
-                    <input type="date"
-                           name="scheduled_to"
-                           id="scheduled_to"
-                           value="{{ $filters['scheduled_to'] ?? '' }}"
-                           class="form-input w-full">
-                </div>
-                <div>
-                    <label class="form-label" for="published_from">Published From</label>
-                    <input type="date"
-                           name="published_from"
-                           id="published_from"
-                           value="{{ $filters['published_from'] ?? '' }}"
-                           class="form-input w-full">
-                </div>
-                <div>
-                    <label class="form-label" for="published_to">Published To</label>
-                    <input type="date"
-                           name="published_to"
-                           id="published_to"
-                           value="{{ $filters['published_to'] ?? '' }}"
-                           class="form-input w-full">
-                </div>
-                <div class="md:col-span-2 xl:col-span-4 flex gap-2">
+                <div class="md:col-span-2 flex gap-2">
                     <button type="submit" class="btn btn-primary">Apply Filters</button>
                     <a href="{{ route('admin.notifications.index') }}" class="btn btn-secondary">Reset</a>
                 </div>

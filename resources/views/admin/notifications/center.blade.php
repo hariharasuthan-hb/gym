@@ -10,6 +10,25 @@
             <h1 class="text-2xl font-bold text-gray-900">Notification Center</h1>
             <p class="text-sm text-gray-500 mt-1">Stay updated with announcements and targeted alerts.</p>
         </div>
+        @php
+            $user = auth()->user();
+            $inAppNotificationRepository = app(\App\Repositories\Interfaces\InAppNotificationRepositoryInterface::class);
+            $dbNotificationRepository = app(\App\Repositories\Interfaces\NotificationRepositoryInterface::class);
+            $inAppUnreadCount = $inAppNotificationRepository->getUnreadCountForUser($user);
+            $dbUnreadCount = $dbNotificationRepository->getUnreadCountForUser($user);
+            $totalUnreadCount = $inAppUnreadCount + $dbUnreadCount;
+        @endphp
+        @if($totalUnreadCount > 0 && $showMarkRead)
+            <form method="POST" action="{{ route('admin.notification-center.read-all') }}" class="inline">
+                @csrf
+                <button type="submit" class="btn btn-primary">
+                    <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Mark All as Read
+                </button>
+            </form>
+        @endif
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -38,12 +57,48 @@
                     <h2 class="text-lg font-semibold text-gray-900">Notifications</h2>
                 </div>
                 <div class="divide-y divide-gray-100">
+                    {{-- Laravel Database Notifications --}}
+                    @forelse($dbNotifications ?? [] as $notification)
+                        @php
+                            $data = $notification->data ?? [];
+                            $isRead = $notification->read_at !== null;
+                        @endphp
+                        <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4" data-notification-row data-notification-type="db" data-notification-id="{{ $notification->id }}">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-semibold text-gray-900">{{ $data['title'] ?? 'Notification' }}</span>
+                                    @if(isset($data['type']))
+                                        <span class="badge badge-light capitalize">{{ str_replace('_', ' ', $data['type']) }}</span>
+                                    @endif
+                                </div>
+                                <p class="text-sm text-gray-600 mt-1">{{ $data['message'] ?? '' }}</p>
+                                <p class="text-xs text-gray-400 mt-2">Sent {{ format_datetime_admin($notification->created_at) }}</p>
+                            </div>
+                            @if($showMarkRead)
+                                <div class="flex items-center gap-3">
+                                    <span class="mark-read-status text-sm {{ $isRead ? 'text-green-600' : 'text-yellow-600' }}">
+                                        {{ $isRead ? 'Read' : 'Unread' }}
+                                    </span>
+                                    @unless($isRead)
+                                        <button type="button"
+                                                class="btn btn-sm btn-primary mark-read-btn"
+                                                data-read-url="{{ route('admin.notification-center.db.read', $notification->id) }}"
+                                                data-notification-id="{{ $notification->id }}">
+                                            Mark as read
+                                        </button>
+                                    @endunless
+                                </div>
+                            @endif
+                        </div>
+                    @empty
+                    @endforelse
+                    {{-- In-App Notifications --}}
                     @forelse($notifications as $notification)
                         @php
                             $pivot = $notification->pivot ?? null;
                             $isRead = (bool) ($pivot?->read_at);
                         @endphp
-                        <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4" data-notification-row>
+                        <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4" data-notification-row data-notification-type="inapp" data-notification-id="{{ $notification->id }}">
                             <div>
                                 <div class="flex items-center gap-2">
                                     <span class="text-sm font-semibold text-gray-900">{{ $notification->title }}</span>
@@ -69,7 +124,9 @@
                             @endif
                         </div>
                     @empty
-                        <p class="p-6 text-center text-gray-500">No notifications yet.</p>
+                        @if(empty($dbNotifications) || $dbNotifications->isEmpty())
+                            <p class="p-6 text-center text-gray-500">No notifications yet.</p>
+                        @endif
                     @endforelse
                 </div>
                 <div class="px-6 py-4">
@@ -100,6 +157,8 @@
                     button.disabled = true;
                     button.textContent = 'Marking...';
 
+                    const notificationType = button.closest('[data-notification-row]').dataset.notificationType;
+
                     fetch(url, {
                         method: 'POST',
                         headers: {
@@ -107,7 +166,7 @@
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                         },
-                        body: JSON.stringify({ _method: 'POST' }),
+                        body: JSON.stringify({}),
                     })
                         .then(response => response.json())
                         .then(data => {

@@ -57,7 +57,10 @@ class UserController extends Controller
     {
         $validated = $request->validated();
 
-        $this->userRepository->createWithRole($validated);
+        $user = $this->userRepository->createWithRole($validated);
+        
+        // Fire Registered event to trigger notification
+        event(new \Illuminate\Auth\Events\Registered($user));
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User created successfully.');

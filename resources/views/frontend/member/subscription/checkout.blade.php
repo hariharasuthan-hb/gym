@@ -197,14 +197,22 @@
                         </form>
 
                     @else
-                        {{-- This should rarely show as subscription is created automatically in controller --}}
-                        {{-- If shown, it means there was an error or payment_data wasn't set --}}
+                        {{-- Payment initialization failed or not completed --}}
                         <div class="text-center py-12">
                             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-4">
-                                <p class="text-sm text-yellow-800 mb-4">Payment setup is being initialized. If this message persists, please refresh the page.</p>
-                                <a href="{{ route('member.subscription.checkout', $plan->id) }}" class="inline-block bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors">
-                                    Refresh Page
-                                </a>
+                                @if(session('error'))
+                                    <p class="text-sm text-red-800 mb-4 font-semibold">{{ session('error') }}</p>
+                                @else
+                                    <p class="text-sm text-yellow-800 mb-4">Payment setup is being initialized. If this message persists, please refresh the page.</p>
+                                @endif
+                                <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                                    <a href="{{ route('member.subscription.checkout', $plan->id) }}" class="inline-block bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                                        Refresh Page
+                                    </a>
+                                    <a href="{{ route('member.dashboard') }}" class="inline-block bg-gray-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-gray-700 transition-colors">
+                                        Back to Dashboard
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     @endif

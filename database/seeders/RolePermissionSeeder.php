@@ -92,9 +92,6 @@ class RolePermissionSeeder extends Seeder
             'edit announcements',
             'delete announcements',
             'view notifications',
-            'create notifications',
-            'edit notifications',
-            'delete notifications',
             'mark notifications read',
             
             // CMS Management

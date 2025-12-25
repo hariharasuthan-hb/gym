@@ -47,6 +47,14 @@ Route::prefix('member')->name('member.')->middleware(['auth', 'role:member'])->g
     Route::post('/check-out', [\App\Http\Controllers\Frontend\MemberController::class, 'checkOut'])->name('check-out');
     Route::get('/diet-plans', [\App\Http\Controllers\Frontend\MemberController::class, 'dietPlans'])->name('diet-plans');
     
+    // Notifications routes
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Frontend\MemberNotificationController::class, 'index'])->name('index');
+        Route::post('/in-app/{notification}/read', [\App\Http\Controllers\Frontend\MemberNotificationController::class, 'markInAppAsRead'])->name('in-app.read');
+        Route::post('/db/{notificationId}/read', [\App\Http\Controllers\Frontend\MemberNotificationController::class, 'markDbAsRead'])->name('db.read');
+        Route::post('/read-all', [\App\Http\Controllers\Frontend\MemberNotificationController::class, 'markAllAsRead'])->name('read-all');
+    });
+    
     // Subscription routes
             Route::prefix('subscription')->name('subscription.')->group(function () {
                 Route::get('/checkout/{plan}', [\App\Http\Controllers\Member\CheckoutController::class, 'checkout'])->name('checkout');

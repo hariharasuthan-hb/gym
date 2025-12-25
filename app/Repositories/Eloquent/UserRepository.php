@@ -27,6 +27,11 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
         $user = $this->create($data);
         $this->syncRole($user, $roleId);
 
+        // Only dispatch UserRegistered if Registered event wasn't already fired
+        // This prevents duplicate notifications when user is created via repository
+        // The Registered event will be handled by SendLaravelRegisteredNotification listener
+        // which will dispatch UserRegistered, so we don't need to dispatch it again here
+        
         return $user;
     }
 
