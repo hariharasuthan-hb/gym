@@ -13,21 +13,32 @@
 --}}
 @extends('admin.layouts.app')
 
-@section('page-title', 'Users Management')
+@section('page-title', auth()->user()->hasRole('trainer') && !auth()->user()->hasRole('admin') ? 'My Members' : 'Users Management')
 
 @section('content')
 <div class="space-y-6">
     {{-- Page Header --}}
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-            <h1 class="text-lg font-semibold text-gray-900 mb-1">Users</h1>
+            <h1 class="text-lg font-semibold text-gray-900 mb-1">
+                @if(auth()->user()->hasRole('trainer') && !auth()->user()->hasRole('admin'))
+                    My Members
+                @else
+                    Users
+                @endif
+            </h1>
+            @if(auth()->user()->hasRole('trainer') && !auth()->user()->hasRole('admin'))
+                <p class="text-sm text-gray-600">View and manage your assigned members</p>
+            @endif
         </div>
+        @can('create users')
         <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
             Create New User
         </a>
+        @endcan
     </div>
 
     {{-- Success Message --}}

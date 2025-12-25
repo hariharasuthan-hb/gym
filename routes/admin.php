@@ -19,10 +19,27 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         ->middleware('role:admin,trainer')
         ->name('dashboard');
 
+    // Users Management - Admins have full access, Trainers have read-only access to their members
+    Route::middleware(['role:admin,trainer'])->group(function () {
+        Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])
+            ->name('users.index');
+        Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])
+            ->name('users.show');
+    });
+    
     // Admin-only routes
     Route::middleware(['role:admin'])->group(function () {
-        // Users Management
-        Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
+        // Users Management - Create, Edit, Delete (Admin only)
+        Route::get('/users/create', [\App\Http\Controllers\Admin\UserController::class, 'create'])
+            ->name('users.create');
+        Route::post('/users', [\App\Http\Controllers\Admin\UserController::class, 'store'])
+            ->name('users.store');
+        Route::get('/users/{user}/edit', [\App\Http\Controllers\Admin\UserController::class, 'edit'])
+            ->name('users.edit');
+        Route::put('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'update'])
+            ->name('users.update');
+        Route::delete('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])
+            ->name('users.destroy');
         
         // Subscription Plans
         Route::resource('subscription-plans', \App\Http\Controllers\Admin\SubscriptionPlanController::class);
