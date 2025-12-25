@@ -39,15 +39,8 @@ class InAppNotificationController extends Controller
             'filters' => request()->only([
                 'search',
                 'status',
-                'audience_type',
-                'requires_acknowledgement',
-                'scheduled_from',
-                'scheduled_to',
-                'published_from',
-                'published_to',
             ]),
-            'statusOptions' => $this->notificationRepository->getStatusOptions(),
-            'audienceOptions' => $this->notificationRepository->getAudienceOptions(),
+            'readStatusOptions' => $this->notificationRepository->getReadStatusOptions(),
         ]);
     }
 

@@ -103,34 +103,23 @@ class InAppNotificationRepository extends BaseRepository implements InAppNotific
         ];
     }
 
+    public function getReadStatusOptions(): array
+    {
+        return [
+            'read' => 'Read',
+            'unread' => 'Unread',
+        ];
+    }
+
     protected function applyFilters($query, array $filters)
     {
-        // Filter by notification type from data JSON
+        // Filter by read status
         if (!empty($filters['status'])) {
-            // Status filter doesn't apply to notifications table
-            // You can filter by read_at if needed
             if ($filters['status'] === 'read') {
                 $query->whereNotNull('notifications.read_at');
             } elseif ($filters['status'] === 'unread') {
                 $query->whereNull('notifications.read_at');
             }
-        }
-
-        // Filter by notification type from data JSON
-        if (!empty($filters['audience_type'])) {
-            // Map audience_type to notification type in data JSON
-            $query->whereRaw("JSON_EXTRACT(notifications.data, '$.type') = ?", [$filters['audience_type']]);
-        }
-
-        // These filters don't apply to notifications table
-        // requires_acknowledgement, scheduled_from, scheduled_to are for in_app_notifications only
-
-        if (!empty($filters['published_from'])) {
-            $query->whereDate('notifications.created_at', '>=', $filters['published_from']);
-        }
-
-        if (!empty($filters['published_to'])) {
-            $query->whereDate('notifications.created_at', '<=', $filters['published_to']);
         }
 
         return $query;

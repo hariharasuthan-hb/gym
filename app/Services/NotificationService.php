@@ -12,16 +12,18 @@ class NotificationService
     public function send(User $user, NotificationType $type, string $message, ?string $actionUrl = null, array $additionalData = []): void
     {
         // Check if a similar notification already exists to prevent duplicates
-        // Check for USER_REGISTRATION, USER_SUBSCRIPTION, and USER_UPLOAD types
+        // Check for USER_REGISTRATION, USER_SUBSCRIPTION, USER_UPLOAD, and ADMIN_APPROVAL types
         if (in_array($type, [
             \App\Enums\NotificationType::USER_REGISTRATION,
             \App\Enums\NotificationType::USER_SUBSCRIPTION,
-            \App\Enums\NotificationType::USER_UPLOAD
+            \App\Enums\NotificationType::USER_UPLOAD,
+            \App\Enums\NotificationType::ADMIN_APPROVAL
         ])) {
             $timeWindow = match($type) {
                 \App\Enums\NotificationType::USER_REGISTRATION => now()->subMinutes(5),
                 \App\Enums\NotificationType::USER_SUBSCRIPTION => now()->subMinutes(10),
                 \App\Enums\NotificationType::USER_UPLOAD => now()->subMinutes(2), // Short window for uploads
+                \App\Enums\NotificationType::ADMIN_APPROVAL => now()->subMinutes(5),
                 default => now()->subMinutes(5),
             };
             
@@ -42,6 +44,9 @@ class NotificationService
                         $query->whereRaw("JSON_EXTRACT(data, '$.subscription_id') = ?", [$additionalData['subscription_id']]);
                     } elseif ($type === \App\Enums\NotificationType::USER_UPLOAD && isset($additionalData['content_path'])) {
                         $query->whereRaw("JSON_EXTRACT(data, '$.content_path') = ?", [$additionalData['content_path']]);
+                    } elseif ($type === \App\Enums\NotificationType::ADMIN_APPROVAL && isset($additionalData['entity_id']) && isset($additionalData['entity_type'])) {
+                        $query->whereRaw("JSON_EXTRACT(data, '$.entity_id') = ?", [$additionalData['entity_id']])
+                              ->whereRaw("JSON_EXTRACT(data, '$.entity_type') = ?", [$additionalData['entity_type']]);
                     }
                     
                     return $query->first();
@@ -64,6 +69,9 @@ class NotificationService
                     $query->whereRaw("JSON_EXTRACT(data, '$.subscription_id') = ?", [$additionalData['subscription_id']]);
                 } elseif ($type === \App\Enums\NotificationType::USER_UPLOAD && isset($additionalData['content_path'])) {
                     $query->whereRaw("JSON_EXTRACT(data, '$.content_path') = ?", [$additionalData['content_path']]);
+                } elseif ($type === \App\Enums\NotificationType::ADMIN_APPROVAL && isset($additionalData['entity_id']) && isset($additionalData['entity_type'])) {
+                    $query->whereRaw("JSON_EXTRACT(data, '$.entity_id') = ?", [$additionalData['entity_id']])
+                          ->whereRaw("JSON_EXTRACT(data, '$.entity_type') = ?", [$additionalData['entity_type']]);
                 }
                 
                 $existingNotification = $query->first();
@@ -102,12 +110,14 @@ class NotificationService
         if (in_array($type, [
             \App\Enums\NotificationType::USER_REGISTRATION,
             \App\Enums\NotificationType::USER_SUBSCRIPTION,
-            \App\Enums\NotificationType::USER_UPLOAD
+            \App\Enums\NotificationType::USER_UPLOAD,
+            \App\Enums\NotificationType::ADMIN_APPROVAL
         ])) {
             $timeWindow = match($type) {
                 \App\Enums\NotificationType::USER_REGISTRATION => now()->subMinutes(5),
                 \App\Enums\NotificationType::USER_SUBSCRIPTION => now()->subMinutes(10),
                 \App\Enums\NotificationType::USER_UPLOAD => now()->subMinutes(2),
+                \App\Enums\NotificationType::ADMIN_APPROVAL => now()->subMinutes(5),
                 default => now()->subMinutes(5),
             };
             
@@ -121,6 +131,9 @@ class NotificationService
                 // For uploads, check by content_path if available
                 if ($type === \App\Enums\NotificationType::USER_UPLOAD && isset($additionalData['content_path'])) {
                     $query->whereRaw("JSON_EXTRACT(data, '$.content_path') = ?", [$additionalData['content_path']]);
+                } elseif ($type === \App\Enums\NotificationType::ADMIN_APPROVAL && isset($additionalData['entity_id']) && isset($additionalData['entity_type'])) {
+                    $query->whereRaw("JSON_EXTRACT(data, '$.entity_id') = ?", [$additionalData['entity_id']])
+                          ->whereRaw("JSON_EXTRACT(data, '$.entity_type') = ?", [$additionalData['entity_type']]);
                 }
                 
                 $existing = $query->first();

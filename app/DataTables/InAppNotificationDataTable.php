@@ -52,12 +52,6 @@ class InAppNotificationDataTable extends BaseDataTable
     {
         $filters = request()->only([
             'status',
-            'audience_type',
-            'requires_acknowledgement',
-            'scheduled_from',
-            'scheduled_to',
-            'published_from',
-            'published_to',
             'search',
         ]);
 

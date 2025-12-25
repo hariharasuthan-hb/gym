@@ -25,5 +25,7 @@ interface InAppNotificationRepositoryInterface extends BaseRepositoryInterface
     public function getStatusOptions(): array;
 
     public function getAudienceOptions(): array;
+
+    public function getReadStatusOptions(): array;
 }
 

@@ -491,20 +491,28 @@ class StripeAdapter
                     $this->handleSubscriptionDeleted($data);
                     break;
                 
+                case 'invoice.created':
+                    $this->handleInvoiceCreated($data);
+                    break;
+                
                 case 'invoice.payment_succeeded':
                     $this->handlePaymentSucceeded($data);
+                    break;
+                
+                case 'invoice.payment_failed':
+                    $this->handlePaymentFailed($data);
                     break;
                 
                 case 'payment_intent.succeeded':
                     $this->handlePaymentIntentSucceeded($data);
                     break;
                 
-                case 'setup_intent.succeeded':
-                    $this->handleSetupIntentSucceeded($data);
+                case 'payment_intent.payment_failed':
+                    $this->handlePaymentIntentFailed($data);
                     break;
                 
-                case 'invoice.payment_failed':
-                    $this->handlePaymentFailed($data);
+                case 'setup_intent.succeeded':
+                    $this->handleSetupIntentSucceeded($data);
                     break;
                 
                 case 'customer.subscription.trial_will_end':
@@ -574,6 +582,20 @@ class StripeAdapter
         if ($subscription) {
             $oldStatus = $subscription->status;
             
+            // Fetch subscription from Stripe to get current_period_end
+            $stripeSubscription = null;
+            try {
+                $paymentSettings = \App\Models\PaymentSetting::getSettings();
+                $stripe = new \Stripe\StripeClient($paymentSettings->stripe_secret_key);
+                $stripeSubscription = $stripe->subscriptions->retrieve($subscriptionId);
+            } catch (\Exception $e) {
+                Log::warning('Failed to fetch Stripe subscription for payment succeeded', [
+                    'subscription_id' => $subscription->id,
+                    'stripe_subscription_id' => $subscriptionId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+            
             // Update status based on current state
             if ($subscription->status === 'pending') {
                 // Payment succeeded, activate subscription
@@ -583,6 +605,9 @@ class StripeAdapter
                 $subscription->update([
                     'status' => $status,
                     'started_at' => now(),
+                    'next_billing_at' => $stripeSubscription && isset($stripeSubscription->current_period_end) 
+                        ? date('Y-m-d H:i:s', $stripeSubscription->current_period_end) 
+                        : null,
                 ]);
                 
                 // Create payment record
@@ -602,6 +627,9 @@ class StripeAdapter
                 // Trial ended, payment succeeded, activate
                 $subscription->update([
                     'status' => 'active',
+                    'next_billing_at' => $stripeSubscription && isset($stripeSubscription->current_period_end) 
+                        ? date('Y-m-d H:i:s', $stripeSubscription->current_period_end) 
+                        : null,
                 ]);
                 
                 // Create payment record for renewal
@@ -615,6 +643,27 @@ class StripeAdapter
                 Log::info('Subscription activated from trialing status', [
                     'subscription_id' => $subscription->id,
                     'stripe_subscription_id' => $subscriptionId,
+                ]);
+            } elseif ($subscription->status === 'active') {
+                // Recurring payment for active subscription
+                // Update next_billing_at and create payment record
+                $updateData = [];
+                
+                if ($stripeSubscription && isset($stripeSubscription->current_period_end)) {
+                    $updateData['next_billing_at'] = date('Y-m-d H:i:s', $stripeSubscription->current_period_end);
+                }
+                
+                if (!empty($updateData)) {
+                    $subscription->update($updateData);
+                }
+                
+                // Create payment record for recurring payment
+                $this->createPaymentFromInvoiceData($subscription, $data);
+                
+                Log::info('Recurring payment processed for active subscription', [
+                    'subscription_id' => $subscription->id,
+                    'stripe_subscription_id' => $subscriptionId,
+                    'next_billing_at' => $updateData['next_billing_at'] ?? null,
                 ]);
             }
         }
@@ -802,6 +851,37 @@ class StripeAdapter
     }
 
     /**
+     * Handle invoice created.
+     */
+    protected function handleInvoiceCreated(array $data): void
+    {
+        $subscriptionId = $data['subscription'] ?? null;
+        
+        if (!$subscriptionId) {
+            return;
+        }
+
+        $subscription = Subscription::where('gateway_subscription_id', $subscriptionId)->first();
+        
+        if ($subscription) {
+            // Log invoice creation for tracking
+            Log::info('Invoice created for subscription', [
+                'subscription_id' => $subscription->id,
+                'stripe_subscription_id' => $subscriptionId,
+                'invoice_id' => $data['id'] ?? null,
+                'amount_due' => $data['amount_due'] ?? 0,
+            ]);
+            
+            // Update next_billing_at if invoice has period_end
+            if (isset($data['period_end'])) {
+                $subscription->update([
+                    'next_billing_at' => date('Y-m-d H:i:s', $data['period_end']),
+                ]);
+            }
+        }
+    }
+
+    /**
      * Handle payment failed.
      */
     protected function handlePaymentFailed(array $data): void
@@ -818,6 +898,63 @@ class StripeAdapter
             $subscription->update([
                 'status' => 'past_due',
             ]);
+            
+            Log::warning('Invoice payment failed', [
+                'subscription_id' => $subscription->id,
+                'stripe_subscription_id' => $subscriptionId,
+                'invoice_id' => $data['id'] ?? null,
+                'amount_due' => $data['amount_due'] ?? 0,
+            ]);
+        }
+    }
+
+    /**
+     * Handle payment intent failed.
+     */
+    protected function handlePaymentIntentFailed(array $data): void
+    {
+        $paymentIntentId = $data['id'] ?? null;
+        $subscriptionId = $data['metadata']['subscription_id'] ?? null;
+        
+        if (!$paymentIntentId) {
+            return;
+        }
+
+        // Find subscription by payment intent metadata or customer
+        $subscription = null;
+        
+        if ($subscriptionId) {
+            $subscription = Subscription::where('gateway_subscription_id', $subscriptionId)->first();
+        }
+        
+        // If not found, try to find by payment intent in metadata
+        if (!$subscription) {
+            $subscription = Subscription::where('metadata->payment_intent_id', $paymentIntentId)
+                ->orWhereJsonContains('metadata->payment_intent_id', $paymentIntentId)
+                ->first();
+        }
+        
+        // If still not found, find by customer
+        if (!$subscription && isset($data['customer'])) {
+            $subscription = Subscription::where('gateway_customer_id', $data['customer'])
+                ->where('status', 'pending')
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
+
+        if ($subscription) {
+            // Update subscription status to past_due or keep as pending
+            if ($subscription->status === 'active' || $subscription->status === 'trialing') {
+                $subscription->update([
+                    'status' => 'past_due',
+                ]);
+            }
+            
+            Log::warning('Payment intent failed', [
+                'subscription_id' => $subscription->id,
+                'payment_intent_id' => $paymentIntentId,
+                'error' => $data['last_payment_error']['message'] ?? 'Unknown error',
+            ]);
         }
     }
 
@@ -826,7 +963,19 @@ class StripeAdapter
      */
     protected function handleTrialWillEnd(array $data): void
     {
-        // You can send notification emails here
+        $subscription = Subscription::where('gateway_subscription_id', $data['id'])->first();
+        
+        if ($subscription) {
+            // Log trial ending for potential notification
+            Log::info('Trial will end soon', [
+                'subscription_id' => $subscription->id,
+                'stripe_subscription_id' => $data['id'],
+                'trial_end' => isset($data['trial_end']) ? date('Y-m-d H:i:s', $data['trial_end']) : null,
+            ]);
+            
+            // You can send notification emails here
+            // Example: Send notification to user about trial ending
+        }
     }
 
     /**

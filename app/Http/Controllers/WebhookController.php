@@ -27,15 +27,39 @@ class WebhookController extends Controller
         
         try {
             // Verify webhook signature
-            $paymentSettings = \App\Models\PaymentSetting::getSettings();
             $webhookSecret = config('services.stripe.webhook_secret');
             
-            if ($webhookSecret && $sigHeader) {
-                \Stripe\Webhook::constructEvent(
-                    $request->getContent(),
-                    $sigHeader,
-                    $webhookSecret
-                );
+            // In production, always verify signature
+            // In local/testing, allow skipping if secret is not set (for testing with Stripe CLI)
+            $shouldVerify = app()->environment('production') || !empty($webhookSecret);
+            
+            if ($shouldVerify && $webhookSecret && $sigHeader) {
+                try {
+                    \Stripe\Webhook::constructEvent(
+                        $request->getContent(),
+                        $sigHeader,
+                        $webhookSecret
+                    );
+                } catch (\Stripe\Exception\SignatureVerificationException $e) {
+                    Log::error('Stripe webhook signature verification failed', [
+                        'error' => $e->getMessage(),
+                        'environment' => app()->environment(),
+                    ]);
+                    
+                    // In production, reject invalid signatures
+                    if (app()->environment('production')) {
+                        return response('Invalid signature', 400);
+                    }
+                }
+            } elseif ($shouldVerify && !$webhookSecret) {
+                Log::warning('Stripe webhook secret not configured', [
+                    'environment' => app()->environment(),
+                ]);
+                
+                // In production, require webhook secret
+                if (app()->environment('production')) {
+                    return response('Webhook secret not configured', 500);
+                }
             }
 
             // Handle webhook
@@ -50,7 +74,9 @@ class WebhookController extends Controller
         } catch (\Exception $e) {
             Log::error('Stripe webhook error', [
                 'error' => $e->getMessage(),
-                'payload' => $payload,
+                'trace' => $e->getTraceAsString(),
+                'payload_type' => $payload['type'] ?? 'unknown',
+                'environment' => app()->environment(),
             ]);
             
             return response('Error', 400);
