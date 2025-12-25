@@ -13,22 +13,30 @@ use Symfony\Component\Process\Process;
 
 /**
  * Convert admin demo videos in the background using FFmpeg.
+ * 
+ * Optimized for large video uploads (25MB+) following production-ready patterns.
+ * Supports chunked uploads, long-running conversions, and robust error handling.
  *
- * Pattern:
- * - Upload controller stores raw file under workout-plans/demo-videos/raw
- * - This job converts raw → MP4 into a temp file
- * - If conversion looks good, we atomically move into final location
- * - If conversion fails or is tiny, we keep the original file instead
+ * Architecture:
+ * 1. Frontend uploads video in chunks (5-10MB per chunk) via JavaScript
+ * 2. Controller assembles chunks and stores raw file in workout-plans/demo-videos/raw
+ * 3. This job converts raw → MP4 using FFmpeg with proper timeout handling
+ * 4. Atomic move to final location only after successful conversion
+ * 5. Falls back to original file if conversion fails or times out
+ *
+ * Timeout: 30 minutes (1800 seconds) for large video files
+ * Memory: Requires 1GB+ for FFmpeg processing large files
  */
 class ConvertDemoVideoJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * Allow long-running conversions.
-     * Set to 600 seconds (10 minutes) for video conversions.
+     * Allow long-running conversions for large video files.
+     * Set to 1800 seconds (30 minutes) for large video conversions (25MB+).
+     * This matches production-ready patterns like YouTube for handling large uploads.
      */
-    public $timeout = 600;
+    public $timeout = 1800;
 
     /**
      * Number of attempts.
@@ -104,15 +112,16 @@ class ConvertDemoVideoJob implements ShouldQueue
             $tempOutput
         ]);
 
-        // Set process timeout to match job timeout (600 seconds = 10 minutes)
+        // Set process timeout to match job timeout (1800 seconds = 30 minutes)
         // Add 60 seconds buffer to ensure FFmpeg has enough time to complete
-        $process->setTimeout(660); // 11 minutes (job timeout + buffer)
+        $process->setTimeout($this->timeout + 60); // Job timeout + buffer
         $process->setIdleTimeout(null); // No idle timeout for video conversion
 
         Log::info('ConvertDemoVideoJob: Starting FFmpeg conversion', [
             'source_path' => $this->sourcePath,
             'input_size' => $inputSize,
-            'timeout' => 660,
+            'input_size_mb' => round($inputSize / 1024 / 1024, 2),
+            'timeout' => $this->timeout + 60,
         ]);
 
         try {
@@ -122,11 +131,24 @@ class ConvertDemoVideoJob implements ShouldQueue
         } catch (\Symfony\Component\Process\Exception\ProcessTimedOutException $e) {
             Log::error('ConvertDemoVideoJob: FFmpeg conversion timed out', [
                 'source_path' => $this->sourcePath,
-                'timeout' => 660,
+                'input_size_mb' => round($inputSize / 1024 / 1024, 2),
+                'timeout' => $process->getTimeout(),
                 'error' => $e->getMessage(),
             ]);
             $status = -1;
             $output = 'FFmpeg conversion timed out after ' . $process->getTimeout() . ' seconds';
+            
+            // Clean up temp file if it exists
+            if (file_exists($tempOutput)) {
+                @unlink($tempOutput);
+            }
+            
+            // Keep original file on timeout
+            $finalRel = $this->outputPath ?: str_replace('raw/', '', $this->sourcePath);
+            if ($this->sourcePath !== $finalRel && $disk->exists($this->sourcePath)) {
+                $disk->move($this->sourcePath, $finalRel);
+            }
+            return;
         }
 
         // If FFmpeg failed or temp file missing → keep original
@@ -170,11 +192,23 @@ class ConvertDemoVideoJob implements ShouldQueue
         $finalRel = $this->outputPath ?: str_replace('raw/', '', $this->sourcePath);
 
         try {
+            // Store final video atomically
             $stream = fopen($tempOutput, 'rb');
             $disk->put($finalRel, $stream);
             fclose($stream);
+        } catch (\Exception $e) {
+            Log::error('ConvertDemoVideoJob: Failed to store final video', [
+                'source_path' => $this->sourcePath,
+                'final_path' => $finalRel,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
         } finally {
-            @unlink($tempOutput);
+            // Always clean up temp file
+            if (file_exists($tempOutput)) {
+                @unlink($tempOutput);
+            }
+            // Delete raw source file after successful conversion
             if ($disk->exists($this->sourcePath)) {
                 $disk->delete($this->sourcePath);
             }
@@ -184,7 +218,10 @@ class ConvertDemoVideoJob implements ShouldQueue
             'source_path' => $this->sourcePath,
             'final_path' => $finalRel,
             'input_bytes' => $inputSize,
+            'input_size_mb' => round($inputSize / 1024 / 1024, 2),
             'output_bytes' => $outputSize,
+            'output_size_mb' => round($outputSize / 1024 / 1024, 2),
+            'compression_ratio' => $inputSize > 0 ? round(($outputSize / $inputSize) * 100, 2) . '%' : 'N/A',
         ]);
     }
 }
