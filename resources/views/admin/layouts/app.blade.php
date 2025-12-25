@@ -20,23 +20,7 @@
     
     @stack('styles')
 </head>
-<body class="font-sans antialiased custom-scrollbar" x-data="{ 
-    sidebarOpen: false, 
-    sidebarCollapsed: (() => {
-        try {
-            return localStorage.getItem('sidebarCollapsed') === 'true';
-        } catch(e) {
-            return false;
-        }
-    })()
-}" 
-x-init="$watch('sidebarCollapsed', value => {
-    try {
-        localStorage.setItem('sidebarCollapsed', value);
-    } catch(e) {
-        console.error('Failed to save sidebar state:', e);
-    }
-})">
+<body class="font-sans antialiased custom-scrollbar" x-data="{ sidebarOpen: false }" @toggle-sidebar.window="sidebarOpen = !sidebarOpen">
     <div class="h-screen flex overflow-hidden">
         {{-- Mobile Overlay --}}
         <div x-show="sidebarOpen" 
@@ -69,6 +53,124 @@ x-init="$watch('sidebarCollapsed', value => {
     
     @include('admin.components.confirm-modal')
     @stack('scripts')
+    
+    <script>
+        // Sidebar Collapse Toggle (Vanilla JS)
+        (function() {
+            const sidebar = document.getElementById('admin-sidebar');
+            const toggleBtn = document.getElementById('sidebar-toggle');
+            const sidebarContent = document.getElementById('sidebar-content');
+            const sidebarTitle = document.getElementById('sidebar-title');
+            const sidebarTitleFull = document.getElementById('sidebar-title-full');
+            const sidebarTitleShort = document.getElementById('sidebar-title-short');
+            const sidebarLogo = document.getElementById('sidebar-logo');
+            const toggleExpand = document.getElementById('sidebar-toggle-expand');
+            const toggleCollapse = document.getElementById('sidebar-toggle-collapse');
+            
+            if (!sidebar || !toggleBtn) return;
+            
+            let collapsed = false;
+            
+            // Load saved state
+            try {
+                collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+                if (collapsed) {
+                    applyCollapsedState();
+                }
+            } catch(e) {
+                console.warn('Could not load sidebar state:', e);
+            }
+            
+            function applyCollapsedState() {
+                // Get all menu text spans (not in SVG)
+                const menuTexts = document.querySelectorAll('#sidebar-nav span:not(svg span)');
+                const menuItems = document.querySelectorAll('#sidebar-nav .admin-sidebar-item, #sidebar-nav > div > button');
+                
+                if (collapsed) {
+                    sidebar.classList.remove('w-64', 'lg:w-64');
+                    sidebar.classList.add('w-16', 'lg:w-16');
+                    if (sidebarContent) sidebarContent.classList.add('lg:px-2');
+                    
+                    // Hide menu texts
+                    menuTexts.forEach(el => {
+                        if (el && !el.closest('svg')) {
+                            el.classList.add('hidden');
+                        }
+                    });
+                    
+                    // Hide full title, show short
+                    if (sidebarTitleFull) sidebarTitleFull.classList.add('hidden');
+                    if (sidebarTitleShort) sidebarTitleShort.classList.remove('hidden');
+                    if (sidebarLogo) {
+                        sidebarLogo.classList.remove('h-10');
+                        sidebarLogo.classList.add('h-8');
+                    }
+                    
+                    // Update toggle icons
+                    if (toggleExpand) toggleExpand.classList.add('hidden');
+                    if (toggleCollapse) toggleCollapse.classList.remove('hidden');
+                    
+                    // Center align menu items
+                    menuItems.forEach(el => {
+                        el.classList.add('lg:justify-center', 'lg:px-2');
+                    });
+                } else {
+                    sidebar.classList.remove('w-16', 'lg:w-16');
+                    sidebar.classList.add('w-64', 'lg:w-64');
+                    if (sidebarContent) sidebarContent.classList.remove('lg:px-2');
+                    
+                    // Show menu texts
+                    menuTexts.forEach(el => {
+                        if (el && !el.closest('svg')) {
+                            el.classList.remove('hidden');
+                        }
+                    });
+                    
+                    // Show full title, hide short
+                    if (sidebarTitleFull) sidebarTitleFull.classList.remove('hidden');
+                    if (sidebarTitleShort) sidebarTitleShort.classList.add('hidden');
+                    if (sidebarLogo) {
+                        sidebarLogo.classList.remove('h-8');
+                        sidebarLogo.classList.add('h-10');
+                    }
+                    
+                    // Update toggle icons
+                    if (toggleExpand) toggleExpand.classList.remove('hidden');
+                    if (toggleCollapse) toggleCollapse.classList.add('hidden');
+                    
+                    // Remove center align
+                    menuItems.forEach(el => {
+                        el.classList.remove('lg:justify-center', 'lg:px-2');
+                    });
+                }
+            }
+            
+            toggleBtn.addEventListener('click', () => {
+                collapsed = !collapsed;
+                applyCollapsedState();
+                
+                try {
+                    localStorage.setItem('sidebarCollapsed', collapsed);
+                } catch(e) {
+                    console.warn('Could not save sidebar state:', e);
+                }
+            });
+            
+            // Close sidebar on mobile when clicking nav links
+            const sidebarNav = document.getElementById('sidebar-nav');
+            if (sidebarNav) {
+                sidebarNav.addEventListener('click', (e) => {
+                    const link = e.target.closest('a');
+                    if (link && window.innerWidth < 1024) {
+                        const body = document.body;
+                        if (body && body.__x && body.__x.$data) {
+                            body.__x.$data.sidebarOpen = false;
+                        }
+                    }
+                });
+            }
+        })();
+    </script>
 </body>
 </html>
 

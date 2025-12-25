@@ -1,10 +1,6 @@
 {{-- Admin Sidebar --}}
-<aside class="w-64 lg:w-64 admin-sidebar text-white h-screen flex flex-col custom-scrollbar transition-all duration-300" 
-       x-data="sidebarMenu()"
-       x-init="init()"
-       :class="{ 'sidebar-collapsed': $root.sidebarCollapsed }">
-    <div class="p-4 lg:p-3 flex-1 overflow-y-auto" 
-         :class="{ 'lg:px-2': $root.sidebarCollapsed }">
+<aside id="admin-sidebar" class="w-64 lg:w-64 admin-sidebar text-white h-screen flex flex-col custom-scrollbar transition-all duration-300" x-data="sidebarMenu()" x-init="init()">
+    <div id="sidebar-content" class="p-4 lg:p-3 flex-1 overflow-y-auto">
         @php
             $siteSettings = \App\Models\SiteSetting::getSettings();
             $landingPage = \App\Models\LandingPageContent::getActive();
@@ -12,26 +8,22 @@
             $logo = $siteSettings->logo ?? ($landingPage->logo ?? null);
             $siteTitle = $siteSettings->site_title ?? config('app.name', 'Gym Management');
         @endphp
-        <div class="mb-4" :class="{ 'lg:mb-3': $root.sidebarCollapsed }">
+        <div class="mb-4">
             @if($logo)
                 <a href="{{ route('admin.dashboard') }}" class="flex items-center justify-center">
-                    <img src="{{ \Illuminate\Support\Facades\Storage::url($logo) }}" 
+                    <img id="sidebar-logo" src="{{ \Illuminate\Support\Facades\Storage::url($logo) }}" 
                          alt="{{ $siteTitle }}" 
-                         class="h-10 w-auto object-contain transition-all duration-300"
-                         :class="{ 'lg:h-8': $root.sidebarCollapsed, 'lg:h-10': !$root.sidebarCollapsed }">
+                         class="h-10 w-auto object-contain transition-all duration-300">
                 </a>
             @else
-                <h2 class="text-xl font-bold gradient-text text-center" 
-                    :class="{ 'lg:text-sm lg:mb-0': $root.sidebarCollapsed }">
-                    <span :class="{ 'lg:hidden': $root.sidebarCollapsed }">{{ $siteTitle }}</span>
-                    <span :class="{ 'lg:hidden': !$root.sidebarCollapsed }" class="hidden lg:block">
-                        {{ strtoupper(substr($siteTitle, 0, 2)) }}
-                    </span>
+                <h2 id="sidebar-title" class="text-xl font-bold gradient-text text-center">
+                    <span id="sidebar-title-full">{{ $siteTitle }}</span>
+                    <span id="sidebar-title-short" class="hidden">{{ strtoupper(substr($siteTitle, 0, 2)) }}</span>
                 </h2>
             @endif
         </div>
         
-        <nav class="space-y-0.5">
+        <nav class="space-y-0.5" id="sidebar-nav">
             {{-- Dashboard --}}
             @canany(['view users', 'view subscriptions', 'view activities', 'view reports'])
             <a href="{{ route('admin.dashboard') }}" 
@@ -653,22 +645,27 @@ function sidebarMenu() {
             reports: {{ request()->routeIs('admin.payments.*') || request()->routeIs('admin.invoices.*') || request()->routeIs('admin.expenses.*') || request()->routeIs('admin.incomes.*') || request()->routeIs('admin.subscriptions.*') || request()->routeIs('admin.activities.*') || request()->routeIs('admin.finances.*') || request()->routeIs('admin.reports.*') ? 'true' : 'false' }},
         },
         toggleGroup(group) {
-            // Don't toggle if sidebar is collapsed
-            if (this.$root.sidebarCollapsed) {
+            // Don't toggle if sidebar is collapsed (check class)
+            const sidebar = document.getElementById('admin-sidebar');
+            if (sidebar && sidebar.classList.contains('w-16')) {
                 return;
             }
             this.openGroups[group] = !this.openGroups[group];
         },
         init() {
             // Watch for sidebar collapse and close groups when collapsed
-            this.$watch('$root.sidebarCollapsed', (collapsed) => {
-                if (collapsed) {
-                    // Close all groups when sidebar collapses
-                    Object.keys(this.openGroups).forEach(key => {
-                        this.openGroups[key] = false;
-                    });
-                }
-            });
+            const sidebar = document.getElementById('admin-sidebar');
+            if (sidebar) {
+                const observer = new MutationObserver(() => {
+                    if (sidebar.classList.contains('w-16')) {
+                        // Close all groups when sidebar collapses
+                        Object.keys(this.openGroups).forEach(key => {
+                            this.openGroups[key] = false;
+                        });
+                    }
+                });
+                observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+            }
         }
     }
 }

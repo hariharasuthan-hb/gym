@@ -106,10 +106,44 @@ class SendUserSubscriptionNotification
                 ]);
             }
             
+            // Send to all trainers
+            $trainers = $this->notificationService->getTrainers();
+            if ($trainers->isNotEmpty()) {
+                \Illuminate\Support\Facades\Log::info('Sending subscription notification to trainers', [
+                    'trainer_count' => $trainers->count(),
+                    'user_id' => $user->id,
+                    'subscription_id' => $subscription->id,
+                ]);
+                
+                $this->notificationService->sendToMany(
+                    $trainers,
+                    NotificationType::USER_SUBSCRIPTION,
+                    $adminMessage,
+                    '/admin/subscriptions',
+                    [
+                        'plan_name' => $plan->plan_name,
+                        'subscription_id' => $subscription->id,
+                        'user_id' => $user->id,
+                        'user_name' => $user->name,
+                        'user_email' => $user->email,
+                    ]
+                );
+                
+                \Illuminate\Support\Facades\Log::info('Subscription notification sent to trainers successfully', [
+                    'trainer_count' => $trainers->count(),
+                ]);
+            } else {
+                \Illuminate\Support\Facades\Log::warning('No trainers found to send subscription notification', [
+                    'user_id' => $user->id,
+                    'subscription_id' => $subscription->id,
+                ]);
+            }
+            
             \Illuminate\Support\Facades\Log::info('Subscription notification sent successfully', [
                 'user_id' => $user->id,
                 'subscription_id' => $subscription->id,
                 'admin_notified' => $admins->isNotEmpty(),
+                'trainer_notified' => $trainers->isNotEmpty(),
             ]);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Failed to send subscription notification', [
