@@ -6,7 +6,7 @@
                 {{-- Sidebar Toggle Button (Mobile - open/close drawer) --}}
                 <button
                     type="button"
-                    @click="$root.sidebarOpen = !$root.sidebarOpen"
+                    @click="$dispatch('toggle-sidebar')"
                     class="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all duration-200 hover-lift focus-ring"
                     title="Toggle Sidebar"
                 >
@@ -18,14 +18,14 @@
                 {{-- Collapse Toggle Button (Desktop - shrink/expand sidebar) --}}
                 <button
                     type="button"
-                    @click="$root.sidebarCollapsed = !$root.sidebarCollapsed"
+                    id="sidebar-toggle"
                     class="hidden lg:flex p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all duration-200 hover-lift focus-ring"
                     title="Toggle Sidebar Width"
                 >
-                    <svg x-show="!$root.sidebarCollapsed" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg id="sidebar-toggle-expand" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
                     </svg>
-                    <svg x-show="$root.sidebarCollapsed" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg id="sidebar-toggle-collapse" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
                     </svg>
                 </button>
