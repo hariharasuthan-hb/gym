@@ -35,7 +35,7 @@
 </style>
 
 <div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {{-- Page Header --}}
         <div class="mb-8">
             <a href="{{ route('member.dashboard') }}" class="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4">
@@ -71,10 +71,10 @@
             </div>
         @endif
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
             {{-- Plan Details Card --}}
             <div class="lg:col-span-1">
-                <div class="bg-white rounded-lg shadow-lg p-6 sticky top-8">
+                <div class="bg-white rounded-lg shadow-lg p-6 lg:p-8 sticky top-8">
                     <div class="text-center mb-6">
                         @if($plan->image)
                             <div class="subscription-image-container mx-auto w-32 h-32 mb-4">
@@ -138,7 +138,7 @@
 
             {{-- Payment Form Card --}}
             <div class="lg:col-span-2">
-                <div class="bg-white rounded-lg shadow-lg p-8" id="payment-information-card">
+                <div class="bg-white rounded-lg shadow-lg p-6 lg:p-10" id="payment-information-card">
                     <h2 class="text-2xl font-bold text-gray-900 mb-6">Payment Information</h2>
 
                     {{-- Gateway Selection (if multiple) --}}
