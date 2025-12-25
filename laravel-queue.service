@@ -9,12 +9,16 @@ User=www-data
 Group=www-data
 Type=simple
 WorkingDirectory=/var/www/html/gym
-ExecStart=/usr/bin/php /var/www/html/gym/artisan queue:work --sleep=3 --tries=3 --max-jobs=1000 --timeout=90
+ExecStart=/usr/bin/php /var/www/html/gym/artisan queue:work --sleep=3 --tries=3 --max-jobs=1000 --timeout=600 --max-time=3600
 Restart=always
 RestartSec=5
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=laravel-queue
+
+# Timeout settings - allow long-running video conversion jobs (10+ minutes)
+TimeoutStartSec=0
+TimeoutStopSec=900
 
 # Security settings
 NoNewPrivileges=yes
