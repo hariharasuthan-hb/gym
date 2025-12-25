@@ -162,8 +162,16 @@
     
     .btn-primary {
         @apply bg-primary-600 text-white;
-        @apply hover:bg-primary-700;
+        @apply hover:bg-primary-700 hover:text-white;
         @apply focus:ring-primary-500;
+        @apply active:bg-primary-800;
+        transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
+    }
+    
+    a.btn-primary:hover,
+    button.btn-primary:hover {
+        background-color: #1d4ed8;
+        color: #ffffff;
     }
     
     .btn-secondary {

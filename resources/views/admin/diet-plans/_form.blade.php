@@ -40,7 +40,7 @@
                     </div>
                     <div class="ml-2">
                         <p class="text-xs text-blue-800">
-                            <strong>Note:</strong> Please ensure a "Workout Plan" exists for this member with the same allocated dates.
+                            <strong>Note:</strong> Ensure that a "Workout Plan" has been created for this member.
                         </p>
                     </div>
                 </div>

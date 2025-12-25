@@ -202,10 +202,10 @@
                     @endif
                     
                     @if($plan->image)
-                    <div class="mb-4">
+                    <div class="mb-4 subscription-image-container">
                         <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($plan->image) }}" 
                              alt="{{ $plan->plan_name }}" 
-                             class="w-full h-32 object-cover rounded-lg">
+                             class="w-full h-32 subscription-image-zoom">
                     </div>
                     @endif
                     
