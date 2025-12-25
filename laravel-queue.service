@@ -1,5 +1,5 @@
 [Unit]
-Description=Laravel Queue Worker for gym.hbitpartner.com
+Description=Laravel Queue Worker for Large Video Processing (gym.hbitpartner.com)
 After=network.target
 After=mysql.service
 Requires=mysql.service
@@ -9,24 +9,29 @@ User=www-data
 Group=www-data
 Type=simple
 WorkingDirectory=/var/www/html/gym
-ExecStart=/usr/bin/php /var/www/html/gym/artisan queue:work --sleep=3 --tries=3 --max-jobs=1000 --timeout=600 --max-time=3600
+ExecStart=/usr/bin/php /var/www/html/gym/artisan queue:work --sleep=3 --tries=3 --max-jobs=500 --timeout=3600 --max-time=3600
 Restart=always
 RestartSec=5
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=laravel-queue
 
-# Timeout settings - allow long-running video conversion jobs (10+ minutes)
+# Timeout settings - allow long-running video conversion jobs (30+ minutes for large files)
+# TimeoutStartSec=0 disables startup timeout, allowing service to start without time constraint
 TimeoutStartSec=0
-TimeoutStopSec=900
+# TimeoutStopSec=1800 allows 30 minutes for graceful shutdown of long-running conversions
+TimeoutStopSec=1800
 
 # Security settings
 NoNewPrivileges=yes
 PrivateTmp=yes
 
 # Resource limits
+# LimitNOFILE: Increase file descriptor limit for FFmpeg operations
 LimitNOFILE=65536
-MemoryLimit=256M
+# MemoryLimit: 1GB for FFmpeg processing large video files (25MB+)
+# FFmpeg can require significant memory for video encoding/decoding
+MemoryLimit=1024M
 
 [Install]
 WantedBy=multi-user.target
