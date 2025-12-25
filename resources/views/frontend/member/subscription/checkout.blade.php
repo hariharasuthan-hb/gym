@@ -77,7 +77,9 @@
                 <div class="bg-white rounded-lg shadow-lg p-6 sticky top-8">
                     <div class="text-center mb-6">
                         @if($plan->image)
-                            <img src="{{ asset('storage/' . $plan->image) }}" alt="{{ $plan->plan_name }}" class="w-32 h-32 mx-auto rounded-lg object-cover mb-4">
+                            <div class="subscription-image-container mx-auto w-32 h-32 mb-4">
+                                <img src="{{ asset('storage/' . $plan->image) }}" alt="{{ $plan->plan_name }}" class="subscription-image-zoom w-32 h-32 rounded-lg object-cover">
+                            </div>
                         @else
                             <div class="w-32 h-32 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mb-4">
                                 <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
