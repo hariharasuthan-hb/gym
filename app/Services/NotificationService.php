@@ -12,52 +12,29 @@ class NotificationService
     public function send(User $user, NotificationType $type, string $message, ?string $actionUrl = null, array $additionalData = []): void
     {
         // Check if a similar notification already exists to prevent duplicates
-        // Check for USER_REGISTRATION, USER_SUBSCRIPTION, USER_UPLOAD, and ADMIN_APPROVAL types
+        // Check for all notification types that can be duplicated
         if (in_array($type, [
             \App\Enums\NotificationType::USER_REGISTRATION,
             \App\Enums\NotificationType::USER_SUBSCRIPTION,
             \App\Enums\NotificationType::USER_UPLOAD,
-            \App\Enums\NotificationType::ADMIN_APPROVAL
+            \App\Enums\NotificationType::ADMIN_APPROVAL,
+            \App\Enums\NotificationType::ADMIN_REJECTION,
+            \App\Enums\NotificationType::TRAINER_APPROVAL,
+            \App\Enums\NotificationType::TRAINER_REJECTION,
         ])) {
             $timeWindow = match($type) {
                 \App\Enums\NotificationType::USER_REGISTRATION => now()->subMinutes(5),
                 \App\Enums\NotificationType::USER_SUBSCRIPTION => now()->subMinutes(10),
                 \App\Enums\NotificationType::USER_UPLOAD => now()->subMinutes(2), // Short window for uploads
                 \App\Enums\NotificationType::ADMIN_APPROVAL => now()->subMinutes(5),
+                \App\Enums\NotificationType::ADMIN_REJECTION => now()->subMinutes(5),
+                \App\Enums\NotificationType::TRAINER_APPROVAL => now()->subMinutes(5),
+                \App\Enums\NotificationType::TRAINER_REJECTION => now()->subMinutes(5),
                 default => now()->subMinutes(5),
             };
             
-            // Use database transaction with lock to prevent race conditions
+            // Simple duplicate check without lock to prevent timeouts
             try {
-                $existingNotification = \Illuminate\Support\Facades\DB::transaction(function () use ($user, $type, $timeWindow, $additionalData) {
-                    // For registration, check by user name in message
-                    // For subscription, check by subscription_id if available
-                    $query = $user->notifications()
-                        ->where('type', \App\Notifications\DatabaseNotification::class)
-                        ->whereRaw("JSON_EXTRACT(data, '$.type') = ?", [$type->value])
-                        ->where('created_at', '>=', $timeWindow)
-                        ->lockForUpdate(); // Lock to prevent race conditions
-                    
-                    if ($type === \App\Enums\NotificationType::USER_REGISTRATION) {
-                        $query->whereRaw("JSON_EXTRACT(data, '$.message') LIKE ?", ["%{$user->name}%"]);
-                    } elseif ($type === \App\Enums\NotificationType::USER_SUBSCRIPTION && isset($additionalData['subscription_id'])) {
-                        $query->whereRaw("JSON_EXTRACT(data, '$.subscription_id') = ?", [$additionalData['subscription_id']]);
-                    } elseif ($type === \App\Enums\NotificationType::USER_UPLOAD && isset($additionalData['content_path'])) {
-                        $query->whereRaw("JSON_EXTRACT(data, '$.content_path') = ?", [$additionalData['content_path']]);
-                    } elseif ($type === \App\Enums\NotificationType::ADMIN_APPROVAL && isset($additionalData['entity_id']) && isset($additionalData['entity_type'])) {
-                        $query->whereRaw("JSON_EXTRACT(data, '$.entity_id') = ?", [$additionalData['entity_id']])
-                              ->whereRaw("JSON_EXTRACT(data, '$.entity_type') = ?", [$additionalData['entity_type']]);
-                    }
-                    
-                    return $query->first();
-                });
-            } catch (\Exception $e) {
-                // If locking fails, fall back to regular check (but log it)
-                \Illuminate\Support\Facades\Log::warning('Failed to acquire lock for duplicate check, using regular check', [
-                    'user_id' => $user->id,
-                    'error' => $e->getMessage(),
-                ]);
-                
                 $query = $user->notifications()
                     ->where('type', \App\Notifications\DatabaseNotification::class)
                     ->whereRaw("JSON_EXTRACT(data, '$.type') = ?", [$type->value])
@@ -69,12 +46,29 @@ class NotificationService
                     $query->whereRaw("JSON_EXTRACT(data, '$.subscription_id') = ?", [$additionalData['subscription_id']]);
                 } elseif ($type === \App\Enums\NotificationType::USER_UPLOAD && isset($additionalData['content_path'])) {
                     $query->whereRaw("JSON_EXTRACT(data, '$.content_path') = ?", [$additionalData['content_path']]);
-                } elseif ($type === \App\Enums\NotificationType::ADMIN_APPROVAL && isset($additionalData['entity_id']) && isset($additionalData['entity_type'])) {
+                } elseif (in_array($type, [
+                    \App\Enums\NotificationType::ADMIN_APPROVAL,
+                    \App\Enums\NotificationType::ADMIN_REJECTION,
+                ]) && isset($additionalData['entity_id']) && isset($additionalData['entity_type'])) {
+                    // Check by entity_id and entity_type for approval/rejection
                     $query->whereRaw("JSON_EXTRACT(data, '$.entity_id') = ?", [$additionalData['entity_id']])
                           ->whereRaw("JSON_EXTRACT(data, '$.entity_type') = ?", [$additionalData['entity_type']]);
+                } elseif (in_array($type, [
+                    \App\Enums\NotificationType::TRAINER_APPROVAL,
+                    \App\Enums\NotificationType::TRAINER_REJECTION,
+                ]) && isset($additionalData['user_id'])) {
+                    // Check by user_id for trainer status changes
+                    $query->whereRaw("JSON_EXTRACT(data, '$.user_id') = ?", [$additionalData['user_id']]);
                 }
                 
-                $existingNotification = $query->first();
+                $existingNotification = $query->limit(1)->first();
+            } catch (\Exception $e) {
+                // If query fails, log and continue (don't block notification)
+                \Illuminate\Support\Facades\Log::warning('Duplicate check query failed, proceeding with notification', [
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage(),
+                ]);
+                $existingNotification = null;
             }
             
             if ($existingNotification) {
@@ -111,39 +105,63 @@ class NotificationService
             \App\Enums\NotificationType::USER_REGISTRATION,
             \App\Enums\NotificationType::USER_SUBSCRIPTION,
             \App\Enums\NotificationType::USER_UPLOAD,
-            \App\Enums\NotificationType::ADMIN_APPROVAL
+            \App\Enums\NotificationType::ADMIN_APPROVAL,
+            \App\Enums\NotificationType::ADMIN_REJECTION,
+            \App\Enums\NotificationType::TRAINER_APPROVAL,
+            \App\Enums\NotificationType::TRAINER_REJECTION,
         ])) {
             $timeWindow = match($type) {
                 \App\Enums\NotificationType::USER_REGISTRATION => now()->subMinutes(5),
                 \App\Enums\NotificationType::USER_SUBSCRIPTION => now()->subMinutes(10),
                 \App\Enums\NotificationType::USER_UPLOAD => now()->subMinutes(2),
                 \App\Enums\NotificationType::ADMIN_APPROVAL => now()->subMinutes(5),
+                \App\Enums\NotificationType::ADMIN_REJECTION => now()->subMinutes(5),
+                \App\Enums\NotificationType::TRAINER_APPROVAL => now()->subMinutes(5),
+                \App\Enums\NotificationType::TRAINER_REJECTION => now()->subMinutes(5),
                 default => now()->subMinutes(5),
             };
             
             // Filter out users who already have this notification
             $users = $users->filter(function ($user) use ($type, $timeWindow, $message, $additionalData) {
-                $query = $user->notifications()
-                    ->where('type', \App\Notifications\DatabaseNotification::class)
-                    ->whereRaw("JSON_EXTRACT(data, '$.type') = ?", [$type->value])
-                    ->where('created_at', '>=', $timeWindow);
-                
-                // For uploads, check by content_path if available
-                if ($type === \App\Enums\NotificationType::USER_UPLOAD && isset($additionalData['content_path'])) {
-                    $query->whereRaw("JSON_EXTRACT(data, '$.content_path') = ?", [$additionalData['content_path']]);
-                } elseif ($type === \App\Enums\NotificationType::ADMIN_APPROVAL && isset($additionalData['entity_id']) && isset($additionalData['entity_type'])) {
-                    $query->whereRaw("JSON_EXTRACT(data, '$.entity_id') = ?", [$additionalData['entity_id']])
-                          ->whereRaw("JSON_EXTRACT(data, '$.entity_type') = ?", [$additionalData['entity_type']]);
-                }
-                
-                $existing = $query->first();
-                
-                if ($existing) {
-                    \Illuminate\Support\Facades\Log::info('Duplicate admin notification prevented', [
+                try {
+                    $query = $user->notifications()
+                        ->where('type', \App\Notifications\DatabaseNotification::class)
+                        ->whereRaw("JSON_EXTRACT(data, '$.type') = ?", [$type->value])
+                        ->where('created_at', '>=', $timeWindow);
+                    
+                    // For uploads, check by content_path if available
+                    if ($type === \App\Enums\NotificationType::USER_UPLOAD && isset($additionalData['content_path'])) {
+                        $query->whereRaw("JSON_EXTRACT(data, '$.content_path') = ?", [$additionalData['content_path']]);
+                    } elseif (in_array($type, [
+                        \App\Enums\NotificationType::ADMIN_APPROVAL,
+                        \App\Enums\NotificationType::ADMIN_REJECTION,
+                    ]) && isset($additionalData['entity_id']) && isset($additionalData['entity_type'])) {
+                        // Check by entity_id and entity_type for approval/rejection
+                        $query->whereRaw("JSON_EXTRACT(data, '$.entity_id') = ?", [$additionalData['entity_id']])
+                              ->whereRaw("JSON_EXTRACT(data, '$.entity_type') = ?", [$additionalData['entity_type']]);
+                    } elseif (in_array($type, [
+                        \App\Enums\NotificationType::TRAINER_APPROVAL,
+                        \App\Enums\NotificationType::TRAINER_REJECTION,
+                    ]) && isset($additionalData['user_id'])) {
+                        // Check by user_id for trainer status changes
+                        $query->whereRaw("JSON_EXTRACT(data, '$.user_id') = ?", [$additionalData['user_id']]);
+                    }
+                    
+                    $existing = $query->limit(1)->first();
+                    
+                    if ($existing) {
+                        \Illuminate\Support\Facades\Log::info('Duplicate admin notification prevented', [
+                            'admin_id' => $user->id,
+                            'notification_type' => $type->value,
+                        ]);
+                        return false;
+                    }
+                } catch (\Exception $e) {
+                    // If query fails, allow notification (don't block)
+                    \Illuminate\Support\Facades\Log::warning('Duplicate check failed for admin notification', [
                         'admin_id' => $user->id,
-                        'notification_type' => $type->value,
+                        'error' => $e->getMessage(),
                     ]);
-                    return false;
                 }
                 
                 return true;

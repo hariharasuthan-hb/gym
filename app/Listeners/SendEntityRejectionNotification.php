@@ -25,16 +25,28 @@ class SendEntityRejectionNotification
             $adminMessage .= " Reason: {$event->reason}";
         }
 
-        // Send to user
+        // Extract entity ID for duplicate prevention
+        $entityId = null;
+        if (is_object($event->entity) && isset($event->entity->id)) {
+            $entityId = $event->entity->id;
+        } elseif (is_array($event->entity) && isset($event->entity['id'])) {
+            $entityId = $event->entity['id'];
+        }
+
+        // Send to user with entity_id for duplicate prevention
         $this->notificationService->send(
             $event->user,
             NotificationType::ADMIN_REJECTION,
             $userMessage,
             null,
-            ['entity_type' => $event->entityType, 'reason' => $event->reason]
+            [
+                'entity_type' => $event->entityType,
+                'entity_id' => $entityId,
+                'reason' => $event->reason
+            ]
         );
         
-        // Send to admins
+        // Send to admins with entity_id for duplicate prevention
         $admins = $this->notificationService->getAdmins();
         if ($admins->isNotEmpty()) {
             $this->notificationService->sendToMany(
@@ -42,7 +54,12 @@ class SendEntityRejectionNotification
                 NotificationType::ADMIN_REJECTION,
                 $adminMessage,
                 null,
-                ['entity_type' => $event->entityType, 'reason' => $event->reason, 'user_id' => $event->user->id]
+                [
+                    'entity_type' => $event->entityType,
+                    'entity_id' => $entityId,
+                    'reason' => $event->reason,
+                    'user_id' => $event->user->id
+                ]
             );
         }
     }
