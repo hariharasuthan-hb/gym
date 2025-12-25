@@ -6,6 +6,7 @@ use App\Models\InAppNotification;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 
 interface InAppNotificationRepositoryInterface extends BaseRepositoryInterface
 {
@@ -15,7 +16,7 @@ interface InAppNotificationRepositoryInterface extends BaseRepositoryInterface
 
     public function deleteNotification(InAppNotification $notification): bool;
 
-    public function queryForDataTable(array $filters = []): Builder;
+    public function queryForDataTable(array $filters = []): QueryBuilder;
 
     public function getForUser(User $user, int $perPage = 15): LengthAwarePaginator;
 
@@ -24,5 +25,7 @@ interface InAppNotificationRepositoryInterface extends BaseRepositoryInterface
     public function getStatusOptions(): array;
 
     public function getAudienceOptions(): array;
+
+    public function getReadStatusOptions(): array;
 }
 

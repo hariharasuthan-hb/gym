@@ -80,7 +80,7 @@ class WorkoutVideoService
         }
         
         // Create workout video record
-        return WorkoutVideo::create([
+        $workoutVideo = WorkoutVideo::create([
             'workout_plan_id' => $workoutPlan->id,
             'user_id' => $user->id,
             'exercise_name' => $exerciseName,
@@ -88,6 +88,10 @@ class WorkoutVideoService
             'duration_seconds' => $durationSeconds,
             'status' => 'pending',
         ]);
+
+        \App\Events\UserUploadedContent::dispatch($user, 'workout_video', $videoPath, $exerciseName);
+
+        return $workoutVideo;
     }
 
     /**

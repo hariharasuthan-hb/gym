@@ -15,6 +15,26 @@
        class="{{ $linkClass }}">
         Home
     </a>
+    <a href="{{ route('member.notifications.index') }}" 
+       class="{{ $linkClass }} relative">
+        Notifications
+        @php
+            try {
+                $inAppNotificationRepository = app(\App\Repositories\Interfaces\InAppNotificationRepositoryInterface::class);
+                $dbNotificationRepository = app(\App\Repositories\Interfaces\NotificationRepositoryInterface::class);
+                $inAppUnreadCount = $inAppNotificationRepository->getUnreadCountForUser(auth()->user());
+                $dbUnreadCount = $dbNotificationRepository->getUnreadCountForUser(auth()->user());
+                $notificationCount = $inAppUnreadCount + $dbUnreadCount;
+            } catch (\Exception $e) {
+                $notificationCount = 0;
+            }
+        @endphp
+        @if($notificationCount > 0)
+            <span class="absolute -top-1 -right-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 text-xs font-semibold text-white" style="padding-left:0.25rem;padding-right:0.25rem;">
+                {{ $notificationCount > 99 ? '99+' : $notificationCount }}
+            </span>
+        @endif
+    </a>
     <a href="{{ route('member.profile') }}" 
        class="{{ $linkClass }}">
         Profile
@@ -57,12 +77,32 @@
         </a>
     @endif
 
-    {{-- Dashboard and Profile Links for authenticated members --}}
+    {{-- Dashboard and Profile Links for authenticated users --}}
     @auth
         @if(auth()->user()->hasRole('member'))
             <a href="{{ route('member.dashboard') }}"
                class="{{ $linkClass }}">
                 Dashboard
+            </a>
+            <a href="{{ route('member.notifications.index') }}"
+               class="{{ $linkClass }} relative">
+                Notifications
+                @php
+                    try {
+                        $inAppNotificationRepository = app(\App\Repositories\Interfaces\InAppNotificationRepositoryInterface::class);
+                        $dbNotificationRepository = app(\App\Repositories\Interfaces\NotificationRepositoryInterface::class);
+                        $inAppUnreadCount = $inAppNotificationRepository->getUnreadCountForUser(auth()->user());
+                        $dbUnreadCount = $dbNotificationRepository->getUnreadCountForUser(auth()->user());
+                        $notificationCount = $inAppUnreadCount + $dbUnreadCount;
+                    } catch (\Exception $e) {
+                        $notificationCount = 0;
+                    }
+                @endphp
+                @if($notificationCount > 0)
+                    <span class="absolute -top-1 -right-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 text-xs font-semibold text-white" style="padding-left:0.25rem;padding-right:0.25rem;">
+                        {{ $notificationCount > 99 ? '99+' : $notificationCount }}
+                    </span>
+                @endif
             </a>
             <a href="{{ route('member.profile') }}"
                class="{{ $linkClass }}">
@@ -72,6 +112,11 @@
             <a href="{{ route('admin.dashboard') }}"
                class="{{ $linkClass }}">
                 Admin
+            </a>
+        @elseif(auth()->user()->hasRole('trainer'))
+            <a href="{{ route('admin.dashboard') }}"
+               class="{{ $linkClass }}">
+                Dashboard
             </a>
         @endif
     @endauth

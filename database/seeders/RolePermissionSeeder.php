@@ -92,9 +92,6 @@ class RolePermissionSeeder extends Seeder
             'edit announcements',
             'delete announcements',
             'view notifications',
-            'create notifications',
-            'edit notifications',
-            'delete notifications',
             'mark notifications read',
             
             // CMS Management
@@ -122,6 +119,10 @@ class RolePermissionSeeder extends Seeder
             'create banners',
             'edit banners',
             'delete banners',
+            
+            // Orphaned Videos Management
+            'view orphaned videos',
+            'delete orphaned videos',
         ];
 
         foreach ($permissions as $permission) {

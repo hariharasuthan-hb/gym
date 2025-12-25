@@ -77,6 +77,13 @@ class WorkoutVideoReviewController extends Controller
             'reviewed_at' => now(),
         ]);
 
+        $member = $workoutVideo->user;
+        if ($action === 'approve') {
+            \App\Events\EntityApproved::dispatch($member, 'workout_video', $workoutVideo, "Your workout video '{$workoutVideo->exercise_name}' has been approved.");
+        } else {
+            \App\Events\EntityRejected::dispatch($member, 'workout_video', $workoutVideo, $feedback);
+        }
+
         return back()->with('success', "Video {$action}ed successfully.");
     }
 }

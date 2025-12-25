@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Repositories\Interfaces\InAppNotificationRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 
 class InAppNotificationRepository extends BaseRepository implements InAppNotificationRepositoryInterface
 {
@@ -30,9 +31,22 @@ class InAppNotificationRepository extends BaseRepository implements InAppNotific
         return $notification->delete();
     }
 
-    public function queryForDataTable(array $filters = []): Builder
+    public function queryForDataTable(array $filters = []): QueryBuilder
     {
-        $query = $this->model->newQuery()->with(['creator', 'targetUser']);
+        // Query from notifications table (Laravel database notifications)
+        $query = \Illuminate\Support\Facades\DB::table('notifications')
+            ->select([
+                'notifications.id',
+                'notifications.type',
+                'notifications.notifiable_type',
+                'notifications.notifiable_id',
+                'notifications.data',
+                'notifications.read_at',
+                'notifications.created_at',
+                'notifications.updated_at',
+            ])
+            ->where('notifications.type', 'App\Notifications\DatabaseNotification');
+        
         $query = $this->applyFilters($query, $filters);
         $query = $this->applySearch($query, $filters['search'] ?? null);
 
@@ -89,34 +103,23 @@ class InAppNotificationRepository extends BaseRepository implements InAppNotific
         ];
     }
 
+    public function getReadStatusOptions(): array
+    {
+        return [
+            'read' => 'Read',
+            'unread' => 'Unread',
+        ];
+    }
+
     protected function applyFilters($query, array $filters)
     {
+        // Filter by read status
         if (!empty($filters['status'])) {
-            $query->where('status', $filters['status']);
-        }
-
-        if (!empty($filters['audience_type'])) {
-            $query->where('audience_type', $filters['audience_type']);
-        }
-
-        if (!empty($filters['requires_acknowledgement'])) {
-            $query->where('requires_acknowledgement', filter_var($filters['requires_acknowledgement'], FILTER_VALIDATE_BOOLEAN));
-        }
-
-        if (!empty($filters['scheduled_from'])) {
-            $query->whereDate('scheduled_for', '>=', $filters['scheduled_from']);
-        }
-
-        if (!empty($filters['scheduled_to'])) {
-            $query->whereDate('scheduled_for', '<=', $filters['scheduled_to']);
-        }
-
-        if (!empty($filters['published_from'])) {
-            $query->whereDate('published_at', '>=', $filters['published_from']);
-        }
-
-        if (!empty($filters['published_to'])) {
-            $query->whereDate('published_at', '<=', $filters['published_to']);
+            if ($filters['status'] === 'read') {
+                $query->whereNotNull('notifications.read_at');
+            } elseif ($filters['status'] === 'unread') {
+                $query->whereNull('notifications.read_at');
+            }
         }
 
         return $query;
@@ -132,9 +135,10 @@ class InAppNotificationRepository extends BaseRepository implements InAppNotific
 
         $search = trim($search);
 
+        // Search in data JSON (title and message fields)
         return $query->where(function ($q) use ($search) {
-            $q->where('title', 'like', "%{$search}%")
-                ->orWhere('message', 'like', "%{$search}%");
+            $q->whereRaw("JSON_EXTRACT(notifications.data, '$.title') LIKE ?", ["%{$search}%"])
+                ->orWhereRaw("JSON_EXTRACT(notifications.data, '$.message') LIKE ?", ["%{$search}%"]);
         });
     }
 }

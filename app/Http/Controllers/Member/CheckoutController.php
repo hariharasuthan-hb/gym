@@ -111,6 +111,13 @@ class CheckoutController extends Controller
                     'metadata' => $metadata,
                 ]);
 
+                // Load relationships before dispatching event
+                $subscription->load(['subscriptionPlan', 'user']);
+
+                if (in_array($subscription->status, ['active', 'trialing'])) {
+                    \App\Events\UserSubscribed::dispatch($subscription);
+                }
+
                 session([
                     'subscription_data' => [
                         'plan_id' => $plan->id,
@@ -133,6 +140,18 @@ class CheckoutController extends Controller
                     'trace' => $e->getTraceAsString(),
                 ]);
                 
+                // Clear any partial session data
+                session()->forget('payment_data');
+                session()->forget('subscription_data');
+                
+                // Provide user-friendly error message
+                $errorMessage = 'Failed to initialize payment. Please try again.';
+                if (str_contains($e->getMessage(), 'Stripe') || str_contains($e->getMessage(), 'stripe')) {
+                    $errorMessage = 'Payment gateway configuration error. Please contact support.';
+                } elseif (str_contains($e->getMessage(), 'Razorpay') || str_contains($e->getMessage(), 'razorpay')) {
+                    $errorMessage = 'Payment gateway configuration error. Please contact support.';
+                }
+                
                 // Continue to show checkout page with error
                 return view('frontend.member.subscription.checkout', [
                     'plan' => $plan,
@@ -140,7 +159,7 @@ class CheckoutController extends Controller
                     'hasTrial' => $plan->hasTrial(),
                     'trialDays' => $plan->getTrialDays(),
                     'enableGpay' => $paymentSettings->enable_gpay ?? false,
-                ])->with('error', 'Failed to initialize payment. Please try again.');
+                ])->with('error', $errorMessage);
             }
         }
 
@@ -240,6 +259,13 @@ class CheckoutController extends Controller
                 'started_at' => now(),
                 'metadata' => $metadata,
             ]);
+
+            // Load relationships before dispatching event
+            $subscription->load(['subscriptionPlan', 'user']);
+
+            if (in_array($subscription->status, ['active', 'trialing'])) {
+                \App\Events\UserSubscribed::dispatch($subscription);
+            }
 
             // Payment records will be created automatically via webhooks after payment confirmation
             // No need to create them here - they will be created when payment_intent.succeeded or invoice.payment_succeeded webhooks are received

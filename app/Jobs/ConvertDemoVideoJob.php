@@ -25,8 +25,9 @@ class ConvertDemoVideoJob implements ShouldQueue
 
     /**
      * Allow long-running conversions.
+     * Set to 600 seconds (10 minutes) for video conversions.
      */
-    public $timeout = 0; // No hard timeout, rely on supervisor / process manager
+    public $timeout = 600;
 
     /**
      * Number of attempts.

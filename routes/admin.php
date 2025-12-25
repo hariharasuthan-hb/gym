@@ -96,8 +96,20 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             ->name('payment-settings.index');
         Route::put('/payment-settings', [\App\Http\Controllers\Admin\PaymentSettingController::class, 'update'])
             ->name('payment-settings.update');
+
+        // Orphaned Videos Management
+        Route::get('/orphaned-videos', [\App\Http\Controllers\Admin\OrphanedVideosController::class, 'index'])
+            ->middleware('permission:view orphaned videos')
+            ->name('orphaned-videos.index');
+        Route::delete('/orphaned-videos', [\App\Http\Controllers\Admin\OrphanedVideosController::class, 'destroy'])
+            ->middleware('permission:delete orphaned videos')
+            ->name('orphaned-videos.destroy');
+        Route::delete('/orphaned-videos/multiple', [\App\Http\Controllers\Admin\OrphanedVideosController::class, 'destroyMultiple'])
+            ->middleware('permission:delete orphaned videos')
+            ->name('orphaned-videos.destroy-multiple');
+
     });
-    
+
     // Routes accessible by both admin and trainer (permission-based)
     Route::middleware(['role:admin,trainer'])->group(function () {
         // Announcements management (admin & trainer, permission-based)
@@ -197,6 +209,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::middleware(['role:admin,trainer,member', 'permission:mark notifications read'])->group(function () {
         Route::post('/notification-center/{notification}/read', [\App\Http\Controllers\Admin\NotificationCenterController::class, 'markAsRead'])
             ->name('notification-center.read');
+        Route::post('/notification-center/db/{notificationId}/read', [\App\Http\Controllers\Admin\NotificationCenterController::class, 'markDbAsRead'])
+            ->name('notification-center.db.read');
+        Route::post('/notification-center/read-all', [\App\Http\Controllers\Admin\NotificationCenterController::class, 'markAllAsRead'])
+            ->name('notification-center.read-all');
     });
 
     Route::middleware(['role:admin,trainer', 'permission:view reports|export reports'])->group(function () {
