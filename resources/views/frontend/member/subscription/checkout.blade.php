@@ -77,9 +77,9 @@
                 <div class="bg-white rounded-lg shadow-lg p-6 lg:p-8 sticky top-8">
                     <div class="text-center mb-6">
                         @if($plan->image)
-                            <img src="{{ asset('storage/' . $plan->image) }}" alt="{{ $plan->plan_name }}" class="w-32 h-32 mx-auto rounded-lg object-cover mb-4">
+                            <img src="{{ asset('storage/' . $plan->image) }}" alt="{{ $plan->plan_name }}" class="w-full max-w-xs mx-auto rounded-lg object-contain mb-4">
                         @else
-                            <div class="w-32 h-32 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mb-4">
+                            <div class="w-full max-w-xs mx-auto aspect-square bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mb-4">
                                 <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
