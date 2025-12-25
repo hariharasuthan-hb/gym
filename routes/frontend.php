@@ -30,7 +30,7 @@ Route::name('frontend.')->group(function () {
 });
 
 // Member Portal (requires authentication)
-Route::prefix('member')->name('member.')->middleware(['auth', 'role:member'])->group(function () {
+Route::prefix('member')->name('member.')->middleware(['auth', 'role:member', 'prevent-back-history'])->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Frontend\MemberController::class, 'dashboard'])->name('dashboard');
     Route::get('/profile', [\App\Http\Controllers\Frontend\MemberController::class, 'profile'])->name('profile');
     Route::put('/profile', [\App\Http\Controllers\Frontend\MemberController::class, 'updateProfile'])->name('profile.update');

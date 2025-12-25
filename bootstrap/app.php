@@ -59,6 +59,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'permission' => \App\Http\Middleware\PermissionMiddleware::class,
             'increase.post.size' => \App\Http\Middleware\IncreasePostSize::class,
+            'prevent-back-history' => \App\Http\Middleware\PreventBackHistory::class,
         ]);
         
         // Apply to routes that handle large file uploads
