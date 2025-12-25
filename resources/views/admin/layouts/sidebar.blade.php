@@ -42,11 +42,11 @@
             {{-- User Management Group --}}
             @can('view users')
             <div class="pt-1">
-                <button @click="toggleGroup('users')" 
-                        class="w-full flex items-center justify-between px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
-                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                <button @click="toggleGroup('users', $event)" 
+                        class="w-full flex items-center px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed, 'justify-between': !$root.sidebarCollapsed }"
                         :title="$root.sidebarCollapsed ? 'User Management' : ''">
-                    <div class="flex items-center">
+                    <div class="flex items-center" :class="{ 'lg:justify-center lg:w-full': $root.sidebarCollapsed }">
                         <svg class="w-5 h-5 transition-all duration-300" 
                              :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
                              fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,11 +92,11 @@
             {{-- Subscription Management Group --}}
             @canany(['view subscription plans', 'view subscriptions'])
             <div class="pt-1">
-                <button @click="toggleGroup('subscriptions')" 
-                        class="w-full flex items-center justify-between px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
-                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                <button @click="toggleGroup('subscriptions', $event)" 
+                        class="w-full flex items-center px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed, 'justify-between': !$root.sidebarCollapsed }"
                         :title="$root.sidebarCollapsed ? 'Subscriptions' : ''">
-                    <div class="flex items-center">
+                    <div class="flex items-center" :class="{ 'lg:justify-center lg:w-full': $root.sidebarCollapsed }">
                         <svg class="w-5 h-5 transition-all duration-300" 
                              :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
                              fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,11 +145,11 @@
             {{-- Communications --}}
             @canany(['view announcements', 'view notifications'])
             <div class="pt-1">
-                <button @click="toggleGroup('communications')" 
-                        class="w-full flex items-center justify-between px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
-                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                <button @click="toggleGroup('communications', $event)" 
+                        class="w-full flex items-center px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed, 'justify-between': !$root.sidebarCollapsed }"
                         :title="$root.sidebarCollapsed ? 'Communications' : ''">
-                    <div class="flex items-center">
+                    <div class="flex items-center" :class="{ 'lg:justify-center lg:w-full': $root.sidebarCollapsed }">
                         <svg class="w-5 h-5 transition-all duration-300" 
                              :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
                              fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -212,11 +212,11 @@
             {{-- Plans Management Group --}}
             @canany(['view workout plans', 'view diet plans'])
             <div class="pt-1">
-                <button @click="toggleGroup('plans')" 
-                        class="w-full flex items-center justify-between px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
-                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                <button @click="toggleGroup('plans', $event)" 
+                        class="w-full flex items-center px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed, 'justify-between': !$root.sidebarCollapsed }"
                         :title="$root.sidebarCollapsed ? 'Plans' : ''">
-                    <div class="flex items-center">
+                    <div class="flex items-center" :class="{ 'lg:justify-center lg:w-full': $root.sidebarCollapsed }">
                         <svg class="w-5 h-5 transition-all duration-300" 
                              :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
                              fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -265,11 +265,11 @@
             {{-- Financial Group --}}
             @canany(['view payments', 'view invoices', 'view expenses', 'view incomes', 'view finances'])
             <div class="pt-1">
-                <button @click="toggleGroup('financial')" 
-                        class="w-full flex items-center justify-between px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
-                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                <button @click="toggleGroup('financial', $event)" 
+                        class="w-full flex items-center px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed, 'justify-between': !$root.sidebarCollapsed }"
                         :title="$root.sidebarCollapsed ? 'Financial' : ''">
-                    <div class="flex items-center">
+                    <div class="flex items-center" :class="{ 'lg:justify-center lg:w-full': $root.sidebarCollapsed }">
                         <svg class="w-5 h-5 transition-all duration-300" 
                              :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
                              fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -387,11 +387,11 @@
             {{-- CMS Management Group --}}
             @canany(['view cms pages', 'view cms content', 'view landing page', 'view site settings', 'view payment settings', 'view banners', 'view orphaned videos'])
             <div class="pt-1">
-                <button @click="toggleGroup('cms')" 
-                        class="w-full flex items-center justify-between px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
-                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                <button @click="toggleGroup('cms', $event)" 
+                        class="w-full flex items-center px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed, 'justify-between': !$root.sidebarCollapsed }"
                         :title="$root.sidebarCollapsed ? 'CMS' : ''">
-                    <div class="flex items-center">
+                    <div class="flex items-center" :class="{ 'lg:justify-center lg:w-full': $root.sidebarCollapsed }">
                         <svg class="w-5 h-5 transition-all duration-300" 
                              :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
                              fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -493,11 +493,11 @@
             {{-- Reports Group --}}
             @canany(['view reports', 'view payments', 'view invoices', 'view expenses', 'view incomes', 'view subscriptions', 'view activities', 'view finances'])
             <div class="pt-1">
-                <button @click="toggleGroup('reports')" 
-                        class="w-full flex items-center justify-between px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
-                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
+                <button @click="toggleGroup('reports', $event)" 
+                        class="w-full flex items-center px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed, 'justify-between': !$root.sidebarCollapsed }"
                         :title="$root.sidebarCollapsed ? 'Reports' : ''">
-                    <div class="flex items-center">
+                    <div class="flex items-center" :class="{ 'lg:justify-center lg:w-full': $root.sidebarCollapsed }">
                         <svg class="w-5 h-5 transition-all duration-300" 
                              :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
                              fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -611,7 +611,8 @@
     </div>
 
     {{-- User Info at Bottom --}}
-    <div class="admin-sidebar-footer w-64 p-3 border-t border-gray-700/50 bg-gray-900/50 backdrop-blur-sm flex-shrink-0 transition-all duration-300">
+    <div class="admin-sidebar-footer p-3 border-t border-gray-700/50 bg-gray-900/50 backdrop-blur-sm flex-shrink-0 transition-all duration-300"
+         :class="{ 'lg:w-16': $root.sidebarCollapsed, 'w-64 lg:w-64': !$root.sidebarCollapsed }">
         <div class="flex items-center" :class="{ 'lg:justify-center': $root.sidebarCollapsed }">
             <div class="flex-1 min-w-0" :class="{ 'lg:hidden': $root.sidebarCollapsed }">
                 <p class="text-sm font-semibold text-white truncate">{{ Auth::user()->name }}</p>
@@ -644,13 +645,28 @@ function sidebarMenu() {
             cms: {{ request()->routeIs('admin.cms.*') || request()->routeIs('admin.landing-page.*') || request()->routeIs('admin.site-settings.*') || request()->routeIs('admin.payment-settings.*') || request()->routeIs('admin.banners.*') || request()->routeIs('admin.orphaned-videos.*') ? 'true' : 'false' }},
             reports: {{ request()->routeIs('admin.payments.*') || request()->routeIs('admin.invoices.*') || request()->routeIs('admin.expenses.*') || request()->routeIs('admin.incomes.*') || request()->routeIs('admin.subscriptions.*') || request()->routeIs('admin.activities.*') || request()->routeIs('admin.finances.*') || request()->routeIs('admin.reports.*') ? 'true' : 'false' }},
         },
-        toggleGroup(group) {
-            // Don't toggle if sidebar is collapsed (check class)
-            const sidebar = document.getElementById('admin-sidebar');
-            if (sidebar && sidebar.classList.contains('w-16')) {
-                return;
+        toggleGroup(group, event) {
+            if (event) {
+                event.stopPropagation();
             }
-            this.openGroups[group] = !this.openGroups[group];
+            
+            // If sidebar is collapsed, expand it first, then toggle the group
+            const sidebar = document.getElementById('admin-sidebar');
+            const toggleBtn = document.getElementById('sidebar-toggle');
+            const isCollapsed = sidebar && (sidebar.classList.contains('w-16') || sidebar.classList.contains('lg:w-16'));
+            
+            if (isCollapsed && toggleBtn) {
+                // Expand sidebar by clicking the toggle button
+                toggleBtn.click();
+                
+                // Wait for sidebar to expand, then toggle the group
+                setTimeout(() => {
+                    this.openGroups[group] = true;
+                }, 350); // Wait for transition (300ms + small buffer)
+            } else {
+                // Normal toggle when expanded
+                this.openGroups[group] = !this.openGroups[group];
+            }
         },
         init() {
             // Watch for sidebar collapse and close groups when collapsed

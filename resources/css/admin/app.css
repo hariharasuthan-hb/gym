@@ -105,6 +105,14 @@
             padding-left: 0.5rem;
             padding-right: 0.5rem;
         }
+        
+        /* Footer width when collapsed via w-16 class */
+        .admin-sidebar.w-16 .admin-sidebar-footer,
+        .admin-sidebar.lg\:w-16 .admin-sidebar-footer {
+            width: 4rem !important;
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
+        }
     }
     
     .admin-sidebar-item {
@@ -508,6 +516,40 @@
     
     .admin-sidebar[class*="lg:w-16"] .ml-4 {
         @apply lg:hidden;
+    }
+    
+    /* Fix alignment for collapsed sidebar buttons */
+    .admin-sidebar.w-16 button[class*="justify-between"],
+    .admin-sidebar.lg\:w-16 button[class*="justify-between"] {
+        justify-content: center !important;
+    }
+    
+    .admin-sidebar.w-16 button > div[class*="flex items-center"],
+    .admin-sidebar.lg\:w-16 button > div[class*="flex items-center"] {
+        justify-content: center !important;
+        width: 100%;
+    }
+    
+    .admin-sidebar.w-16 button > svg:last-child,
+    .admin-sidebar.lg\:w-16 button > svg:last-child {
+        display: none !important;
+    }
+    
+    /* Ensure all icons are centered when collapsed */
+    .admin-sidebar.w-16 .admin-sidebar-item,
+    .admin-sidebar.lg\:w-16 .admin-sidebar-item,
+    .admin-sidebar.w-16 button,
+    .admin-sidebar.lg\:w-16 button {
+        justify-content: center !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+    
+    /* Remove margins from icons when collapsed */
+    .admin-sidebar.w-16 svg,
+    .admin-sidebar.lg\:w-16 svg {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
     }
 }
 

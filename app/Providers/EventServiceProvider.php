@@ -8,6 +8,7 @@ use App\Events\TrainerStatusChanged;
 use App\Events\UserRegistered;
 use App\Events\UserSubscribed;
 use App\Events\UserUploadedContent;
+use App\Events\WorkoutPlanCreated;
 use App\Events\WorkoutVideoAssigned;
 use Illuminate\Auth\Events\Registered;
 use App\Listeners\SendEntityApprovalNotification;
@@ -17,6 +18,7 @@ use App\Listeners\SendTrainerStatusNotification;
 use App\Listeners\SendUserRegistrationNotification;
 use App\Listeners\SendUserSubscriptionNotification;
 use App\Listeners\SendUserUploadNotification;
+use App\Listeners\SendWorkoutPlanCreatedNotification;
 use App\Listeners\SendWorkoutVideoNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
@@ -37,6 +39,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         WorkoutVideoAssigned::class => [
             SendWorkoutVideoNotification::class,
+        ],
+        WorkoutPlanCreated::class => [
+            SendWorkoutPlanCreatedNotification::class,
         ],
         TrainerStatusChanged::class => [
             SendTrainerStatusNotification::class,

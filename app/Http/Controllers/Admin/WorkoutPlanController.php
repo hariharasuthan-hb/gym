@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\StoreWorkoutPlanRequest;
 use App\Http\Requests\Admin\UpdateWorkoutPlanRequest;
 use App\Models\WorkoutPlan;
 use App\Models\User;
+use App\Events\WorkoutPlanCreated;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -131,7 +132,10 @@ class WorkoutPlanController extends Controller
             $validated['demo_video_path'] = $finalPath;
         }
         
-        WorkoutPlan::create($validated);
+        $workoutPlan = WorkoutPlan::create($validated);
+        
+        // Fire event to send notification to member
+        event(new WorkoutPlanCreated($workoutPlan));
 
         return redirect()->route('admin.workout-plans.index')
             ->with('success', 'Workout plan created successfully.');

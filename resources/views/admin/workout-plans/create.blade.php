@@ -21,6 +21,7 @@
                     Cancel
                 </a>
                 <button type="submit"
+                        id="create-plan-btn"
                         class="btn btn-primary {{ auth()->user()->hasRole('admin') && collect($trainers ?? [])->isEmpty() ? 'opacity-50 cursor-not-allowed' : '' }}"
                         {{ auth()->user()->hasRole('admin') && collect($trainers ?? [])->isEmpty() ? 'disabled' : '' }}>
                     Create Plan
@@ -172,11 +173,45 @@ document.addEventListener('DOMContentLoaded', function() {
         exercisesJsonInput.value = JSON.stringify(exercises);
     }
     
-    // Update JSON on input change
+    // Function to check if exercises and notes are filled and enable/disable submit button
+    function checkExercisesAndToggleButton() {
+        const submitButton = document.getElementById('create-plan-btn');
+        if (!submitButton) return;
+        
+        const exerciseInputs = container.querySelectorAll('input[name="exercises[]"]');
+        const hasExercises = Array.from(exerciseInputs).some(input => input.value.trim() !== '');
+        
+        // Check additional notes
+        const notesInput = document.querySelector('textarea[name="notes"]');
+        const hasNotes = notesInput && notesInput.value.trim() !== '';
+        
+        // Check if trainer requirement is met (for admin)
+        const isAdmin = {{ auth()->user()->hasRole('admin') ? 'true' : 'false' }};
+        const hasTrainers = {{ collect($trainers ?? [])->isNotEmpty() ? 'true' : 'false' }};
+        const trainerRequirementMet = !isAdmin || hasTrainers;
+        
+        if (hasExercises && hasNotes && trainerRequirementMet) {
+            submitButton.disabled = false;
+            submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        } else {
+            submitButton.disabled = true;
+            submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    }
+    
+    // Check notes on input change
+    const notesInput = document.querySelector('textarea[name="notes"]');
+    if (notesInput) {
+        notesInput.addEventListener('input', checkExercisesAndToggleButton);
+        notesInput.addEventListener('change', checkExercisesAndToggleButton);
+    }
+    
+    // Update JSON on input change and check exercises
     if (container) {
         container.addEventListener('input', function(e) {
             if (e.target.name === 'exercises[]') {
                 updateExercisesJson();
+                checkExercisesAndToggleButton();
             }
         });
     }
@@ -188,8 +223,29 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Initial JSON update
+    // Check when exercises are added
+    if (addButton) {
+        addButton.addEventListener('click', function() {
+            setTimeout(() => {
+                checkExercisesAndToggleButton();
+            }, 100);
+        });
+    }
+    
+    // Check when exercise is removed
+    if (container) {
+        container.addEventListener('click', function(e) {
+            if (e.target.closest('.remove-exercise')) {
+                setTimeout(() => {
+                    checkExercisesAndToggleButton();
+                }, 100);
+            }
+        });
+    }
+    
+    // Initial JSON update and check
     updateExercisesJson();
+    checkExercisesAndToggleButton();
 });
 </script>
 <script src="{{ asset('js/video-upload-utils.js') }}"></script>

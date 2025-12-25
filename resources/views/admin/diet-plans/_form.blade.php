@@ -159,12 +159,12 @@
 
     {{-- Nutritional Goals Section --}}
     <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-5 rounded-xl border border-green-100">
-        <h3 class="text-base font-semibold text-gray-800 mb-3">Nutritional Goals</h3>
         
         @include('admin.components.form-textarea', [
             'name' => 'nutritional_goals',
             'label' => 'Nutritional Goals',
             'value' => old('nutritional_goals', $dietPlan->nutritional_goals ?? null),
+            'required' => true,
             'placeholder' => 'Enter nutritional goals (e.g., High protein, Low carb, etc.)',
             'rows' => 4,
             'colspan' => 2,
@@ -238,12 +238,12 @@
 
     {{-- Notes Section --}}
     <div class="bg-gradient-to-r from-orange-50 to-red-50 p-5 rounded-xl border border-orange-100">
-        <h3 class="text-base font-semibold text-gray-800 mb-3">Additional Notes</h3>
         
         @include('admin.components.form-textarea', [
             'name' => 'notes',
             'label' => 'Notes',
             'value' => old('notes', $dietPlan->notes ?? null),
+            'required' => true,
             'placeholder' => 'Enter any additional notes or instructions',
             'rows' => 4,
             'colspan' => 2,

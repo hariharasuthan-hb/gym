@@ -45,10 +45,9 @@ return Application::configure(basePath: dirname(__DIR__))
             ->dailyAt('09:00')
             ->withoutOverlapping();
 
-        $notificationTime = config('notifications.daily_notification_time', '08:00');
         $schedule->command(SendDailyWorkoutDietPlanNotifications::class)
             ->name('daily-workout-diet-plan-notifications')
-            ->dailyAt($notificationTime)
+            ->dailyAt('00:00')
             ->withoutOverlapping();
     })
     ->withProviders([

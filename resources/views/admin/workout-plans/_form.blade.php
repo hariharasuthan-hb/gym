@@ -145,7 +145,7 @@
     {{-- Exercises Section --}}
     <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-5 rounded-xl border border-green-100">
         <div class="flex items-center justify-between mb-3">
-            <h3 class="text-base font-semibold text-gray-800">Exercises</h3>
+            <h3 class="text-base font-semibold text-gray-800">Exercises <span class="text-red-500">*</span></h3>
             <button type="button" id="add-exercise" class="text-sm text-green-600 hover:text-green-800 font-medium flex items-center">
                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -268,12 +268,11 @@
 
     {{-- Notes Section --}}
     <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-5 rounded-xl border border-purple-100">
-        <h3 class="text-base font-semibold text-gray-800 mb-3">Additional Notes</h3>
-        
         @include('admin.components.form-textarea', [
             'name' => 'notes',
             'label' => 'Notes',
             'value' => old('notes', $workoutPlan->notes ?? null),
+            'required' => true,
             'placeholder' => 'Enter any additional notes or instructions',
             'rows' => 4,
             'colspan' => 2,
