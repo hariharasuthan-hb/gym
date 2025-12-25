@@ -9,6 +9,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\Process\Process;
 
 /**
  * Convert admin demo videos in the background using FFmpeg.
@@ -88,23 +89,52 @@ class ConvertDemoVideoJob implements ShouldQueue
         // Build FFmpeg command (no ffprobe)
         $ffmpeg = config('video.ffmpeg_path') ?: 'ffmpeg';
 
-        $cmd = sprintf(
-            '%s -y -loglevel error -i %s -c:v libx264 -preset veryfast -crf 23 -c:a aac -b:a 128k %s 2>&1',
-            escapeshellcmd($ffmpeg),
-            escapeshellarg($input),
-            escapeshellarg($tempOutput)
-        );
+        // Use Symfony Process instead of exec() for better timeout control
+        // This ensures the process respects the job timeout and doesn't spawn nested queue workers
+        $process = new Process([
+            $ffmpeg,
+            '-y',
+            '-loglevel', 'error',
+            '-i', $input,
+            '-c:v', 'libx264',
+            '-preset', 'veryfast',
+            '-crf', '23',
+            '-c:a', 'aac',
+            '-b:a', '128k',
+            $tempOutput
+        ]);
 
-        $output = [];
-        $status = 0;
-        exec($cmd, $output, $status);
+        // Set process timeout to match job timeout (600 seconds = 10 minutes)
+        // Add 60 seconds buffer to ensure FFmpeg has enough time to complete
+        $process->setTimeout(660); // 11 minutes (job timeout + buffer)
+        $process->setIdleTimeout(null); // No idle timeout for video conversion
+
+        Log::info('ConvertDemoVideoJob: Starting FFmpeg conversion', [
+            'source_path' => $this->sourcePath,
+            'input_size' => $inputSize,
+            'timeout' => 660,
+        ]);
+
+        try {
+            $process->run();
+            $status = $process->getExitCode();
+            $output = $process->getOutput() . $process->getErrorOutput();
+        } catch (\Symfony\Component\Process\Exception\ProcessTimedOutException $e) {
+            Log::error('ConvertDemoVideoJob: FFmpeg conversion timed out', [
+                'source_path' => $this->sourcePath,
+                'timeout' => 660,
+                'error' => $e->getMessage(),
+            ]);
+            $status = -1;
+            $output = 'FFmpeg conversion timed out after ' . $process->getTimeout() . ' seconds';
+        }
 
         // If FFmpeg failed or temp file missing → keep original
         if ($status !== 0 || !file_exists($tempOutput)) {
             Log::warning('ConvertDemoVideoJob: FFmpeg failed, keeping original', [
                 'source_path' => $this->sourcePath,
                 'status' => $status,
-                'output' => implode("\n", $output),
+                'output' => $output,
             ]);
 
             $finalRel = $this->outputPath ?: str_replace('raw/', '', $this->sourcePath);
