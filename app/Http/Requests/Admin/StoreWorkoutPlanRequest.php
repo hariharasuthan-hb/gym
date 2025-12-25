@@ -32,6 +32,8 @@ class StoreWorkoutPlanRequest extends FormRequest
             'exercises.*' => ['nullable', 'string', 'max:255'],
             'exercises_json' => ['nullable', 'string'],
             'demo_video' => ['nullable', 'file', 'mimes:mp4,webm,mov', 'max:25600'], // Max 25MB
+            // When the admin UI uploads via AJAX (chunked), it sends a stored path instead of a file
+            'demo_video_path' => ['nullable', 'string', 'max:1000'],
         ];
         
         // Trainer ID is required for admins, auto-set for trainers

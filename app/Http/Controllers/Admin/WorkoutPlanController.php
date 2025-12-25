@@ -107,29 +107,29 @@ class WorkoutPlanController extends Controller
         // Remove temporary fields
         unset($validated['exercises_json']);
         
-        // Handle demo video upload (store first, convert via queue)
+        // Handle demo video upload (store final file directly; no queue conversion for admin)
         if ($request->hasFile('demo_video')) {
             $file = $request->file('demo_video');
             $originalName = $file->getClientOriginalName();
             $fileName = pathinfo($originalName, PATHINFO_FILENAME);
             $uniqueFileName = \Illuminate\Support\Str::slug($fileName) . '-' . time();
             
-            // Store original file in raw directory
-            $extension = $file->getClientOriginalExtension();
-            $sourcePath = $file->storeAs(
-                'workout-plans/demo-videos/raw',
-                $uniqueFileName . '.' . $extension,
-                'public'
-            );
-            
-            // Final path where converted MP4 will be saved
-            $finalPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.mp4';
-            
-            // Dispatch background job to convert the video
-            \App\Jobs\ConvertDemoVideoJob::dispatch($sourcePath, $finalPath);
-            
-            // Store the final path (conversion will happen in background)
+            // Store final file (as uploaded) directly in final directory
+            $extension = strtolower($file->getClientOriginalExtension());
+            $finalPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.' . $extension;
+            $file->storeAs('workout-plans/demo-videos', $uniqueFileName . '.' . $extension, 'public');
+
             $validated['demo_video_path'] = $finalPath;
+        } elseif ($request->filled('demo_video_path')) {
+            // Video was pre-uploaded via AJAX (chunked upload)
+            $path = (string) $request->input('demo_video_path');
+            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+                // Enforce the same 25MB limit server-side
+                $size = \Illuminate\Support\Facades\Storage::disk('public')->size($path);
+                if ($size <= 26214400) {
+                    $validated['demo_video_path'] = $path;
+                }
+            }
         }
         
         $workoutPlan = WorkoutPlan::create($validated);
@@ -229,21 +229,11 @@ class WorkoutPlanController extends Controller
             $fileName = pathinfo($originalName, PATHINFO_FILENAME);
             $uniqueFileName = \Illuminate\Support\Str::slug($fileName) . '-' . time();
             
-            // Store original file in raw directory
-            $extension = $file->getClientOriginalExtension();
-            $sourcePath = $file->storeAs(
-                'workout-plans/demo-videos/raw',
-                $uniqueFileName . '.' . $extension,
-                'public'
-            );
-            
-            // Final path where converted MP4 will be saved
-            $finalPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.mp4';
-            
-            // Dispatch background job to convert the video
-            \App\Jobs\ConvertDemoVideoJob::dispatch($sourcePath, $finalPath);
-            
-            // Store the final path (conversion will happen in background)
+            // Store final file (as uploaded) directly in final directory (no queue conversion for admin)
+            $extension = strtolower($file->getClientOriginalExtension());
+            $finalPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.' . $extension;
+            $file->storeAs('workout-plans/demo-videos', $uniqueFileName . '.' . $extension, 'public');
+
             $validated['demo_video_path'] = $finalPath;
         } elseif ($request->has('demo_video_path') && !empty($request->input('demo_video_path'))) {
             // Video was pre-uploaded via AJAX
@@ -334,27 +324,29 @@ class WorkoutPlanController extends Controller
                 'demo_video.max' => 'Demo video file size must not exceed 25MB.',
             ]);
 
-            // Store original file in raw directory for queue processing
+            // Store final file directly (no queue conversion for admin)
             $originalName = $file->getClientOriginalName();
             $fileName = pathinfo($originalName, PATHINFO_FILENAME);
             $uniqueFileName = \Illuminate\Support\Str::slug($fileName) . '-' . time();
             
-                    $extension = $file->getClientOriginalExtension();
-            $sourcePath = $file->storeAs(
-                'workout-plans/demo-videos/raw',
-                $uniqueFileName . '.' . $extension,
-                'public'
-            );
-            
-            // Final path where converted MP4 will be saved
-            $finalPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.mp4';
-            
-            // Dispatch background job to convert the video
-            \App\Jobs\ConvertDemoVideoJob::dispatch($sourcePath, $finalPath);
+            $extension = strtolower($file->getClientOriginalExtension());
+            $finalPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.' . $extension;
+            $file->storeAs('workout-plans/demo-videos', $uniqueFileName . '.' . $extension, 'public');
+
+            // Verify stored size matches uploaded size
+            $storedSize = \Illuminate\Support\Facades\Storage::disk('public')->size($finalPath);
+            if ($storedSize !== $file->getSize()) {
+                // Cleanup and error if something went wrong
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($finalPath);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Upload failed: stored file size mismatch.',
+                ], 500);
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Video uploaded successfully. Conversion will continue in the background.',
+                'message' => 'Video uploaded successfully.',
                 'video_path' => $finalPath,
                 'video_url' => file_url($finalPath),
             ]);
@@ -403,12 +395,14 @@ class WorkoutPlanController extends Controller
             }
             
             $validated = $request->validate([
-                'video_chunk' => ['required', 'file'],
+                // Each chunk should be small enough to avoid POST limits (we send 5MB chunks from the browser)
+                'video_chunk' => ['required', 'file', 'max:10240'], // 10MB per chunk (KB)
                 'chunk_index' => ['required', 'integer', 'min:0'],
                 'total_chunks' => ['required', 'integer', 'min:1'],
                 'upload_id' => ['required', 'string'],
                 'file_name' => ['required', 'string'],
-                'file_size' => ['required', 'integer'],
+                // Total size limit for admin demo videos: 25MB
+                'file_size' => ['required', 'integer', 'min:1', 'max:26214400'],
                 '_videoFieldName' => ['nullable', 'string'], // Allow additional data
             ]);
 
@@ -419,17 +413,44 @@ class WorkoutPlanController extends Controller
             $fileName = $request->input('file_name');
             $fileSize = (int) $request->input('file_size');
 
+            if ($chunkIndex >= $totalChunks) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid chunk index.',
+                ], 422);
+            }
+
             // Store chunk in temporary directory
             $tempDir = storage_path('app/temp/demo-video-uploads/' . $uploadId);
             if (!\Illuminate\Support\Facades\File::exists($tempDir)) {
                 \Illuminate\Support\Facades\File::makeDirectory($tempDir, 0755, true);
             }
 
-            $chunkPath = $tempDir . '/chunk_' . $chunkIndex;
+            // Validate extension from original filename (we store final file as uploaded; no conversion here)
+            $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+            $allowedExtensions = ['mp4', 'webm', 'mov'];
+            if (!in_array($extension, $allowedExtensions)) {
+                \Illuminate\Support\Facades\File::deleteDirectory($tempDir);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid file type. Allowed: mp4, webm, mov.',
+                ], 422);
+            }
+
+            // Move chunk into temp folder
             $chunk->move($tempDir, 'chunk_' . $chunkIndex);
 
             // If this is the last chunk, combine all chunks and save
             if ($chunkIndex === $totalChunks - 1) {
+                // Prevent concurrent assembly (e.g. retries hitting last chunk)
+                $lockFile = $tempDir . '/assemble.lock';
+                $lockHandle = fopen($lockFile, 'c');
+                if ($lockHandle === false || !flock($lockHandle, LOCK_EX)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Upload failed: unable to acquire assembly lock.',
+                    ], 500);
+                }
 
                 // Check if all chunks exist before assembly
                 $missingChunks = [];
@@ -447,7 +468,9 @@ class WorkoutPlanController extends Controller
                         'total_chunks' => $totalChunks,
                     ]);
 
-                    // Clean up and return error
+                    // Unlock then clean up and return error
+                    flock($lockHandle, LOCK_UN);
+                    fclose($lockHandle);
                     \Illuminate\Support\Facades\File::deleteDirectory($tempDir);
                     return response()->json([
                         'success' => false,
@@ -455,50 +478,99 @@ class WorkoutPlanController extends Controller
                     ], 422);
                 }
 
-                $finalPath = storage_path('app/temp/demo-video-uploads/' . $uploadId . '/final.' . pathinfo($fileName, PATHINFO_EXTENSION));
-                $finalFile = fopen($finalPath, 'wb');
-
-                $totalWritten = 0;
-                for ($i = 0; $i < $totalChunks; $i++) {
-                    $chunkFile = $tempDir . '/chunk_' . $i;
-                    $chunkContent = file_get_contents($chunkFile);
-                    fwrite($finalFile, $chunkContent);
+                // Assemble chunks into a single temp file (streaming, low memory)
+                $assembledLocalPath = $tempDir . '/final.' . $extension;
+                $out = fopen($assembledLocalPath, 'wb');
+                if ($out === false) {
+                    flock($lockHandle, LOCK_UN);
+                    fclose($lockHandle);
+                    \Illuminate\Support\Facades\File::deleteDirectory($tempDir);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Upload failed: unable to create final file.',
+                    ], 500);
                 }
 
-                fclose($finalFile);
+                for ($i = 0; $i < $totalChunks; $i++) {
+                    $chunkFile = $tempDir . '/chunk_' . $i;
+                    $in = fopen($chunkFile, 'rb');
+                    if ($in === false) {
+                        fclose($out);
+                        flock($lockHandle, LOCK_UN);
+                        fclose($lockHandle);
+                        \Illuminate\Support\Facades\File::deleteDirectory($tempDir);
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Upload failed: unable to read chunk ' . $i,
+                        ], 500);
+                    }
+                    stream_copy_to_stream($in, $out);
+                    fclose($in);
+                }
+                fclose($out);
 
-                // Create UploadedFile from final file
-                $uploadedFile = new \Illuminate\Http\UploadedFile(
-                    $finalPath,
-                    $fileName,
-                    mime_content_type($finalPath),
-                    null,
-                    true
-                );
+                // Verify assembled file size matches the client-reported total
+                clearstatcache();
+                $assembledSize = @filesize($assembledLocalPath) ?: 0;
+                if ($assembledSize !== $fileSize) {
+                    \Illuminate\Support\Facades\Log::error('Chunk assembly size mismatch', [
+                        'upload_id' => $uploadId,
+                        'expected_size' => $fileSize,
+                        'assembled_size' => $assembledSize,
+                        'total_chunks' => $totalChunks,
+                    ]);
 
-                // Store assembled file in raw directory for queue processing
+                    flock($lockHandle, LOCK_UN);
+                    fclose($lockHandle);
+                    \Illuminate\Support\Facades\File::deleteDirectory($tempDir);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Upload failed: file size mismatch after assembly.',
+                    ], 422);
+                }
+
+                // Store assembled file directly in final directory (no queue conversion)
                 $baseName = pathinfo($fileName, PATHINFO_FILENAME);
                 $uniqueFileName = \Illuminate\Support\Str::slug($baseName) . '-' . time();
-                        $extension = pathinfo($fileName, PATHINFO_EXTENSION);
-                
-                // Move final assembled file to raw directory
-                $sourcePath = 'workout-plans/demo-videos/raw/' . $uniqueFileName . '.' . $extension;
-                \Illuminate\Support\Facades\Storage::disk('public')->put($sourcePath, file_get_contents($finalPath));
+                $finalRelPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.' . $extension;
 
-                // Final path where converted MP4 will be saved
-                $finalPath = 'workout-plans/demo-videos/' . $uniqueFileName . '.mp4';
-                
-                // Dispatch background job to convert the video
-                \App\Jobs\ConvertDemoVideoJob::dispatch($sourcePath, $finalPath);
+                $stream = fopen($assembledLocalPath, 'rb');
+                if ($stream === false) {
+                    flock($lockHandle, LOCK_UN);
+                    fclose($lockHandle);
+                    \Illuminate\Support\Facades\File::deleteDirectory($tempDir);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Upload failed: unable to open assembled file.',
+                    ], 500);
+                }
+                \Illuminate\Support\Facades\Storage::disk('public')->put($finalRelPath, $stream);
+                fclose($stream);
 
-                // Clean up temporary chunk directory
+                // Verify stored file size matches expected
+                $storedSize = \Illuminate\Support\Facades\Storage::disk('public')->size($finalRelPath);
+                if ($storedSize !== $fileSize) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($finalRelPath);
+                    flock($lockHandle, LOCK_UN);
+                    fclose($lockHandle);
+                    \Illuminate\Support\Facades\File::deleteDirectory($tempDir);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Upload failed: stored file size mismatch.',
+                    ], 500);
+                }
+
+                // Unlock then clean up temporary chunk directory
+                flock($lockHandle, LOCK_UN);
+                fclose($lockHandle);
                 \Illuminate\Support\Facades\File::deleteDirectory($tempDir);
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Video uploaded successfully. Conversion will continue in the background.',
-                    'video_path' => $finalPath,
-                    'video_url' => file_url($finalPath),
+                    'message' => 'Video uploaded successfully.',
+                    'video_path' => $finalRelPath,
+                    'video_url' => file_url($finalRelPath),
+                    'file_size' => $storedSize,
                 ]);
             }
 
@@ -551,45 +623,6 @@ class WorkoutPlanController extends Controller
             ->with('success', 'Workout plan deleted successfully.');
     }
 
-    /**
-     * Check if video conversion is complete.
-     */
-    public function checkVideoConversion(Request $request): \Illuminate\Http\JsonResponse
-    {
-        $request->validate([
-            'video_path' => ['required', 'string'],
-        ]);
-
-        $videoPath = $request->input('video_path');
-        
-        // Check if the final converted file exists
-        $convertedExists = \Illuminate\Support\Facades\Storage::disk('public')->exists($videoPath);
-        
-        // Check if raw file still exists (conversion not done yet)
-        // Extract base filename from final path (e.g., "video-name-1234567890.mp4" -> "video-name-1234567890")
-        $baseName = pathinfo($videoPath, PATHINFO_FILENAME);
-        $rawDir = 'workout-plans/demo-videos/raw';
-        $rawExists = false;
-        
-        // Check if raw directory exists and has files matching the base name
-        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($rawDir)) {
-            $rawFiles = \Illuminate\Support\Facades\Storage::disk('public')->files($rawDir);
-            foreach ($rawFiles as $file) {
-                if (pathinfo($file, PATHINFO_FILENAME) === $baseName) {
-                    $rawExists = true;
-                    break;
-                }
-            }
-        }
-
-        $isComplete = $convertedExists && !$rawExists;
-
-        return response()->json([
-            'success' => true,
-            'is_complete' => $isComplete,
-            'converted_exists' => $convertedExists,
-            'raw_exists' => $rawExists,
-        ]);
-    }
+    // checkVideoConversion removed: admin demo videos are stored directly (no queue conversion)
 }
 
