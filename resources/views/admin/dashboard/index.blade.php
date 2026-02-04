@@ -7,7 +7,7 @@
     <h1 class="text-2xl font-bold text-gray-900 mb-6">Admin Dashboard</h1>
     
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="admin-card">
+        <a href="{{ route('admin.users.index') }}" class="admin-card block no-underline hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-gray-600 mb-1">Total Members</p>
@@ -19,9 +19,9 @@
                     </svg>
                 </div>
             </div>
-        </div>
+        </a>
         
-        <div class="admin-card">
+        <a href="{{ route('admin.subscriptions.index') }}" class="admin-card block no-underline hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-gray-600 mb-1">Active Subscriptions</p>
@@ -33,7 +33,7 @@
                     </svg>
                 </div>
             </div>
-        </div>
+        </a>
         
         <div class="admin-card">
             <div class="flex items-center justify-between">
@@ -65,4 +65,3 @@
     </div>
 </div>
 @endsection
-

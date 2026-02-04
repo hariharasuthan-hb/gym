@@ -11,9 +11,21 @@
         <div class="mb-4">
             @if($logo)
                 <a href="{{ route('admin.dashboard') }}" class="flex items-center justify-center">
-                    <img id="sidebar-logo" src="{{ \Illuminate\Support\Facades\Storage::url($logo) }}" 
+                    @php
+                        $logoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($logo);
+                        // Ensure absolute URL
+                        if (!preg_match('/^https?:\/\//', $logoUrl)) {
+                            $logoUrl = asset($logoUrl);
+                        }
+                    @endphp
+                    <img id="sidebar-logo" src="{{ $logoUrl }}?v={{ $siteSettings->updated_at ? $siteSettings->updated_at->timestamp : time() }}" 
                          alt="{{ $siteTitle }}" 
-                         class="h-10 w-auto object-contain transition-all duration-300">
+                         class="h-10 w-auto object-contain transition-all duration-300"
+                         onerror="console.error('Logo failed to load:', this.src); this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <h2 id="sidebar-title-fallback" class="text-xl font-bold gradient-text text-center" style="display: none;">
+                        <span id="sidebar-title-full">{{ $siteTitle }}</span>
+                        <span id="sidebar-title-short" class="hidden">{{ strtoupper(substr($siteTitle, 0, 2)) }}</span>
+                    </h2>
                 </a>
             @else
                 <h2 id="sidebar-title" class="text-xl font-bold gradient-text text-center">

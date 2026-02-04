@@ -29,7 +29,7 @@ class SubscriptionPlanDataTable extends BaseDataTable
                 if ($plan->is_active) {
                     return '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">Active</span>';
                 }
-                return '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">Inactive</span>';
+                return '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">Inactive</span>';
             })
             ->addColumn('action', function ($plan) {
                 $editUrl = route('admin.subscription-plans.edit', $plan->id);

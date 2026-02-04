@@ -9,12 +9,15 @@ document.addEventListener('DOMContentLoaded', function() {
     if (mobileMenuBtn && mobileMenu) {
         mobileMenuBtn.addEventListener('click', function(e) {
             e.stopPropagation();
+            e.preventDefault();
             mobileMenu.classList.toggle('hidden');
         });
         
-        // Close mobile menu when clicking outside
+        // Close mobile menu when clicking outside (only if menu is open)
         document.addEventListener('click', function(e) {
-            if (!mobileMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+            if (!mobileMenu.classList.contains('hidden') && 
+                !mobileMenu.contains(e.target) && 
+                !mobileMenuBtn.contains(e.target)) {
                 mobileMenu.classList.add('hidden');
             }
         });

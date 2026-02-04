@@ -43,7 +43,8 @@
                         {{ $subscription->status === 'active' ? 'bg-green-100 text-green-800' : '' }}
                         {{ $subscription->status === 'trialing' ? 'bg-blue-100 text-blue-800' : '' }}
                         {{ $subscription->status === 'past_due' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                        {{ $subscription->status === 'canceled' ? 'bg-red-100 text-red-800' : '' }}">
+                        {{ $subscription->status === 'canceled' ? 'bg-red-100 text-red-800' : '' }}
+                        {{ $subscription->status === 'expired' ? 'bg-red-100 text-red-800' : '' }}">
                         {{ ucfirst(str_replace('_',' ', $subscription->status)) }}
                     </span>
                 </div>
@@ -73,10 +74,25 @@
         </div>
     </div>
 
-    @if($subscription->metadata)
+    @if($subscription->metadata && is_array($subscription->metadata) && count($subscription->metadata) > 0)
     <div class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-3">Metadata</h2>
-        <pre class="bg-gray-50 rounded-lg p-4 text-sm text-gray-800 overflow-auto">{{ json_encode($subscription->metadata, JSON_PRETTY_PRINT) }}</pre>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Payment Information</h2>
+        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            @foreach($subscription->metadata as $key => $value)
+                @if($value !== null && $value !== '')
+                    <div>
+                        <dt class="text-gray-500 mb-1">{{ ucwords(str_replace(['_', '-'], ' ', $key)) }}</dt>
+                        <dd class="font-semibold text-gray-900">
+                            @if(is_array($value) || is_object($value))
+                                {{ json_encode($value, JSON_UNESCAPED_SLASHES) }}
+                            @else
+                                {{ $value }}
+                            @endif
+                        </dd>
+                    </div>
+                @endif
+            @endforeach
+        </dl>
     </div>
     @endif
 </div>
