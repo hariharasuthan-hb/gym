@@ -6,6 +6,7 @@ use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Services\PaymentGateway\PaymentGatewayService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -139,6 +140,23 @@ class WebhookController extends Controller
             $stripe = new \Stripe\StripeClient($paymentSettings->stripe_secret_key);
             $stripeSubscription = $stripe->subscriptions->retrieve($subscriptionId);
 
+            $trialEndAt = $stripeSubscription->trial_end
+                ? Carbon::createFromTimestamp($stripeSubscription->trial_end)
+                : null;
+            $nextBillingAt = $stripeSubscription->current_period_end
+                ? Carbon::createFromTimestamp($stripeSubscription->current_period_end)
+                : null;
+            $startedAt = $stripeSubscription->start_date
+                ? Carbon::createFromTimestamp($stripeSubscription->start_date)
+                : Carbon::now();
+
+            $expirationAt = Subscription::calculateExpiration(
+                $plan,
+                $startedAt,
+                $trialEndAt,
+                $nextBillingAt
+            );
+
             // Create subscription record
             Subscription::create([
                 'user_id' => $user->id,
@@ -147,9 +165,10 @@ class WebhookController extends Controller
                 'gateway_customer_id' => $stripeSubscription->customer,
                 'gateway_subscription_id' => $subscriptionId,
                 'status' => $this->mapStripeStatus($stripeSubscription->status),
-                'trial_end_at' => $stripeSubscription->trial_end ? date('Y-m-d H:i:s', $stripeSubscription->trial_end) : null,
-                'next_billing_at' => $stripeSubscription->current_period_end ? date('Y-m-d H:i:s', $stripeSubscription->current_period_end) : null,
-                'started_at' => $stripeSubscription->start_date ? date('Y-m-d H:i:s', $stripeSubscription->start_date) : now(),
+                'trial_end_at' => $trialEndAt,
+                'next_billing_at' => $nextBillingAt,
+                'started_at' => $startedAt,
+                'expiration_at' => $expirationAt,
                 'metadata' => [
                     'checkout_session_id' => $session['id'],
                 ],

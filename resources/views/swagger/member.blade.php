@@ -19,7 +19,7 @@
     <script>
         window.onload = () => {
             SwaggerUIBundle({
-                url: '{{ route('api.documentation.schema') }}',
+                url: '{{ route('api.documentation.schema') }}?t=' + Date.now(),
                 dom_id: '#swagger-ui',
                 presets: [
                     SwaggerUIBundle.presets.apis,

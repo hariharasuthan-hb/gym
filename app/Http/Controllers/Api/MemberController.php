@@ -52,7 +52,7 @@ class MemberController extends Controller
             'status' => $user->status,
             'created_at' => $user->created_at,
             'updated_at' => $user->updated_at,
-        ], 'Profile retrieved successfully');
+        ]);
     }
 
     /**
@@ -70,6 +70,8 @@ class MemberController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'phone' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:500'],
+            'gender' => ['nullable', 'in:male,female,other'],
+            'age' => ['nullable', 'integer', 'min:0', 'max:120'],
         ]);
 
         $this->userRepository->updateWithRole($user, $validated);
@@ -80,6 +82,8 @@ class MemberController extends Controller
             'name' => $user->name,
             'email' => $user->email,
             'phone' => $user->phone,
+            'age' => $user->age,
+            'gender' => $user->gender,
             'address' => $user->address,
         ]);
     }
@@ -116,14 +120,10 @@ class MemberController extends Controller
         $user = auth()->user();
         \App\Models\DietPlan::autoCompleteExpired();
         
-        // Get active subscription
+        // Get active (non-expired) subscription
         $activeSubscription = $user->subscriptions()
+            ->active()
             ->with('subscriptionPlan')
-            ->whereIn('status', ['active', 'trialing'])
-            ->where(function ($query) {
-                $query->whereNull('next_billing_at')
-                      ->orWhere('next_billing_at', '>=', now());
-            })
             ->first();
         
         // Get active subscription plans if no active subscription
@@ -198,17 +198,28 @@ class MemberController extends Controller
         
         $todayActivity = null;
         if ($canTrackAttendance) {
-            $activity = \App\Models\ActivityLog::todayForUser($user->id);
+            $activity = ActivityLog::with('checkedInBy')->where('user_id', $user->id)
+                ->where('date', now()->toDateString())
+                ->whereNotNull('check_in_time')
+                ->latest('check_in_time')
+                ->first();
             if ($activity) {
-                $todayActivity = [
-                    'checked_in' => (bool) $activity->check_in_time,
-                    'checked_out' => (bool) $activity->check_out_time,
-                    'check_in_time' => $activity->check_in_time?->format('H:i:s'),
-                    'check_out_time' => $activity->check_out_time?->format('H:i:s'),
-                ];
+                $todayActivity = $this->formatActivityWithRelations($activity, true);
             }
         }
-        
+
+        // Recent check-in/check-out records (last 10) with relations for dashboard (relative time like UI)
+        $recentCheckInCheckOut = ActivityLog::where('user_id', $user->id)
+            ->whereNotNull('check_in_time')
+            ->with('checkedInBy')
+            ->latest('date')
+            ->latest('check_in_time')
+            ->limit(10)
+            ->get()
+            ->map(fn ($a) => $this->formatActivityWithRelations($a, true))
+            ->values()
+            ->all();
+
         return $this->successResponse('Dashboard data retrieved successfully', [
             'active_subscription' => $activeSubscription ? [
                 'id' => $activeSubscription->id,
@@ -225,41 +236,88 @@ class MemberController extends Controller
             'active_diet_plans' => $activeDietPlans,
             'stats' => $stats,
             'today_activity' => $todayActivity,
+            'recent_check_in_check_out' => $recentCheckInCheckOut,
             'can_track_attendance' => $canTrackAttendance,
         ]);
     }
 
     /**
-     * Get member subscriptions.
-     * 
+     * Format a single activity log with check-in/check-out details and relations.
+     *
+     * @param ActivityLog $activity
+     * @param bool $useRelativeTime When true (dashboard/recent), uses same format as UI e.g. "49 minutes ago". When false (workout plan history), uses clock time e.g. "07:11 PM".
+     * @return array<string, mixed>
+     */
+    private function formatActivityWithRelations(ActivityLog $activity, bool $useRelativeTime = false): array
+    {
+        $formatTime = $useRelativeTime
+            ? fn ($t) => $t ? format_time_smart($t) : null
+            : fn ($t) => $t ? format_time($t) : null;
+
+        return [
+            'id' => $activity->id,
+            'date' => $activity->date?->toDateString(),
+            'checked_in' => (bool) $activity->check_in_time,
+            'checked_out' => (bool) $activity->check_out_time,
+            'check_in_time' => $activity->check_in_time?->format('H:i:s'),
+            'check_out_time' => $activity->check_out_time?->format('H:i:s'),
+            'check_in_time_formatted' => $formatTime($activity->check_in_time),
+            'check_out_time_formatted' => $formatTime($activity->check_out_time),
+            'duration_minutes' => $activity->duration_minutes ?? 0,
+            'workout_summary' => $activity->workout_summary,
+            'check_in_method' => $activity->check_in_method,
+            'checked_in_by' => $activity->checkedInBy ? [
+                'id' => $activity->checkedInBy->id,
+                'name' => $activity->checkedInBy->name,
+            ] : null,
+        ];
+    }
+
+    /**
+     * Get member user details with subscription details (using relations).
+     *
      * @return JsonResponse
      */
     public function subscriptions(): JsonResponse
     {
-        $user = auth()->user();
-        
-        $subscriptions = $user->subscriptions()
-            ->with('subscriptionPlan')
-            ->latest()
-            ->get()
-            ->map(function ($subscription) {
-                return [
-                    'id' => $subscription->id,
-                    'status' => $subscription->status,
-                    'plan' => $subscription->subscriptionPlan ? [
-                        'id' => $subscription->subscriptionPlan->id,
-                        'plan_name' => $subscription->subscriptionPlan->plan_name,
-                        'price' => $subscription->subscriptionPlan->price,
-                        'duration' => $subscription->subscriptionPlan->duration,
-                        'duration_type' => $subscription->subscriptionPlan->duration_type,
-                    ] : null,
-                    'started_at' => $subscription->started_at,
-                    'next_billing_at' => $subscription->next_billing_at,
-                    'created_at' => $subscription->created_at,
-                ];
-            });
-        
-        return $this->successResponse('Subscriptions retrieved successfully', $subscriptions);
+        $user = auth()->user()->load(['subscriptions' => function ($query) {
+            $query->with('subscriptionPlan')->latest();
+        }]);
+
+        $member = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'age' => $user->age,
+            'gender' => $user->gender,
+            'address' => $user->address,
+            'status' => $user->status,
+            'created_at' => $user->created_at,
+        ];
+
+        $subscriptions = $user->subscriptions->map(function ($subscription) {
+            return [
+                'id' => $subscription->id,
+                'status' => $subscription->status,
+                'plan' => $subscription->subscriptionPlan ? [
+                    'id' => $subscription->subscriptionPlan->id,
+                    'plan_name' => $subscription->subscriptionPlan->plan_name,
+                    'price' => $subscription->subscriptionPlan->price,
+                    'duration' => $subscription->subscriptionPlan->duration,
+                    'duration_type' => $subscription->subscriptionPlan->duration_type,
+                ] : null,
+                'started_at' => $subscription->started_at,
+                'next_billing_at' => $subscription->next_billing_at,
+                'expiration_at' => $subscription->expiration_at,
+                'created_at' => $subscription->created_at,
+            ];
+        })->values()->all();
+
+        return $this->successResponse('Subscriptions retrieved successfully', [
+            'user' => $member,
+            'subscriptions' => $subscriptions,
+        ]);
     }
 
     /**
@@ -336,32 +394,69 @@ class MemberController extends Controller
     }
 
     /**
-     * Get single workout plan details.
-     * 
+     * Get single workout plan view details (with trainer, videos, notes, demo).
+     *
      * @param int $id
      * @return JsonResponse
      */
     public function showWorkoutPlan(int $id): JsonResponse
     {
         $user = auth()->user();
-        
+
         $workoutPlan = $user->workoutPlans()
-            ->with('trainer')
+            ->with(['trainer', 'workoutVideos' => fn ($q) => $q->orderBy('created_at')])
             ->findOrFail($id);
-        
+
+        // Check-in/check-out details for this plan's date range with relations
+        $checkInCheckOutDetails = [];
+        if ($workoutPlan->start_date && $workoutPlan->end_date) {
+            $checkInCheckOutDetails = ActivityLog::where('user_id', $user->id)
+                ->whereBetween('date', [$workoutPlan->start_date, $workoutPlan->end_date])
+                ->whereNotNull('check_in_time')
+                ->with('checkedInBy')
+                ->orderByDesc('date')
+                ->orderByDesc('check_in_time')
+                ->get()
+                ->map(fn ($a) => $this->formatActivityWithRelations($a, true))
+                ->values()
+                ->all();
+        }
+
+        $workoutVideos = $workoutPlan->workoutVideos->map(function ($video) {
+            return [
+                'id' => $video->id,
+                'exercise_name' => $video->exercise_name,
+                'status' => $video->status,
+                'video_url' => $video->video_url,
+                'thumbnail_url' => $video->thumbnail_url,
+                'duration_seconds' => $video->duration_seconds,
+                'trainer_feedback' => $video->trainer_feedback,
+                'reviewed_at' => $video->reviewed_at?->toIso8601String(),
+                'created_at' => $video->created_at?->toIso8601String(),
+            ];
+        })->values()->all();
+
         return $this->successResponse('Workout plan retrieved successfully', [
             'id' => $workoutPlan->id,
             'plan_name' => $workoutPlan->plan_name,
             'description' => $workoutPlan->description,
             'status' => $workoutPlan->status,
-            'start_date' => $workoutPlan->start_date,
-            'end_date' => $workoutPlan->end_date,
-            'exercises' => $workoutPlan->exercises,
+            'start_date' => $workoutPlan->start_date?->toIso8601String(),
+            'end_date' => $workoutPlan->end_date?->toIso8601String(),
+            'duration_weeks' => $workoutPlan->duration_weeks,
+            'exercises' => $workoutPlan->exercises ?? [],
+            'notes' => $workoutPlan->notes,
+            'demo_video_path' => $workoutPlan->demo_video_path,
+            'demo_video_url' => $workoutPlan->demo_video_path ? file_url($workoutPlan->demo_video_path) : null,
+            'created_at' => $workoutPlan->created_at?->toIso8601String(),
+            'updated_at' => $workoutPlan->updated_at?->toIso8601String(),
             'trainer' => $workoutPlan->trainer ? [
                 'id' => $workoutPlan->trainer->id,
                 'name' => $workoutPlan->trainer->name,
                 'email' => $workoutPlan->trainer->email,
             ] : null,
+            'workout_videos' => $workoutVideos,
+            'check_in_check_out_details' => $checkInCheckOutDetails,
         ]);
     }
 
@@ -453,7 +548,9 @@ class MemberController extends Controller
                 'status' => $plan->status,
                 'start_date' => $plan->start_date,
                 'end_date' => $plan->end_date,
-                'meals' => $plan->meals,
+                'target_calories' => $plan->target_calories,
+                'nutritional_goals' => $plan->nutritional_goals,
+                'meal_plan' => $plan->meal_plan,
                 'trainer' => $plan->trainer ? [
                     'id' => $plan->trainer->id,
                     'name' => $plan->trainer->name,
@@ -475,13 +572,9 @@ class MemberController extends Controller
         $user = auth()->user();
         $today = now()->toDateString();
 
-        // Ensure user has active subscription and workout plan
+        // Ensure user has active (non-expired) subscription and workout plan
         $hasActiveSubscription = $user->subscriptions()
-            ->whereIn('status', ['active', 'trialing'])
-            ->where(function ($query) {
-                $query->whereNull('next_billing_at')
-                    ->orWhere('next_billing_at', '>=', now());
-            })
+            ->active()
             ->exists();
 
         if (!$hasActiveSubscription) {
@@ -619,11 +712,7 @@ class MemberController extends Controller
         $user = auth()->user();
 
         $hasActiveSubscription = $user->subscriptions()
-            ->whereIn('status', ['active', 'trialing'])
-            ->where(function ($query) {
-                $query->whereNull('next_billing_at')
-                    ->orWhere('next_billing_at', '>=', now());
-            })
+            ->active()
             ->exists();
 
         if (!$hasActiveSubscription) {

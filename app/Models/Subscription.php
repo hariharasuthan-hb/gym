@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -65,6 +66,7 @@ class Subscription extends Model
         'status',
         'trial_end_at',
         'next_billing_at',
+        'expiration_at',
         'started_at',
         'canceled_at',
         'metadata',
@@ -82,6 +84,7 @@ class Subscription extends Model
             'next_billing_at' => 'datetime',
             'started_at' => 'datetime',
             'canceled_at' => 'datetime',
+            'expiration_at' => 'datetime',
             'metadata' => 'array',
         ];
     }
@@ -115,7 +118,7 @@ class Subscription extends Model
      */
     public function scopeActive($query)
     {
-        return $query->whereIn('status', ['active', 'trialing'])
+        return $query->whereIn('status', [self::STATUS_ACTIVE, self::STATUS_TRIALING])
             ->where(function ($q) {
                 $q->whereNull('next_billing_at')
                   ->orWhere('next_billing_at', '>=', now());
@@ -123,7 +126,27 @@ class Subscription extends Model
             ->where(function ($q) {
                 $q->whereNull('trial_end_at')
                   ->orWhere('trial_end_at', '>=', now());
-            });
+            })
+            ->notExpired();
+    }
+
+    /**
+     * Scope a query to only include non-expired subscriptions.
+     */
+    public function scopeNotExpired($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNull('expiration_at')
+              ->orWhere('expiration_at', '>', now());
+        });
+    }
+
+    /**
+     * Scope a query to only include active and non-expired subscriptions.
+     */
+    public function scopeActiveAndNotExpired($query)
+    {
+        return $query->active()->notExpired();
     }
 
     /**
@@ -141,8 +164,9 @@ class Subscription extends Model
      */
     public function isActive(): bool
     {
-        return $this->status === 'active' 
-            && (!$this->next_billing_at || $this->next_billing_at->isFuture());
+        return $this->status === self::STATUS_ACTIVE
+            && (!$this->next_billing_at || $this->next_billing_at->isFuture())
+            && !$this->isExpired();
     }
 
     /**
@@ -150,7 +174,19 @@ class Subscription extends Model
      */
     public function isCanceled(): bool
     {
-        return $this->status === 'canceled' || $this->canceled_at !== null;
+        return $this->status === self::STATUS_CANCELED || $this->canceled_at !== null;
+    }
+
+    /**
+     * Check if subscription is expired based on expiration_at or status.
+     */
+    public function isExpired(): bool
+    {
+        if ($this->status === self::STATUS_EXPIRED) {
+            return true;
+        }
+
+        return $this->expiration_at instanceof Carbon && $this->expiration_at->isPast();
     }
 
     /**
@@ -159,16 +195,36 @@ class Subscription extends Model
      */
     public function hasAccess(): bool
     {
-        // If active or trialing, user has access
-        if ($this->isActive() || $this->isTrialing()) {
-            return true;
+        // Only grant access for non-expired active or trialing subscriptions
+        if ($this->isExpired()) {
+            return false;
         }
 
-        // If canceled but next_billing_at is in the future, user still has access
-        if ($this->isCanceled() && $this->next_billing_at && $this->next_billing_at->isFuture()) {
-            return true;
+        return $this->isActive() || $this->isTrialing();
+    }
+
+    /**
+     * Calculate expiration date based purely on start date and plan duration.
+     */
+    public static function calculateExpiration(
+        ?SubscriptionPlan $plan,
+        ?Carbon $startedAt,
+        ?Carbon $trialEndAt = null,
+        ?Carbon $nextBillingAt = null
+    ): ?Carbon {
+        if (!$plan || !$startedAt) {
+            return null;
         }
 
-        return false;
+        $base = $startedAt->copy();
+
+        return match ($plan->duration_type) {
+            'daily' => $base->addDays($plan->duration),
+            'weekly' => $base->addWeeks($plan->duration),
+            'monthly' => $base->addMonths($plan->duration),
+            'yearly' => $base->addYears($plan->duration),
+            'trial' => $base->addDays($plan->duration ?? ($plan->trial_days ?? 0)),
+            default => null,
+        };
     }
 }

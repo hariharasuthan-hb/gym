@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
 use App\Services\PaymentGateway\PaymentGatewayService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -104,12 +105,20 @@ class CheckoutController extends Controller
                 if (isset($result['trial_end']) && $result['trial_end']) {
                     try {
                         $trialEndAt = is_string($result['trial_end']) 
-                            ? \Carbon\Carbon::parse($result['trial_end']) 
+                            ? Carbon::parse($result['trial_end']) 
                             : $result['trial_end'];
                     } catch (\Exception $e) {
                         Log::warning('Failed to parse trial_end', ['trial_end' => $result['trial_end'] ?? null]);
                     }
                 }
+
+                $startedAt = Carbon::now();
+                $expirationAt = Subscription::calculateExpiration(
+                    $plan,
+                    $startedAt,
+                    $trialEndAt,
+                    null
+                );
 
                 // Prepare metadata with payment intent IDs for webhook matching
                 $metadata = $result;
@@ -133,7 +142,8 @@ class CheckoutController extends Controller
                     'gateway_subscription_id' => $result['subscription_id'] ?? null,
                     'status' => $result['status'] ?? 'pending',
                     'trial_end_at' => $trialEndAt,
-                    'started_at' => now(),
+                    'started_at' => $startedAt,
+                    'expiration_at' => $expirationAt,
                     'metadata' => $metadata,
                 ]);
 
@@ -252,13 +262,21 @@ class CheckoutController extends Controller
             if (isset($result['trial_end']) && $result['trial_end']) {
                 try {
                     $trialEndAt = is_string($result['trial_end']) 
-                        ? \Carbon\Carbon::parse($result['trial_end']) 
+                        ? Carbon::parse($result['trial_end']) 
                         : $result['trial_end'];
                 } catch (\Exception $e) {
                     // If parsing fails, leave as null
                     Log::warning('Failed to parse trial_end', ['trial_end' => $result['trial_end'] ?? null]);
                 }
             }
+
+            $startedAt = Carbon::now();
+            $expirationAt = Subscription::calculateExpiration(
+                $plan,
+                $startedAt,
+                $trialEndAt,
+                null
+            );
 
             // Prepare metadata with payment intent IDs for webhook matching
             $metadata = $result;
@@ -282,7 +300,8 @@ class CheckoutController extends Controller
                 'gateway_subscription_id' => $result['subscription_id'] ?? null,
                 'status' => $result['status'] ?? 'pending',
                 'trial_end_at' => $trialEndAt,
-                'started_at' => now(),
+                'started_at' => $startedAt,
+                'expiration_at' => $expirationAt,
                 'metadata' => $metadata,
             ]);
 

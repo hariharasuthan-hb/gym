@@ -51,5 +51,19 @@ class LoginController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Logout the authenticated member by revoking the current access token.
+     */
+    public function logout(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user && method_exists($user, 'token') && $user->token()) {
+            $user->token()->revoke();
+        }
+
+        return $this->successResponse('Logout successful');
+    }
 }
 

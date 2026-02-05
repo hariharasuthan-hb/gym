@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Member;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Subscription;
+use Carbon\Carbon;
 use App\Services\PaymentGateway\PaymentGatewayService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -31,8 +32,10 @@ class SubscriptionController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $activeSubscription = $subscriptions->firstWhere('status', 'active') 
-            ?? $subscriptions->firstWhere('status', 'trialing');
+        $activeSubscription = $subscriptions
+            ->filter(fn (Subscription $subscription) => !$subscription->isExpired() && $subscription->hasAccess())
+            ->sortByDesc('next_billing_at')
+            ->first();
 
         return view('frontend.member.subscription.index', [
             'subscriptions' => $subscriptions,
@@ -166,11 +169,30 @@ class SubscriptionController extends Controller
                     }
                     
                     $oldStatus = $subscription->status;
+
+                    $trialEndAt = $stripeSubscription->trial_end
+                        ? Carbon::createFromTimestamp($stripeSubscription->trial_end)
+                        : null;
+                    $nextBillingAt = $stripeSubscription->current_period_end
+                        ? Carbon::createFromTimestamp($stripeSubscription->current_period_end)
+                        : null;
+                    $startedAt = $stripeSubscription->start_date
+                        ? Carbon::createFromTimestamp($stripeSubscription->start_date)
+                        : Carbon::now();
+
+                    $expirationAt = Subscription::calculateExpiration(
+                        $subscription->subscriptionPlan,
+                        $startedAt,
+                        $trialEndAt,
+                        $nextBillingAt
+                    );
+
                     $subscription->update([
                         'status' => $status,
-                        'trial_end_at' => $stripeSubscription->trial_end ? date('Y-m-d H:i:s', $stripeSubscription->trial_end) : null,
-                        'next_billing_at' => $stripeSubscription->current_period_end ? date('Y-m-d H:i:s', $stripeSubscription->current_period_end) : null,
-                        'started_at' => $stripeSubscription->start_date ? date('Y-m-d H:i:s', $stripeSubscription->start_date) : now(),
+                        'trial_end_at' => $trialEndAt,
+                        'next_billing_at' => $nextBillingAt,
+                        'started_at' => $startedAt,
+                        'expiration_at' => $expirationAt,
                     ]);
 
                     // Create payment record if subscription is active/trialing and invoice is paid
@@ -221,9 +243,18 @@ class SubscriptionController extends Controller
                     $status = ($plan && $plan->hasTrial()) ? 'trialing' : 'active';
                     $oldStatus = $subscription->status;
                     
+                    $startedAt = $subscription->started_at ?? Carbon::now();
+                    $expirationAt = Subscription::calculateExpiration(
+                        $subscription->subscriptionPlan,
+                        $startedAt,
+                        $subscription->trial_end_at,
+                        $subscription->next_billing_at
+                    );
+
                     $subscription->update([
                         'status' => $status,
-                        'started_at' => now(),
+                        'started_at' => $startedAt,
+                        'expiration_at' => $expirationAt,
                     ]);
 
                     // Create payment record if subscription is active/trialing
@@ -267,10 +298,19 @@ class SubscriptionController extends Controller
                 $plan = $subscription->subscriptionPlan;
                 $status = ($plan && $plan->hasTrial()) ? 'trialing' : 'active';
                 $oldStatus = $subscription->status;
-                
+
+                $startedAt = $subscription->started_at ?? Carbon::now();
+                $expirationAt = Subscription::calculateExpiration(
+                    $plan,
+                    $startedAt,
+                    $subscription->trial_end_at,
+                    $subscription->next_billing_at
+                );
+
                 $subscription->update([
                     'status' => $status,
-                    'started_at' => now(),
+                    'started_at' => $startedAt,
+                    'expiration_at' => $expirationAt,
                 ]);
 
                 // Create payment record if subscription is active/trialing

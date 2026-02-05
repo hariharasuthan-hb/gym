@@ -1,9 +1,10 @@
 <?php
 
-use App\Jobs\SendDailyDietPlanNotificationsJob;
-use App\Jobs\CleanupWorkoutPlanVideosJob;
-use App\Console\Commands\SendSubscriptionExpiryReminders;
+use App\Console\Commands\ExpireSubscriptions;
 use App\Console\Commands\SendDailyWorkoutDietPlanNotifications;
+use App\Console\Commands\SendSubscriptionExpiryReminders;
+use App\Jobs\CleanupWorkoutPlanVideosJob;
+use App\Jobs\SendDailyDietPlanNotificationsJob;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Console\Scheduling\Schedule;
@@ -48,6 +49,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command(SendDailyWorkoutDietPlanNotifications::class)
             ->name('daily-workout-diet-plan-notifications')
             ->dailyAt('00:00')
+            ->withoutOverlapping();
+
+        $schedule->command(ExpireSubscriptions::class)
+            ->name('subscriptions-expire')
+            ->hourly()
             ->withoutOverlapping();
     })
     ->withProviders([

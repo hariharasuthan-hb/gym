@@ -15,4 +15,10 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+    server: {
+        // Allow cross-origin requests so Laravel (e.g. http://0.0.0.0:8000) can load Vite assets
+        cors: true,
+        // Ensure dev server is reachable when Laravel uses 0.0.0.0
+        host: true,
+    },
 });
