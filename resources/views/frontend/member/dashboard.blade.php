@@ -13,19 +13,6 @@
                     <p class="mt-2 text-gray-600">Welcome back! Here's your overview.</p>
                 </div>
                 <div class="flex flex-col md:flex-row md:items-center gap-3">
-                    {{-- Notifications Link --}}
-                    <a href="{{ route('member.notifications.index') }}" 
-                       class="relative px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center shadow-sm">
-                        <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                        </svg>
-                        <span class="ml-2 text-gray-700">Notifications</span>
-                        @if(($totalUnreadNotifications ?? 0) > 0)
-                            <span class="absolute -top-1 -right-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 text-xs font-semibold text-white ring-2 ring-white" style="padding-left:0.30rem;padding-right:0.30rem;">
-                                {{ ($totalUnreadNotifications ?? 0) > 99 ? '99+' : ($totalUnreadNotifications ?? 0) }}
-                            </span>
-                        @endif
-                    </a>
                     @if($canTrackAttendance ?? false)
                     @if(!($checkedInToday ?? false))
                     <button id="check-in-btn" onclick="checkIn()" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center shadow-md">
@@ -203,9 +190,15 @@
                     
                     @if($plan->image)
                     <div class="mb-4 subscription-image-container">
-                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($plan->image) }}" 
+                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($plan->image) }}?v={{ $plan->updated_at->timestamp ?? time() }}" 
                              alt="{{ $plan->plan_name }}" 
-                             class="w-full h-32 subscription-image-zoom">
+                             class="w-full h-32 subscription-image-zoom object-cover rounded-lg"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <div class="w-full h-32 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center hidden">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
                     </div>
                     @endif
                     

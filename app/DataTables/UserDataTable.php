@@ -5,6 +5,7 @@ namespace App\DataTables;
 use App\Models\User;
 use Yajra\DataTables\Html\Column;
 use Yajra\DataTables\Html\Button;
+use Yajra\DataTables\Html\Builder;
 
 class UserDataTable extends BaseDataTable
 {
@@ -61,16 +62,90 @@ class UserDataTable extends BaseDataTable
             ->rawColumns(['action', 'roles', 'status']);
     }
 
+    public function html(): Builder
+    {
+        $formId = $this->getFilterFormId();
+
+        $builder = $this->builder()
+            ->setTableId($this->getTableId())
+            ->columns($this->getColumns());
+
+        // Add filter form data if form exists
+        if ($formId) {
+            $builder->ajax([
+                'data' => "function(d) {
+                    var form = document.getElementById('{$formId}');
+                    if (form) {
+                        var inputs = form.querySelectorAll('input, select, textarea');
+                        for (var i = 0; i < inputs.length; i++) {
+                            var input = inputs[i];
+                            var name = input.name;
+                            var value = input.value;
+                            if (!name) continue;
+                            if (input.type === 'date') {
+                                d[name] = value || '';
+                            } else if (value && value.toString().trim() !== '') {
+                                d[name] = value;
+                            }
+                        }
+                    }
+                    return d;
+                }"
+            ]);
+        }
+
+        return $builder
+            ->orderBy(0, 'desc') // ID column (index 0) descending - newest users first
+            ->buttons($this->getButtons())
+            ->parameters([
+                'dom' => "<'dt-toolbar flex flex-col md:flex-row md:items-center md:justify-between gap-4'<'dt-toolbar-left flex items-center gap-3'lB><'dt-toolbar-right'f>>" .
+                    "<'dt-table'rt>" .
+                    "<'dt-footer flex flex-col md:flex-row md:items-center md:justify-between gap-4'<'dt-info'i><'dt-pagination'p>>",
+                'language' => [
+                    'search' => '',
+                    'searchPlaceholder' => 'Search...',
+                    'lengthMenu' => '_MENU_',
+                ],
+                'responsive' => true,
+                'autoWidth' => false,
+                'pageLength' => 5,
+                'lengthMenu' => [[5, 10, 25, 50, 100, -1], [5, 10, 25, 50, 100, "All"]],
+                // Default order: ID column (index 0) descending - newest users first
+                'order' => [[0, 'desc']],
+                // Disable state saving to ensure default order is always applied on initial load
+                'stateSave' => false,
+                'columnDefs' => [
+                    [
+                        'targets' => '_all',
+                        'createdCell' => "function(td, cellData, rowData, row, col) {
+                            var api = this.api();
+                            var header = $(api.column(col).header());
+                            // Apply alignment classes from header to cell
+                            if (header.hasClass('text-right')) {
+                                $(td).addClass('text-right').css('text-align', 'right');
+                            } else if (header.hasClass('text-center')) {
+                                $(td).addClass('text-center').css('text-align', 'center');
+                            } else {
+                                // Default to left alignment
+                                $(td).addClass('text-left').css('text-align', 'left');
+                            }
+                        }"
+                    ]
+                ],
+            ]);
+    }
+
     /**
      * Get query source of dataTable.
      * For trainers: filters to show only their assigned members
      * For admins: shows all users
+     * 
+     * Orders by ID DESC (newest users first - higher IDs = newer users).
      */
     public function query(User $model)
     {
         $query = $model->newQuery()->with('roles');
         
-        // If user is a trainer (and not admin), filter to show only their assigned members
         if (auth()->user()->hasRole('trainer') && !auth()->user()->hasRole('admin')) {
             $memberIds = \App\Models\WorkoutPlan::where('trainer_id', auth()->id())
                 ->pluck('member_id')
@@ -80,10 +155,13 @@ class UserDataTable extends BaseDataTable
             if (!empty($memberIds)) {
                 $query->whereIn('id', $memberIds);
             } else {
-                // If trainer has no assigned members, return empty result
                 $query->whereRaw('1 = 0');
             }
         }
+        
+        // Default ordering: newest users first (ID DESC)
+        // Higher IDs = newer users since IDs are auto-incrementing
+        $query->orderByDesc('id');
         
         return $query;
     }

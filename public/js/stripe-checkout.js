@@ -10,55 +10,90 @@
     const config = window.stripeCheckoutConfig || {};
     
     if (!config.publishableKey || !config.clientSecret) {
+        console.warn('Stripe checkout config missing');
         return;
     }
 
-    // Initialize Stripe
-    const stripe = Stripe(config.publishableKey);
-    
-    // Create Elements instance with client secret
-    const elements = stripe.elements({
-        clientSecret: config.clientSecret,
-        appearance: {
-            variables: {
-                colorPrimary: '#3B82F6',
-            },
-        },
-    });
-    
-    const paymentElement = elements.create('payment', {
-        layout: 'tabs',
-        fields: {
-            billingDetails: 'auto',
-        },
-        // Disable wallets to show only card entry
-        wallets: {
-            applePay: 'never',
-            googlePay: 'never',
-        },
-    });
-    
-    function mountPaymentElement() {
-        const element = document.getElementById('stripe-payment-element');
-        if (element) {
-            try {
-                paymentElement.mount('#stripe-payment-element');
-            } catch (error) {
-                const errorDiv = document.getElementById('stripe-errors');
-                if (errorDiv) {
-                    errorDiv.textContent = 'Error loading payment form: ' + error.message;
-                    errorDiv.classList.remove('hidden');
+    // Wait for Stripe to be available
+    function initializeStripe() {
+        if (typeof Stripe === 'undefined') {
+            console.warn('Stripe.js not loaded yet, retrying...');
+            setTimeout(initializeStripe, 100);
+            return;
+        }
+
+        try {
+            // Initialize Stripe
+            const stripe = Stripe(config.publishableKey);
+            
+            // Create Elements instance with client secret
+            const elements = stripe.elements({
+                clientSecret: config.clientSecret,
+                appearance: {
+                    variables: {
+                        colorPrimary: '#3B82F6',
+                    },
+                },
+            });
+            
+            const paymentElement = elements.create('payment', {
+                layout: 'tabs',
+                fields: {
+                    billingDetails: 'auto',
+                },
+                // Disable wallets to show only card entry
+                wallets: {
+                    applePay: 'never',
+                    googlePay: 'never',
+                },
+            });
+            
+            // Store elements and paymentElement globally for form submission
+            window.stripeElements = elements;
+            window.stripePaymentElement = paymentElement;
+            window.stripeInstance = stripe;
+            
+            function mountPaymentElement() {
+                const element = document.getElementById('stripe-payment-element');
+                if (!element) {
+                    setTimeout(mountPaymentElement, 100);
+                    return;
+                }
+                
+                try {
+                    paymentElement.mount('#stripe-payment-element');
+                } catch (error) {
+                    console.error('Error mounting payment element:', error);
+                    const errorDiv = document.getElementById('stripe-errors');
+                    if (errorDiv) {
+                        errorDiv.textContent = 'Error loading payment form: ' + (error.message || 'Please refresh the page and try again.');
+                        errorDiv.classList.remove('hidden');
+                    }
                 }
             }
-        } else {
-            setTimeout(mountPaymentElement, 100);
+            
+            // Wait for DOM to be ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', mountPaymentElement);
+            } else {
+                // Small delay to ensure container is ready
+                setTimeout(mountPaymentElement, 50);
+            }
+        } catch (error) {
+            console.error('Error initializing Stripe:', error);
+            const errorDiv = document.getElementById('stripe-errors');
+            if (errorDiv) {
+                errorDiv.textContent = 'Error initializing payment form: ' + (error.message || 'Please refresh the page and try again.');
+                errorDiv.classList.remove('hidden');
+            }
         }
     }
     
+    // Start initialization
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', mountPaymentElement);
+        document.addEventListener('DOMContentLoaded', initializeStripe);
     } else {
-        mountPaymentElement();
+        initializeStripe();
     }
     
     // Wait for DOM to be ready
@@ -70,6 +105,16 @@
             setTimeout(initializeForm, 100);
             return;
         }
+        
+        // Wait for Stripe elements to be initialized
+        if (!window.stripeElements) {
+            setTimeout(initializeForm, 100);
+            return;
+        }
+        
+        const elements = window.stripeElements;
+        const stripe = window.stripeInstance;
+        
         // Track if form is already being submitted to prevent double submission
         let isSubmitting = false;
         
@@ -262,10 +307,18 @@
         });
     }
     
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeForm);
-    } else {
+    // Initialize form when DOM and Stripe are ready
+    function waitForStripeAndInit() {
+        if (!window.stripeElements || !window.stripeInstance) {
+            setTimeout(waitForStripeAndInit, 100);
+            return;
+        }
         initializeForm();
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', waitForStripeAndInit);
+    } else {
+        waitForStripeAndInit();
     }
 })();

@@ -58,8 +58,34 @@ class CheckoutController extends Controller
         // Get payment settings for Google Pay check
         $paymentSettings = \App\Models\PaymentSetting::getSettings();
 
-        // Auto-create subscription if payment_data doesn't exist (skip button click step)
+        // Clear any stale payment data from previous attempts
+        // Check if payment_data exists and is valid (has client_secret and matches current plan)
         $paymentData = session('payment_data', []);
+        $subscriptionData = session('subscription_data', []);
+        
+        // Clear payment data if it's stale, doesn't match current plan, or subscription is canceled
+        if (!empty($paymentData)) {
+            $isStale = !isset($paymentData['client_secret']) || 
+                       empty($paymentData['client_secret']) ||
+                       (isset($subscriptionData['plan_id']) && $subscriptionData['plan_id'] != $plan->id);
+            
+            // Check if subscription from session data is canceled
+            if (!$isStale && isset($subscriptionData['subscription_id'])) {
+                $sessionSubscription = Subscription::find($subscriptionData['subscription_id']);
+                if ($sessionSubscription && ($sessionSubscription->isCanceled() || $sessionSubscription->status === 'canceled')) {
+                    $isStale = true;
+                }
+            }
+            
+            if ($isStale) {
+                session()->forget('payment_data');
+                session()->forget('subscription_data');
+                session()->save();
+                $paymentData = [];
+            }
+        }
+        
+        // Auto-create subscription if payment_data doesn't exist (skip button click step)
         if (empty($paymentData)) {
             try {
                 // Use the first available gateway
@@ -323,6 +349,11 @@ class CheckoutController extends Controller
                     'status' => 'canceled',
                     'canceled_at' => now(),
                 ]);
+                
+                // Clear any payment data from session to allow new subscriptions
+                session()->forget('payment_data');
+                session()->forget('subscription_data');
+                session()->save();
             }
         } catch (\Exception $e) {
             Log::error('Auto cancel for upgrade failed', [

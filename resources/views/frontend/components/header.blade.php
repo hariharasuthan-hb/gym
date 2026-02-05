@@ -16,7 +16,7 @@
                 @endphp
                 <a href="{{ route('frontend.home') }}" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
                     @if($logo)
-                        <img src="{{ \Illuminate\Support\Facades\Storage::url($logo) }}" alt="{{ $siteTitle }}" class="h-12 object-contain">
+                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($logo) }}?v={{ $siteSettings->updated_at->timestamp ?? time() }}" alt="{{ $siteTitle }}" class="h-12 object-contain">
                     @endif
                     <span class="text-2xl font-bold bg-gradient-to-r from-orange-500 to-black bg-clip-text text-transparent">{{ $siteTitle }}</span>
                 </a>

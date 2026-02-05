@@ -67,6 +67,11 @@ class SubscriptionController extends Controller
                     'canceled_at' => now(),
                 ]);
 
+                // Clear any payment data from session to allow new subscriptions
+                session()->forget('payment_data');
+                session()->forget('subscription_data');
+                session()->save();
+
                 return redirect()->route('member.subscription.index')
                     ->with('success', 'Subscription canceled successfully. It will remain active until the end of the current billing period.');
             } else {

@@ -10,7 +10,7 @@
         @endphp
         <a href="{{ route('frontend.home') }}" class="inline-block group">
             @if($logo)
-                <img src="{{ \Illuminate\Support\Facades\Storage::url($logo) }}" 
+                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($logo) }}?v={{ $siteSettings->updated_at->timestamp ?? time() }}" 
                      alt="{{ $siteTitle }}" 
                      class="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105 mx-auto">
             @else

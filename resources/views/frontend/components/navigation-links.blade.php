@@ -9,11 +9,23 @@
     $excludedMenusOnMemberPages = ['About', 'Services', 'Service', 'Contact Us', 'Contact'];
 @endphp
 
-@if($isMemberDashboard && auth()->check() && auth()->user()->hasRole('member'))
-    {{-- Simplified navigation for member dashboard page only --}}
-    <a href="{{ route('frontend.home') }}" 
+@if(auth()->check() && auth()->user()->hasRole('member'))
+    {{-- Member navigation - always show About, Services, Contact, Dashboard --}}
+    <a href="{{ route('frontend.home') }}#about"
        class="{{ $linkClass }}">
-        Home
+        About
+    </a>
+    <a href="{{ route('frontend.home') }}#services"
+       class="{{ $linkClass }}">
+        Services
+    </a>
+    <a href="{{ route('frontend.home') }}#contact"
+       class="{{ $linkClass }}">
+        Contact
+    </a>
+    <a href="{{ route('member.dashboard') }}"
+       class="{{ $linkClass }}">
+        Dashboard
     </a>
     <a href="{{ route('member.notifications.index') }}" 
        class="{{ $linkClass }} relative">
@@ -61,54 +73,9 @@
         @endif
     @endforeach
 
-    {{-- Home page section links for member pages --}}
-    @if($isMemberPage)
-        <a href="{{ route('frontend.home') }}#about"
-           class="{{ $linkClass }}">
-            About
-        </a>
-        <a href="{{ route('frontend.home') }}#services"
-           class="{{ $linkClass }}">
-            Services
-        </a>
-        <a href="{{ route('frontend.home') }}#contact"
-           class="{{ $linkClass }}">
-            Contact
-        </a>
-    @endif
-
-    {{-- Dashboard and Profile Links for authenticated users --}}
+    {{-- Dashboard and Profile Links for authenticated users (non-members) --}}
     @auth
-        @if(auth()->user()->hasRole('member'))
-            <a href="{{ route('member.dashboard') }}"
-               class="{{ $linkClass }}">
-                Dashboard
-            </a>
-            <a href="{{ route('member.notifications.index') }}"
-               class="{{ $linkClass }} relative">
-                Notifications
-                @php
-                    try {
-                        $inAppNotificationRepository = app(\App\Repositories\Interfaces\InAppNotificationRepositoryInterface::class);
-                        $dbNotificationRepository = app(\App\Repositories\Interfaces\NotificationRepositoryInterface::class);
-                        $inAppUnreadCount = $inAppNotificationRepository->getUnreadCountForUser(auth()->user());
-                        $dbUnreadCount = $dbNotificationRepository->getUnreadCountForUser(auth()->user());
-                        $notificationCount = $inAppUnreadCount + $dbUnreadCount;
-                    } catch (\Exception $e) {
-                        $notificationCount = 0;
-                    }
-                @endphp
-                @if($notificationCount > 0)
-                    <span class="absolute -top-1 -right-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 text-xs font-semibold text-white" style="padding-left:0.25rem;padding-right:0.25rem;">
-                        {{ $notificationCount > 99 ? '99+' : $notificationCount }}
-                    </span>
-                @endif
-            </a>
-            <a href="{{ route('member.profile') }}"
-               class="{{ $linkClass }}">
-                Profile
-            </a>
-        @elseif(auth()->user()->hasRole('admin'))
+        @if(auth()->user()->hasRole('admin'))
             <a href="{{ route('admin.dashboard') }}"
                class="{{ $linkClass }}">
                 Admin

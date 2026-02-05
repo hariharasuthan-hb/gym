@@ -78,7 +78,15 @@
                     <div class="text-center mb-6">
                         @if($plan->image)
                             <div class="subscription-image-container mx-auto w-32 h-32 mb-4">
-                            <img src="{{ asset('storage/' . $plan->image) }}" alt="{{ $plan->plan_name }}" class="w-full max-w-xs mx-auto rounded-lg object-contain mb-4">
+                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($plan->image) }}?v={{ $plan->updated_at->timestamp ?? time() }}" 
+                                 alt="{{ $plan->plan_name }}" 
+                                 class="w-full max-w-xs mx-auto rounded-lg object-contain mb-4"
+                                 onerror="this.style.display='none'; this.parentElement.querySelector('.fallback-image').style.display='flex';">
+                            <div class="w-full max-w-xs mx-auto aspect-square bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mb-4 fallback-image hidden">
+                                <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
                             </div>
                         @else
                             <div class="w-full max-w-xs mx-auto aspect-square bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mb-4">

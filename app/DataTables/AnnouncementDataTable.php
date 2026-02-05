@@ -20,7 +20,16 @@ class AnnouncementDataTable extends BaseDataTable
         $this->autoFormatDates($dataTable, ['created_at', 'updated_at', 'published_at']);
 
         return $dataTable
-            ->editColumn('status', fn ($announcement) => ucfirst($announcement->status))
+            ->editColumn('status', function ($announcement) {
+                $statusColors = [
+                    'draft' => 'bg-yellow-100 text-yellow-800',
+                    'published' => 'bg-green-100 text-green-800',
+                    'archived' => 'bg-gray-100 text-gray-800',
+                ];
+                $statusColor = $statusColors[$announcement->status] ?? 'bg-gray-100 text-gray-800';
+                $statusLabel = ucfirst($announcement->status);
+                return '<span class="px-2 py-1 text-xs font-semibold rounded-full ' . $statusColor . '">' . $statusLabel . '</span>';
+            })
             ->editColumn('audience_type', fn ($announcement) => ucfirst($announcement->audience_type))
             ->addColumn('creator_name', fn ($announcement) => $announcement->creator?->name ?? 'System')
             ->addColumn('action', function ($announcement) {
@@ -42,7 +51,7 @@ class AnnouncementDataTable extends BaseDataTable
 
                 return $html;
             })
-            ->rawColumns(['action']);
+            ->rawColumns(['action', 'status']);
     }
 
     public function query(Announcement $model)
