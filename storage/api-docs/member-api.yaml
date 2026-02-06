@@ -10,7 +10,7 @@ servers:
     description: Local (default)
   - url: http://localhost
     description: Local (hostname)
-  - url: https://staging.example.com
+  - url: https://gym.hbitpartner.com/
     description: Staging server
   - url: https://example.com
     description: Production server
