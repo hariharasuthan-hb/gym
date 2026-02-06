@@ -80,14 +80,10 @@ class MemberController extends Controller
         // Ensure user has timezone set
         ensure_user_has_timezone();
         
-        // Check if user has an active subscription
+        // Check if user has an active (non-expired) subscription
         $activeSubscription = $user->subscriptions()
+            ->active()
             ->with('subscriptionPlan')
-            ->whereIn('status', ['active', 'trialing'])
-            ->where(function ($query) {
-                $query->whereNull('next_billing_at')
-                      ->orWhere('next_billing_at', '>=', now());
-            })
             ->first();
         
         // Get active subscription plans if user has no active subscription
@@ -679,13 +675,9 @@ class MemberController extends Controller
         $user = auth()->user();
         $today = now()->toDateString();
 
-        // Ensure user has active subscription and workout plan
+        // Ensure user has active (non-expired) subscription and workout plan
         $hasActiveSubscription = $user->subscriptions()
-            ->whereIn('status', ['active', 'trialing'])
-            ->where(function ($query) {
-                $query->whereNull('next_billing_at')
-                    ->orWhere('next_billing_at', '>=', now());
-            })
+            ->active()
             ->exists();
 
         if (!$hasActiveSubscription) {
@@ -741,11 +733,7 @@ class MemberController extends Controller
         $user = auth()->user();
 
         $hasActiveSubscription = $user->subscriptions()
-            ->whereIn('status', ['active', 'trialing'])
-            ->where(function ($query) {
-                $query->whereNull('next_billing_at')
-                    ->orWhere('next_billing_at', '>=', now());
-            })
+            ->active()
             ->exists();
 
         if (!$hasActiveSubscription) {
@@ -834,11 +822,7 @@ class MemberController extends Controller
     protected function userHasActiveSubscription($user): bool
     {
         return $user->subscriptions()
-            ->whereIn('status', ['active', 'trialing'])
-            ->where(function ($query) {
-                $query->whereNull('next_billing_at')
-                    ->orWhere('next_billing_at', '>=', now());
-            })
+            ->active()
             ->exists();
     }
 

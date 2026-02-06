@@ -4,11 +4,12 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "concurrently -n \"vite,server,ngrok\" -c \"yellow,green,blue\" \"vite\" \"php artisan serve\" \"start-ngrok.bat\"",
-        "serve": "php artisan serve",
+        "dev": "concurrently -n \"vite,server\" -c \"yellow,green\" \"vite\" \"php artisan serve --host=0.0.0.0 --port=8000\"",
+        "serve": "php artisan serve --host=0.0.0.0 --port=8000",
+        "serve:android": "npm run build && php artisan serve --host=0.0.0.0 --port=8000",
         "ngrok": "ngrok http 8000",
-        "serve:ngrok": "concurrently -n \"server,ngrok\" -c \"green,blue\" \"php artisan serve\" \"ngrok http 8000\"",
-        "dev:ngrok": "concurrently -n \"vite,server,ngrok\" -c \"yellow,green,blue\" \"vite\" \"php artisan serve\" \"ngrok http 8000\"",
+        "serve:ngrok": "concurrently -n \"server,ngrok\" -c \"green,blue\" \"php artisan serve --host=0.0.0.0 --port=8000\" \"ngrok http 8000\"",
+        "dev:ngrok": "concurrently -n \"vite,server,ngrok\" -c \"yellow,green,blue\" \"vite\" \"php artisan serve --host=0.0.0.0 --port=8000\" \"ngrok http 8000\"",
         "start:ngrok": "powershell -ExecutionPolicy Bypass -File ./start-ngrok.ps1",
         "dev:windows": "powershell -ExecutionPolicy Bypass -File ./start-dev-ngrok.ps1",
         "ngrok:url": "powershell -ExecutionPolicy Bypass -File ./get-ngrok-url.ps1"

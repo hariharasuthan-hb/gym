@@ -95,14 +95,7 @@ class User extends Authenticatable
     public function activeSubscription()
     {
         return $this->hasOne(\App\Models\Subscription::class)
-            ->whereIn('status', [
-                \App\Models\Subscription::STATUS_ACTIVE,
-                \App\Models\Subscription::STATUS_TRIALING,
-            ])
-            ->where(function ($query) {
-                $query->whereNull('next_billing_at')
-                    ->orWhere('next_billing_at', '>=', now());
-            })
+            ->active()
             ->latest('next_billing_at');
     }
 

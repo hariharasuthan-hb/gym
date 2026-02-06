@@ -28,6 +28,9 @@ Route::get('/api/documentation/member.yaml', function () {
 
     return response()->file($path, [
         'Content-Type' => 'application/yaml',
+        'Cache-Control' => 'no-cache, no-store, must-revalidate',
+        'Pragma' => 'no-cache',
+        'Expires' => '0',
     ]);
 })->name('api.documentation.schema');
 

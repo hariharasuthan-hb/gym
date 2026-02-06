@@ -14,6 +14,23 @@ servers:
     description: Staging server
   - url: https://example.com
     description: Production server
+tags:
+  - name: Auth
+    description: Login and token
+  - name: Notifications
+    description: List, mark read, and mark all notifications as read
+  - name: Member
+    description: Profile, dashboard, subscriptions
+  - name: CMS
+    description: Pages and content
+  - name: Workout Plans
+    description: Workout plans and uploads
+  - name: Workout Videos
+    description: Workout videos
+  - name: Diet Plans
+    description: Diet plans
+  - name: Attendance
+    description: Check-in and check-out
 components:
   securitySchemes:
     PassportToken:
@@ -123,6 +140,136 @@ components:
             to:
               type: integer
               nullable: true
+    NotificationItemInApp:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          example: in_app
+        title:
+          type: string
+        message:
+          type: string
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    NotificationItemDatabase:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          example: database
+        title:
+          type: string
+          nullable: true
+        message:
+          type: string
+          nullable: true
+        notification_type:
+          type: string
+          nullable: true
+        action_url:
+          type: string
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    NotificationsListResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Notifications retrieved successfully
+        data:
+          type: object
+          properties:
+            unread_count:
+              type: integer
+            in_app:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/NotificationItemInApp'
+                pagination:
+                  type: object
+                  properties:
+                    current_page:
+                      type: integer
+                    per_page:
+                      type: integer
+                    total:
+                      type: integer
+                    last_page:
+                      type: integer
+                    from:
+                      type: integer
+                      nullable: true
+                    to:
+                      type: integer
+                      nullable: true
+            database:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/NotificationItemDatabase'
+                pagination:
+                  type: object
+                  properties:
+                    current_page:
+                      type: integer
+                    per_page:
+                      type: integer
+                    total:
+                      type: integer
+                    last_page:
+                      type: integer
+                    from:
+                      type: integer
+                      nullable: true
+                    to:
+                      type: integer
+                      nullable: true
+    MarkReadResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Notification marked as read.
+        data:
+          type: object
+          properties:
+            unread_count:
+              type: integer
 paths:
   /api/member/login:
     post:
@@ -147,6 +294,111 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/member/notifications:
+    get:
+      tags: [Notifications]
+      summary: List notifications
+      description: Returns in-app and database notifications with pagination and total unread count.
+      security:
+        - PassportToken: []
+      parameters:
+        - name: per_page
+          in: query
+          description: Items per page (1–50, default 15)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 15
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationsListResponse'
+        '401':
+          description: Unauthorized
+  /api/member/notifications/in-app/{notification}/read:
+    put:
+      tags: [Notifications]
+      summary: Mark in-app notification as read
+      description: Marks a single in-app notification as read. Use the notification numeric ID.
+      security:
+        - PassportToken: []
+      parameters:
+        - name: notification
+          in: path
+          required: true
+          description: In-app notification ID (integer)
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkReadResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Notification not found or not assigned to you
+  /api/member/notifications/database/{id}/read:
+    put:
+      tags: [Notifications]
+      summary: Mark database notification as read
+      description: Marks a single Laravel database notification as read. Use the notification UUID.
+      security:
+        - PassportToken: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Database notification UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkReadResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Notification not found
+  /api/member/notifications/read-all:
+    post:
+      tags: [Notifications]
+      summary: Mark all notifications as read
+      description: Marks all in-app and database notifications as read for the authenticated member.
+      security:
+        - PassportToken: []
+      responses:
+        '200':
+          description: All notifications marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: All notifications marked as read.
+                  data:
+                    type: object
+                    properties:
+                      unread_count:
+                        type: integer
+                        example: 0
+        '401':
+          description: Unauthorized
   /api/pages/{slug}:
     get:
       tags: [CMS]
