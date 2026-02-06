@@ -43,6 +43,9 @@
 # Ignore sensitive storage files
 /storage/*.key
 /storage/pail
+/storage/app/public/*
+/storage/framework/*
+/storage/logs/*
 /vendor
 Homestead.json
 Homestead.yaml
