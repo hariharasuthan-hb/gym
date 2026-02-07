@@ -95,6 +95,7 @@ class SubscriptionController extends Controller
                     'canceled_at' => now(),
                 ]);
 
+                \App\Events\UserSubscriptionCanceled::dispatch($subscription);
 
                 return redirect()->route('admin.subscriptions.show', $subscription)
                     ->with('success', 'Subscription canceled successfully.');
@@ -104,6 +105,8 @@ class SubscriptionController extends Controller
                     'status' => 'canceled',
                     'canceled_at' => now(),
                 ]);
+
+                \App\Events\UserSubscriptionCanceled::dispatch($subscription);
 
                 return redirect()->route('admin.subscriptions.show', $subscription)
                     ->with('warning', 'Subscription marked as canceled locally, but gateway cancellation may have failed.');

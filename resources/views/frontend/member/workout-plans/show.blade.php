@@ -795,6 +795,21 @@ async function checkInWorkout() {
         {{-- Workout Video Upload Section --}}
         @if($workoutPlan->status === 'active' && $workoutPlan->exercises && is_array($workoutPlan->exercises) && count($workoutPlan->exercises) > 0)
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            @if($todayVideoApproved ?? false)
+            {{-- All exercises for today are approved: show message only, no upload UI --}}
+            <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+                <div class="flex items-center text-green-800">
+                    <svg class="w-8 h-8 mr-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900 mb-1">Video for this day is approved</h2>
+                        <p class="text-sm text-green-700">{{ $todayVideoMessage ?? 'Video for this day is approved' }}</p>
+                        <p class="text-sm text-gray-600 mt-2">You do not need to upload again. Your trainer has approved today&rsquo;s workout video(s).</p>
+                    </div>
+                </div>
+            </div>
+            @else
             <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                 <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
@@ -1164,6 +1179,7 @@ async function checkInWorkout() {
                     </div>
                 @endforeach
             </div>
+            @endif
         </div>
         @endif
 

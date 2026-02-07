@@ -6,6 +6,7 @@ enum NotificationType: string
 {
     case USER_REGISTRATION = 'user_registration';
     case USER_SUBSCRIPTION = 'user_subscription';
+    case SUBSCRIPTION_CANCELED = 'subscription_canceled';
     case USER_UPLOAD = 'user_upload';
     case WORKOUT_VIDEO = 'workout_video';
     case TRAINER_APPROVAL = 'trainer_approval';
@@ -21,6 +22,7 @@ enum NotificationType: string
         return match ($this) {
             self::USER_REGISTRATION => 'Welcome!',
             self::USER_SUBSCRIPTION => 'Subscription Activated',
+            self::SUBSCRIPTION_CANCELED => 'Subscription Cancelled',
             self::USER_UPLOAD => 'Upload Successful',
             self::WORKOUT_VIDEO => 'Workout Video',
             self::TRAINER_APPROVAL => 'Trainer Approved',
@@ -38,6 +40,7 @@ enum NotificationType: string
         return match ($this) {
             self::USER_REGISTRATION => 'user-plus',
             self::USER_SUBSCRIPTION => 'credit-card',
+            self::SUBSCRIPTION_CANCELED => 'alert-circle',
             self::USER_UPLOAD => 'upload',
             self::WORKOUT_VIDEO => 'video',
             self::TRAINER_APPROVAL => 'check-circle',

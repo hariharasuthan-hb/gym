@@ -120,6 +120,143 @@ components:
             updated_at:
               type: string
               format: date-time
+    WorkoutPlanDetail:
+      type: object
+      description: Workout plan details (single plan). workout_videos contains only today's uploads. When today_video_approved is true, show today_video_message and do not prompt upload again.
+      properties:
+        id:
+          type: integer
+        plan_name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+        duration_weeks:
+          type: integer
+          nullable: true
+        exercises:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+          nullable: true
+        demo_video_path:
+          type: string
+          nullable: true
+        demo_video_url:
+          type: string
+          format: uri
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        trainer:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            email:
+              type: string
+        workout_videos:
+          type: array
+          description: Only today's uploaded videos for this plan (user can upload for today; previous days not shown).
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              exercise_name:
+                type: string
+              status:
+                type: string
+                enum: [pending, approved, rejected]
+              video_url:
+                type: string
+                format: uri
+                nullable: true
+              thumbnail_url:
+                type: string
+                format: uri
+                nullable: true
+              duration_seconds:
+                type: integer
+              trainer_feedback:
+                type: string
+                nullable: true
+              reviewed_at:
+                type: string
+                format: date-time
+                nullable: true
+              created_at:
+                type: string
+                format: date-time
+                nullable: true
+        today_video_approved:
+          type: boolean
+          description: When true, all exercises for today have approved video(s); do not prompt upload again for this day.
+        today_video_message:
+          type: string
+          nullable: true
+          description: When today_video_approved is true, e.g. "Video for this day is approved". Show this message instead of upload UI.
+        plan_progress:
+          type: object
+          description: Attendance progress for this plan (matches web Plan Progress). Use for Attendance Progress %, attended/missed counts, and summary.
+          properties:
+            total_days:
+              type: integer
+              description: Total days in plan (start to end inclusive).
+            days_passed:
+              type: integer
+              description: Days from plan start to now (or end), i.e. days considered for attendance.
+            attended_count:
+              type: integer
+              description: Number of days with check-in (attended).
+            missed_count:
+              type: integer
+              description: Days in range with no check-in (missed).
+            attendance_progress_percent:
+              type: number
+              format: float
+              description: (attended_count / days_passed) * 100. Display as "Attendance Progress" percentage.
+            days_breakdown:
+              type: array
+              description: Per-day attended/missed for rendering progress bar (green/red).
+              items:
+                type: object
+                properties:
+                  date:
+                    type: string
+                    format: date
+                    example: "2026-02-05"
+                  attended:
+                    type: boolean
+            summary_text:
+              type: string
+              nullable: true
+              description: e.g. "3 attended, 4 missed out of 7 days" or "Plan starts in 5 days" or "Plan completed - 3 of 28 days attended".
+        check_in_check_out_details:
+          type: array
+          items:
+            type: object
     PaginationMeta:
       type: object
       properties:
@@ -294,6 +431,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/member/logout:
+    post:
+      tags: [Auth]
+      summary: Member logout
+      description: Revoke the current access token for the authenticated member.
+      security:
+        - PassportToken: []
+      responses:
+        '200':
+          description: Logout successful
+        '401':
+          description: Unauthorized
   /api/member/notifications:
     get:
       tags: [Notifications]
@@ -583,7 +732,20 @@ paths:
             type: integer
       responses:
         '200':
-          description: Workout plan details
+          description: Workout plan details. Use today_video_approved and today_video_message to show "Video for this day is approved" and skip upload UI when applicable.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Workout plan retrieved successfully
+                  data:
+                    $ref: '#/components/schemas/WorkoutPlanDetail'
         '404':
           description: Not found
   /api/member/workout-plans/{id}/upload-video:

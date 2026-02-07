@@ -377,6 +377,8 @@ class RazorpayAdapter
                 'status' => 'canceled',
                 'canceled_at' => now(),
             ]);
+
+            \App\Events\UserSubscriptionCanceled::dispatch($subscription);
         }
     }
 
