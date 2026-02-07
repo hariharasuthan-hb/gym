@@ -19,7 +19,7 @@ class SubscriptionPlanFactory extends Factory
             'description' => fake()->sentence(),
             'price' => fake()->randomFloat(2, 29.99, 299.99),
             'duration' => fake()->numberBetween(1, 12),
-            'duration_type' => fake()->randomElement(['month', 'year']),
+            'duration_type' => fake()->randomElement(['monthly', 'yearly']),
             'features' => json_encode([
                 'feature1' => fake()->sentence(),
                 'feature2' => fake()->sentence(),
