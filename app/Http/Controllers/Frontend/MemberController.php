@@ -430,16 +430,28 @@ class MemberController extends Controller
         // Today's recording progress
         $today = now()->toDateString();
         $todayVideos = $this->workoutVideoRepository->getVideosUploadedOnDate($workoutPlan, $user, $today);
-        $todayVideosByExercise = $todayVideos
-            ->groupBy('exercise_name')
-            ->map(fn($videos) => $videos->sortByDesc('created_at')->first());
-        $todayRecordedExercises = $todayVideos->pluck('exercise_name')->unique()->toArray();
+        // Key by plan exercise name so view lookup matches; match case-insensitively if exact match missing
+        $todayVideosByExercise = collect();
+        foreach (is_array($workoutPlan->exercises) ? $workoutPlan->exercises : [] as $planExercise) {
+            $video = $todayVideos->where('exercise_name', $planExercise)->sortByDesc('created_at')->first();
+            if (!$video) {
+                $video = $todayVideos->first(fn ($v) => strcasecmp(trim((string) $v->exercise_name), trim((string) $planExercise)) === 0);
+            }
+            if ($video) {
+                $todayVideosByExercise[$planExercise] = $video;
+            }
+        }
+        $todayRecordedExercises = $todayVideosByExercise->keys()->toArray();
         $recordedTodayCount = count($todayRecordedExercises);
         $todayRecordingPercent = $exerciseCount > 0 ? round(($recordedTodayCount / $exerciseCount) * 100, 1) : 0;
         $attendanceMarkedToday = \App\Models\ActivityLog::where('user_id', $user->id)
             ->where('date', $today)
             ->whereNotNull('check_in_time')
             ->exists();
+
+        // When all exercises for today have approved video(s), show message and hide upload UI
+        $todayVideoApproved = $this->workoutVideoRepository->checkAllExercisesApprovedForToday($workoutPlan, $user);
+        $todayVideoMessage = $todayVideoApproved ? __('Video for this day is approved') : null;
         
         return view('frontend.member.workout-plans.show', compact(
             'workoutPlan', 
@@ -452,7 +464,9 @@ class MemberController extends Controller
             'todayVideosByExercise',
             'recordedTodayCount',
             'todayRecordingPercent',
-            'attendanceMarkedToday'
+            'attendanceMarkedToday',
+            'todayVideoApproved',
+            'todayVideoMessage'
         ));
     }
 

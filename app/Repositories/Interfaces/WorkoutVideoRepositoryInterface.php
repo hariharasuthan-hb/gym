@@ -41,6 +41,14 @@ interface WorkoutVideoRepositoryInterface
     ): bool;
 
     /**
+     * Check if all exercises have approved videos for today (no need to upload again).
+     */
+    public function checkAllExercisesApprovedForToday(
+        WorkoutPlan $workoutPlan,
+        User $user
+    ): bool;
+
+    /**
      * Get pending videos for a workout plan.
      */
     public function getPendingVideos(WorkoutPlan $workoutPlan): Collection;

@@ -274,6 +274,140 @@ class MemberController extends Controller
     }
 
     /**
+     * Compute duration label, weeks, pending days and days remaining from plan dates.
+     * Reused for workout plan and diet plan list responses.
+     *
+     * @param \Carbon\Carbon|null $startDate
+     * @param \Carbon\Carbon|null $endDate
+     * @param int|null $fallbackDurationWeeks Used when dates are missing (e.g. workout plan has duration_weeks on model).
+     * @return array{duration_weeks: int|null, duration: string|null, pending_days: int, days_remaining: int|null}
+     */
+    private function computePlanDuration(?\Carbon\Carbon $startDate, ?\Carbon\Carbon $endDate, ?int $fallbackDurationWeeks = null): array
+    {
+        $durationWeeks = $fallbackDurationWeeks;
+        $pendingDays = 0;
+        $durationLabel = null;
+
+        if ($startDate && $endDate) {
+            $start = $startDate->copy()->startOfDay();
+            $end = $endDate->copy()->startOfDay();
+            $totalDays = (int) $start->diffInDays($end) + 1;
+            $fullWeeks = (int) floor($totalDays / 7);
+            $durationWeeks = $fullWeeks;
+            $pendingDays = $totalDays % 7;
+            if ($fullWeeks > 0) {
+                $weeksPart = $fullWeeks === 1 ? '1 week' : "{$fullWeeks} weeks";
+                $daysPart = $pendingDays === 1 ? '1 day' : "{$pendingDays} days";
+                $durationLabel = $pendingDays > 0 ? "{$weeksPart} {$daysPart}" : $weeksPart;
+            } elseif ($pendingDays > 0) {
+                $durationLabel = $pendingDays === 1 ? '1 day' : "{$pendingDays} days";
+            }
+        } elseif ($fallbackDurationWeeks !== null) {
+            $durationLabel = $fallbackDurationWeeks === 1 ? '1 week' : "{$fallbackDurationWeeks} weeks";
+        }
+
+        $daysRemaining = null;
+        if ($endDate && $endDate->copy()->startOfDay()->isFuture()) {
+            $daysRemaining = max(0, (int) now()->startOfDay()->diffInDays($endDate->copy()->startOfDay()) + 1);
+        }
+
+        return [
+            'duration_weeks' => $durationWeeks,
+            'duration' => $durationLabel,
+            'pending_days' => $pendingDays,
+            'days_remaining' => $daysRemaining,
+        ];
+    }
+
+    /**
+     * Compute plan progress (attendance) for a workout plan. Matches web logic so API and web show same data.
+     *
+     * @param \App\Models\WorkoutPlan $workoutPlan
+     * @param int $userId
+     * @return array{total_days: int, days_passed: int, attended_count: int, missed_count: int, attendance_progress_percent: float, days_breakdown: array<int, array{date: string, attended: bool}>, summary_text: string|null}
+     */
+    private function computePlanProgress(\App\Models\WorkoutPlan $workoutPlan, int $userId): array
+    {
+        $default = [
+            'total_days' => 0,
+            'days_passed' => 0,
+            'attended_count' => 0,
+            'missed_count' => 0,
+            'attendance_progress_percent' => 0.0,
+            'days_breakdown' => [],
+            'summary_text' => null,
+        ];
+
+        if (!$workoutPlan->start_date || !$workoutPlan->end_date) {
+            return $default;
+        }
+
+        $startDate = Carbon::parse($workoutPlan->start_date)->startOfDay();
+        $endDate = Carbon::parse($workoutPlan->end_date)->startOfDay();
+        $now = now()->startOfDay();
+
+        $totalDays = (int) $startDate->diffInDays($endDate) + 1;
+
+        $attendedDates = ActivityLog::where('user_id', $userId)
+            ->whereBetween('date', [$workoutPlan->start_date, $workoutPlan->end_date])
+            ->whereNotNull('check_in_time')
+            ->get()
+            ->pluck('date')
+            ->map(fn ($date) => Carbon::parse($date)->format('Y-m-d'))
+            ->values()
+            ->all();
+
+        $daysPassed = 0;
+        $attendedCount = 0;
+        $missedCount = 0;
+        $daysBreakdown = [];
+
+        if ($now->gte($startDate)) {
+            $checkUntil = $now->lt($endDate) ? $now->copy() : $endDate->copy();
+            $currentCheckDate = $startDate->copy();
+
+            while ($currentCheckDate->lte($checkUntil)) {
+                $dayKey = $currentCheckDate->format('Y-m-d');
+                $hasAttended = in_array($dayKey, $attendedDates);
+                $daysBreakdown[] = [
+                    'date' => $dayKey,
+                    'attended' => $hasAttended,
+                ];
+                if ($hasAttended) {
+                    $attendedCount++;
+                } else {
+                    $missedCount++;
+                }
+                $daysPassed++;
+                $currentCheckDate->addDay();
+            }
+        }
+
+        $attendanceProgressPercent = $daysPassed > 0 ? round(($attendedCount / $daysPassed) * 100, 1) : 0.0;
+
+        if ($now->lt($startDate)) {
+            $daysUntilStart = (int) round($now->diffInDays($startDate));
+            $summaryText = $daysUntilStart === 1
+                ? 'Plan starts in 1 day'
+                : "Plan starts in {$daysUntilStart} days";
+        } elseif ($now->gt($endDate)) {
+            $summaryText = "Plan completed - {$attendedCount} of {$totalDays} days attended";
+        } else {
+            $summaryText = "{$attendedCount} attended, {$missedCount} missed out of {$daysPassed} days";
+        }
+
+        return [
+            'total_days' => $totalDays,
+            'days_passed' => $daysPassed,
+            'attended_count' => $attendedCount,
+            'missed_count' => $missedCount,
+            'attendance_progress_percent' => $attendanceProgressPercent,
+            'days_breakdown' => $daysBreakdown,
+            'summary_text' => $summaryText,
+        ];
+    }
+
+    /**
      * Get member user details with subscription details (using relations).
      *
      * @return JsonResponse
@@ -376,34 +510,18 @@ class MemberController extends Controller
         $workoutPlans = $query->paginate($perPage);
         
         $workoutPlans->getCollection()->transform(function ($plan) {
-            $weeks = $plan->duration_weeks ?? 0;
-            $pendingDays = 0;
-            $durationLabel = $weeks === 1 ? '1 week' : "{$weeks} weeks";
-            if ($plan->start_date && $plan->end_date) {
-                $start = $plan->start_date->copy()->startOfDay();
-                $end = $plan->end_date->copy()->startOfDay();
-                $totalDays = (int) $start->diffInDays($end) + 1;
-                $fullWeeks = (int) floor($totalDays / 7);
-                $pendingDays = $totalDays % 7;
-                if ($fullWeeks > 0) {
-                    $weeksPart = $fullWeeks === 1 ? '1 week' : "{$fullWeeks} weeks";
-                    $daysPart = $pendingDays === 1 ? '1 day' : "{$pendingDays} days";
-                    $durationLabel = $pendingDays > 0 ? "{$weeksPart} {$daysPart}" : $weeksPart;
-                } elseif ($pendingDays > 0) {
-                    $durationLabel = $pendingDays === 1 ? '1 day' : "{$pendingDays} days";
-                }
-            }
-            $daysRemaining = null;
-            if ($plan->end_date && $plan->end_date->startOfDay()->isFuture()) {
-                $daysRemaining = max(0, (int) now()->startOfDay()->diffInDays($plan->end_date->startOfDay()) + 1);
-            }
+            $d = $this->computePlanDuration(
+                $plan->start_date,
+                $plan->end_date,
+                $plan->duration_weeks
+            );
             $payload = [
                 'id' => $plan->id,
                 'plan_name' => $plan->plan_name,
                 'description' => $plan->description,
                 'status' => $plan->status,
-                'duration_weeks' => $plan->duration_weeks,
-                'duration' => $durationLabel,
+                'duration_weeks' => $d['duration_weeks'],
+                'duration' => $d['duration'],
                 'start_date' => $plan->start_date?->toDateString(),
                 'end_date' => $plan->end_date?->toDateString(),
                 'created_at' => $plan->created_at?->toIso8601String(),
@@ -413,11 +531,11 @@ class MemberController extends Controller
                 ] : null,
                 'exercises' => $plan->exercises ?? [],
             ];
-            if ($pendingDays > 0) {
-                $payload['pending_days'] = $pendingDays;
+            if ($d['pending_days'] > 0) {
+                $payload['pending_days'] = $d['pending_days'];
             }
-            if ($daysRemaining !== null) {
-                $payload['days_remaining'] = $daysRemaining;
+            if ($d['days_remaining'] !== null) {
+                $payload['days_remaining'] = $d['days_remaining'];
             }
             return $payload;
         });
@@ -435,8 +553,15 @@ class MemberController extends Controller
     {
         $user = auth()->user();
 
+        $today = now()->toDateString();
         $workoutPlan = $user->workoutPlans()
-            ->with(['trainer', 'workoutVideos' => fn ($q) => $q->orderBy('created_at')])
+            ->with([
+                'trainer',
+                // Only today's videos so user can upload for today; previous days' videos are not shown
+                'workoutVideos' => fn ($q) => $q->where('user_id', $user->id)
+                    ->whereDate('created_at', $today)
+                    ->orderBy('created_at'),
+            ])
             ->findOrFail($id);
 
         // Check-in/check-out details for this plan's date range with relations
@@ -468,6 +593,9 @@ class MemberController extends Controller
             ];
         })->values()->all();
 
+        $todayVideoApproved = $this->workoutVideoRepository->checkAllExercisesApprovedForToday($workoutPlan, $user);
+        $planProgress = $this->computePlanProgress($workoutPlan, $user->id);
+
         return $this->successResponse('Workout plan retrieved successfully', [
             'id' => $workoutPlan->id,
             'plan_name' => $workoutPlan->plan_name,
@@ -488,6 +616,9 @@ class MemberController extends Controller
                 'email' => $workoutPlan->trainer->email,
             ] : null,
             'workout_videos' => $workoutVideos,
+            'today_video_approved' => $todayVideoApproved,
+            'today_video_message' => $todayVideoApproved ? 'Video for this day is approved' : null,
+            'plan_progress' => $planProgress,
             'check_in_check_out_details' => $checkInCheckOutDetails,
         ]);
     }
@@ -574,32 +705,14 @@ class MemberController extends Controller
         $dietPlans = $query->paginate($perPage);
         
         $dietPlans->getCollection()->transform(function ($plan) {
-            $durationLabel = null;
-            $pendingDays = 0;
-            if ($plan->start_date && $plan->end_date) {
-                $start = $plan->start_date->copy()->startOfDay();
-                $end = $plan->end_date->copy()->startOfDay();
-                $totalDays = (int) $start->diffInDays($end) + 1;
-                $fullWeeks = (int) floor($totalDays / 7);
-                $pendingDays = $totalDays % 7;
-                if ($fullWeeks > 0) {
-                    $weeksPart = $fullWeeks === 1 ? '1 week' : "{$fullWeeks} weeks";
-                    $daysPart = $pendingDays === 1 ? '1 day' : "{$pendingDays} days";
-                    $durationLabel = $pendingDays > 0 ? "{$weeksPart} {$daysPart}" : $weeksPart;
-                } elseif ($pendingDays > 0) {
-                    $durationLabel = $pendingDays === 1 ? '1 day' : "{$pendingDays} days";
-                }
-            }
-            $daysRemaining = null;
-            if ($plan->end_date && $plan->end_date->startOfDay()->isFuture()) {
-                $daysRemaining = max(0, (int) now()->startOfDay()->diffInDays($plan->end_date->startOfDay()) + 1);
-            }
+            $d = $this->computePlanDuration($plan->start_date, $plan->end_date, null);
             $payload = [
                 'id' => $plan->id,
                 'plan_name' => $plan->plan_name,
                 'description' => $plan->description,
                 'status' => $plan->status,
-                'duration' => $durationLabel,
+                'duration_weeks' => $d['duration_weeks'],
+                'duration' => $d['duration'],
                 'start_date' => $plan->start_date?->toDateString(),
                 'end_date' => $plan->end_date?->toDateString(),
                 'created_at' => $plan->created_at?->toIso8601String(),
@@ -611,11 +724,11 @@ class MemberController extends Controller
                     'name' => $plan->trainer->name,
                 ] : null,
             ];
-            if ($pendingDays > 0) {
-                $payload['pending_days'] = $pendingDays;
+            if ($d['pending_days'] > 0) {
+                $payload['pending_days'] = $d['pending_days'];
             }
-            if ($daysRemaining !== null) {
-                $payload['days_remaining'] = $daysRemaining;
+            if ($d['days_remaining'] !== null) {
+                $payload['days_remaining'] = $d['days_remaining'];
             }
             return $payload;
         });

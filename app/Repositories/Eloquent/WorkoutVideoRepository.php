@@ -114,6 +114,37 @@ class WorkoutVideoRepository extends BaseRepository implements WorkoutVideoRepos
     }
 
     /**
+     * Check if all exercises have approved videos for today (no need to upload again).
+     */
+    public function checkAllExercisesApprovedForToday(
+        WorkoutPlan $workoutPlan,
+        User $user
+    ): bool {
+        $exercises = is_array($workoutPlan->exercises) ? $workoutPlan->exercises : [];
+
+        if (empty($exercises)) {
+            return false;
+        }
+
+        $today = now()->toDateString();
+
+        foreach ($exercises as $exercise) {
+            $hasApprovedVideo = $this->model->where('workout_plan_id', $workoutPlan->id)
+                ->where('user_id', $user->id)
+                ->where('exercise_name', $exercise)
+                ->where('status', 'approved')
+                ->whereDate('created_at', $today)
+                ->exists();
+
+            if (!$hasApprovedVideo) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Get pending videos for a workout plan.
      */
     public function getPendingVideos(WorkoutPlan $workoutPlan): Collection
