@@ -34,8 +34,9 @@ class UserDataTable extends BaseDataTable
                 $editUrl = route('admin.users.edit', $user->id);
                 $showUrl = route('admin.users.show', $user->id);
                 $deleteUrl = route('admin.users.destroy', $user->id);
-                
-                $isAdmin = auth()->user()->hasRole('admin');
+
+                $currentUser = auth()->user();
+                $isAdmin = $currentUser && $currentUser->hasRole('admin');
                 
                 $html = '<div class="flex justify-center space-x-2">';
                 $html .= '<a href="' . $showUrl . '" class="text-blue-600 hover:text-blue-900" title="View">';
@@ -145,9 +146,10 @@ class UserDataTable extends BaseDataTable
     public function query(User $model)
     {
         $query = $model->newQuery()->with('roles');
-        
-        if (auth()->user()->hasRole('trainer') && !auth()->user()->hasRole('admin')) {
-            $memberIds = \App\Models\WorkoutPlan::where('trainer_id', auth()->id())
+
+        $user = auth()->user();
+        if ($user && $user->hasRole('trainer') && !$user->hasRole('admin')) {
+            $memberIds = \App\Models\WorkoutPlan::where('trainer_id', $user->id)
                 ->pluck('member_id')
                 ->unique()
                 ->toArray();
