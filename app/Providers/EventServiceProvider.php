@@ -7,6 +7,7 @@ use App\Events\EntityRejected;
 use App\Events\TrainerStatusChanged;
 use App\Events\UserRegistered;
 use App\Events\UserSubscribed;
+use App\Events\UserSubscriptionCanceled;
 use App\Events\UserUploadedContent;
 use App\Events\WorkoutPlanCreated;
 use App\Events\WorkoutVideoAssigned;
@@ -17,6 +18,7 @@ use App\Listeners\SendLaravelRegisteredNotification;
 use App\Listeners\SendTrainerStatusNotification;
 use App\Listeners\SendUserRegistrationNotification;
 use App\Listeners\SendUserSubscriptionNotification;
+use App\Listeners\SendUserSubscriptionCanceledNotification;
 use App\Listeners\SendUserUploadNotification;
 use App\Listeners\SendWorkoutPlanCreatedNotification;
 use App\Listeners\SendWorkoutVideoNotification;
@@ -33,6 +35,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         UserSubscribed::class => [
             SendUserSubscriptionNotification::class,
+        ],
+        UserSubscriptionCanceled::class => [
+            SendUserSubscriptionCanceledNotification::class,
         ],
         UserUploadedContent::class => [
             SendUserUploadNotification::class,

@@ -368,26 +368,58 @@ class MemberController extends Controller
             ->with('trainer')
             ->latest('start_date');
         
-        if ($status !== 'all') {
+        // When status=all (or empty), do not add any status condition to the query
+        if ($status && $status !== 'all') {
             $query->where('status', $status);
         }
         
         $workoutPlans = $query->paginate($perPage);
         
         $workoutPlans->getCollection()->transform(function ($plan) {
-            return [
+            $weeks = $plan->duration_weeks ?? 0;
+            $pendingDays = 0;
+            $durationLabel = $weeks === 1 ? '1 week' : "{$weeks} weeks";
+            if ($plan->start_date && $plan->end_date) {
+                $start = $plan->start_date->copy()->startOfDay();
+                $end = $plan->end_date->copy()->startOfDay();
+                $totalDays = (int) $start->diffInDays($end) + 1;
+                $fullWeeks = (int) floor($totalDays / 7);
+                $pendingDays = $totalDays % 7;
+                if ($fullWeeks > 0) {
+                    $weeksPart = $fullWeeks === 1 ? '1 week' : "{$fullWeeks} weeks";
+                    $daysPart = $pendingDays === 1 ? '1 day' : "{$pendingDays} days";
+                    $durationLabel = $pendingDays > 0 ? "{$weeksPart} {$daysPart}" : $weeksPart;
+                } elseif ($pendingDays > 0) {
+                    $durationLabel = $pendingDays === 1 ? '1 day' : "{$pendingDays} days";
+                }
+            }
+            $daysRemaining = null;
+            if ($plan->end_date && $plan->end_date->startOfDay()->isFuture()) {
+                $daysRemaining = max(0, (int) now()->startOfDay()->diffInDays($plan->end_date->startOfDay()) + 1);
+            }
+            $payload = [
                 'id' => $plan->id,
                 'plan_name' => $plan->plan_name,
                 'description' => $plan->description,
                 'status' => $plan->status,
-                'start_date' => $plan->start_date,
-                'end_date' => $plan->end_date,
+                'duration_weeks' => $plan->duration_weeks,
+                'duration' => $durationLabel,
+                'start_date' => $plan->start_date?->toDateString(),
+                'end_date' => $plan->end_date?->toDateString(),
+                'created_at' => $plan->created_at?->toIso8601String(),
                 'trainer' => $plan->trainer ? [
                     'id' => $plan->trainer->id,
                     'name' => $plan->trainer->name,
                 ] : null,
-                'exercises' => $plan->exercises,
+                'exercises' => $plan->exercises ?? [],
             ];
+            if ($pendingDays > 0) {
+                $payload['pending_days'] = $pendingDays;
+            }
+            if ($daysRemaining !== null) {
+                $payload['days_remaining'] = $daysRemaining;
+            }
+            return $payload;
         });
         
         return $this->paginatedResponse($workoutPlans, 'Workout plans retrieved successfully');
@@ -534,28 +566,58 @@ class MemberController extends Controller
             ->with('trainer')
             ->latest('start_date');
         
-        if ($status !== 'all') {
+        // When status=all (or empty), do not add any status condition to the query
+        if ($status && $status !== 'all') {
             $query->where('status', $status);
         }
         
         $dietPlans = $query->paginate($perPage);
         
         $dietPlans->getCollection()->transform(function ($plan) {
-            return [
+            $durationLabel = null;
+            $pendingDays = 0;
+            if ($plan->start_date && $plan->end_date) {
+                $start = $plan->start_date->copy()->startOfDay();
+                $end = $plan->end_date->copy()->startOfDay();
+                $totalDays = (int) $start->diffInDays($end) + 1;
+                $fullWeeks = (int) floor($totalDays / 7);
+                $pendingDays = $totalDays % 7;
+                if ($fullWeeks > 0) {
+                    $weeksPart = $fullWeeks === 1 ? '1 week' : "{$fullWeeks} weeks";
+                    $daysPart = $pendingDays === 1 ? '1 day' : "{$pendingDays} days";
+                    $durationLabel = $pendingDays > 0 ? "{$weeksPart} {$daysPart}" : $weeksPart;
+                } elseif ($pendingDays > 0) {
+                    $durationLabel = $pendingDays === 1 ? '1 day' : "{$pendingDays} days";
+                }
+            }
+            $daysRemaining = null;
+            if ($plan->end_date && $plan->end_date->startOfDay()->isFuture()) {
+                $daysRemaining = max(0, (int) now()->startOfDay()->diffInDays($plan->end_date->startOfDay()) + 1);
+            }
+            $payload = [
                 'id' => $plan->id,
                 'plan_name' => $plan->plan_name,
                 'description' => $plan->description,
                 'status' => $plan->status,
-                'start_date' => $plan->start_date,
-                'end_date' => $plan->end_date,
+                'duration' => $durationLabel,
+                'start_date' => $plan->start_date?->toDateString(),
+                'end_date' => $plan->end_date?->toDateString(),
+                'created_at' => $plan->created_at?->toIso8601String(),
                 'target_calories' => $plan->target_calories,
                 'nutritional_goals' => $plan->nutritional_goals,
-                'meal_plan' => $plan->meal_plan,
+                'meal_plan' => $plan->meal_plan ?? [],
                 'trainer' => $plan->trainer ? [
                     'id' => $plan->trainer->id,
                     'name' => $plan->trainer->name,
                 ] : null,
             ];
+            if ($pendingDays > 0) {
+                $payload['pending_days'] = $pendingDays;
+            }
+            if ($daysRemaining !== null) {
+                $payload['days_remaining'] = $daysRemaining;
+            }
+            return $payload;
         });
         
         return $this->paginatedResponse($dietPlans, 'Diet plans retrieved successfully');

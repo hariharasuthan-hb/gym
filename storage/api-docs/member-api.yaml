@@ -294,6 +294,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/member/logout:
+    post:
+      tags: [Auth]
+      summary: Member logout
+      description: Revoke the current access token for the authenticated member.
+      security:
+        - PassportToken: []
+      responses:
+        '200':
+          description: Logout successful
+        '401':
+          description: Unauthorized
   /api/member/notifications:
     get:
       tags: [Notifications]

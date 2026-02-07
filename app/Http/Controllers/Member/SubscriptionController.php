@@ -70,6 +70,8 @@ class SubscriptionController extends Controller
                     'canceled_at' => now(),
                 ]);
 
+                \App\Events\UserSubscriptionCanceled::dispatch($subscription);
+
                 // Clear any payment data from session to allow new subscriptions
                 session()->forget('payment_data');
                 session()->forget('subscription_data');
