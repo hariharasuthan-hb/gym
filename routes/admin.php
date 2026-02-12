@@ -23,17 +23,27 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'prevent-back-histor
     Route::middleware(['role:admin,trainer'])->group(function () {
         Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])
             ->name('users.index');
-        Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])
-            ->name('users.show');
     });
     
     // Admin-only routes
     Route::middleware(['role:admin'])->group(function () {
         // Users Management - Create, Edit, Delete (Admin only)
+        // IMPORTANT: /users/create must come BEFORE /users/{user} to avoid route conflicts
         Route::get('/users/create', [\App\Http\Controllers\Admin\UserController::class, 'create'])
             ->name('users.create');
         Route::post('/users', [\App\Http\Controllers\Admin\UserController::class, 'store'])
             ->name('users.store');
+    });
+    
+    // Users Management - Show (accessible by both admin and trainer)
+    // Must come AFTER /users/create to avoid route conflicts
+    Route::middleware(['role:admin,trainer'])->group(function () {
+        Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])
+            ->name('users.show');
+    });
+    
+    // Admin-only routes (continued)
+    Route::middleware(['role:admin'])->group(function () {
         Route::get('/users/{user}/edit', [\App\Http\Controllers\Admin\UserController::class, 'edit'])
             ->name('users.edit');
         Route::put('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'update'])
@@ -107,6 +117,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'prevent-back-histor
         Route::delete('/orphaned-videos/multiple', [\App\Http\Controllers\Admin\OrphanedVideosController::class, 'destroyMultiple'])
             ->middleware('permission:delete orphaned videos')
             ->name('orphaned-videos.destroy-multiple');
+
+        // Leads Management
+        Route::resource('leads', \App\Http\Controllers\Admin\LeadController::class);
 
     });
 
