@@ -155,6 +155,9 @@ class RolePermissionSeeder extends Seeder
             'export reports',
             'view notifications',
             'mark notifications read',
+            // Leads Management - Trainers can view and edit their assigned leads
+            'view leads',
+            'edit leads',
         ]);
 
         $memberRole = Role::firstOrCreate(['name' => 'member']);

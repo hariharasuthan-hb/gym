@@ -17,8 +17,12 @@ class LeadAssignmentService
      * Automatically assign a lead to a trainer based on load balancing rules.
      * 
      * Rules:
-     * 1. Prioritize trainers with less than 5 leads
-     * 2. If all trainers have 5+ leads, distribute randomly/equally
+     * 1. Always prioritize trainers with the **lowest** number of active leads
+     *    (so trainers with 0 active leads are filled first).
+     * 2. As long as at least one trainer is under MAX_LEADS_PER_TRAINER, only
+     *    trainers under that limit are considered.
+     * 3. When multiple trainers share the same lowest count, pick one randomly
+     *    so leads are distributed as equally as possible.
      * 
      * @return int|null The trainer ID to assign, or null if no trainers available
      */
@@ -30,16 +34,36 @@ class LeadAssignmentService
             return null;
         }
 
-        // Get trainers with less than MAX_LEADS_PER_TRAINER leads
-        $availableTrainers = $this->getTrainersWithLessThanMaxLeads($trainers);
+        // Build a collection of trainers with their active lead counts
+        $trainersWithCounts = $this->getTrainersWithActiveLeadCounts($trainers);
 
-        if ($availableTrainers->isNotEmpty()) {
-            // Randomly select from trainers with less than 5 leads
-            return $availableTrainers->random()->id;
+        if ($trainersWithCounts->isEmpty()) {
+            return null;
         }
 
-        // All trainers have 5+ leads, distribute equally by selecting trainer with least leads
-        return $this->getTrainerWithLeastLeads($trainers)?->id;
+        // First, try to use only trainers who are under the MAX_LEADS_PER_TRAINER limit
+        $eligible = $trainersWithCounts->filter(function (array $item) {
+            return $item['lead_count'] < self::MAX_LEADS_PER_TRAINER;
+        });
+
+        // If everyone is already at or above the limit, fall back to all trainers
+        if ($eligible->isEmpty()) {
+            $eligible = $trainersWithCounts;
+        }
+
+        // Find the minimum active lead count among eligible trainers
+        $minCount = $eligible->min('lead_count');
+
+        // From trainers with this minimum count, pick one at random
+        $candidates = $eligible
+            ->where('lead_count', $minCount)
+            ->pluck('trainer');
+
+        if ($candidates->isEmpty()) {
+            return null;
+        }
+
+        return $candidates->random()->id;
     }
 
     /**
@@ -57,23 +81,26 @@ class LeadAssignmentService
     }
 
     /**
-     * Get trainers who have less than MAX_LEADS_PER_TRAINER leads assigned.
+     * Build a collection of trainers with their active lead counts.
      * 
      * @param Collection $trainers
      * @return Collection
      */
-    private function getTrainersWithLessThanMaxLeads(Collection $trainers): Collection
+    private function getTrainersWithActiveLeadCounts(Collection $trainers): Collection
     {
-        return $trainers->filter(function ($trainer) {
+        return $trainers->map(function ($trainer) {
             $leadCount = Lead::where('assigned_to', $trainer->id)
                 ->whereIn('status', [
                     Lead::STATUS_NEW,
                     Lead::STATUS_CONTACTED,
-                    Lead::STATUS_QUALIFIED
+                    Lead::STATUS_QUALIFIED,
                 ])
                 ->count();
 
-            return $leadCount < self::MAX_LEADS_PER_TRAINER;
+            return [
+                'trainer'    => $trainer,
+                'lead_count' => $leadCount,
+            ];
         });
     }
 

@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\UpdateLeadRequest;
 use App\Models\Lead;
 use App\Models\User;
 use App\Repositories\Interfaces\LeadRepositoryInterface;
+use App\Services\LeadAccessService;
 use App\Services\LeadAssignmentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -17,7 +18,7 @@ use Illuminate\View\View;
  * Controller for managing leads in the admin panel.
  * 
  * Handles CRUD operations for leads including creation, updating, deletion,
- * and assignment. Admins have full access.
+ * and assignment. Admins have full access, trainers can view/edit their assigned leads.
  */
 class LeadController extends Controller
 {
@@ -29,6 +30,8 @@ class LeadController extends Controller
 
     /**
      * Display a listing of the resource.
+     * For trainers: shows only their assigned leads
+     * For admins: shows all leads
      */
     public function index(LeadDataTable $dataTable)
     {
@@ -81,18 +84,26 @@ class LeadController extends Controller
 
     /**
      * Display the specified resource.
+     * For trainers: can only view their assigned leads
+     * For admins: can view any lead
      */
     public function show(Lead $lead): View
     {
+        LeadAccessService::ensureCanAccessLead($lead, null, 'view');
+        
         $lead->load(['assignedTo', 'createdBy']);
         return view('admin.leads.show', compact('lead'));
     }
 
     /**
      * Show the form for editing the specified resource.
+     * For trainers: can only edit their assigned leads
+     * For admins: can edit any lead
      */
     public function edit(Lead $lead): View
     {
+        LeadAccessService::ensureCanAccessLead($lead, null, 'edit');
+        
         $users = User::whereHas('roles', function ($query) {
             $query->whereIn('name', ['admin', 'trainer']);
         })->get();
@@ -107,9 +118,13 @@ class LeadController extends Controller
 
     /**
      * Update the specified resource in storage.
+     * For trainers: can only update their assigned leads
+     * For admins: can update any lead
      */
     public function update(UpdateLeadRequest $request, Lead $lead): RedirectResponse
     {
+        LeadAccessService::ensureCanAccessLead($lead, null, 'update');
+        
         $validated = $request->validated();
         
         // If status is changed to 'converted', set converted_at

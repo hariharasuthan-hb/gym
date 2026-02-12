@@ -7,7 +7,12 @@
             // Priority: Site Settings Logo > Landing Page Logo > Site Title
             $logo = $siteSettings->logo ?? ($landingPage->logo ?? null);
             $siteTitle = $siteSettings->site_title ?? config('app.name', 'Gym Management');
+            
+            // User role check (reusable throughout sidebar)
+            $currentUser = auth()->user();
+            $isTrainerOnly = $currentUser->hasRole('trainer') && !$currentUser->hasRole('admin');
         @endphp
+        
         <div class="mb-4">
             @if($logo)
                 <a href="{{ route('admin.dashboard') }}" class="flex items-center justify-center">
@@ -65,11 +70,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                         </svg>
                         <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="text-sm font-semibold transition-all duration-300">
-                            @if(auth()->user()->hasRole('trainer') && !auth()->user()->hasRole('admin'))
-                                My Members
-                            @else
-                                User Management
-                            @endif
+                            {{ $isTrainerOnly ? 'My Members' : 'User Management' }}
                         </span>
                     </div>
                     <svg :class="{ 'lg:hidden': $root.sidebarCollapsed }" 
@@ -83,18 +84,14 @@
                     <a href="{{ route('admin.users.index') }}" 
                        class="admin-sidebar-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"
                        :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
-                       :title="$root.sidebarCollapsed ? (@if(auth()->user()->hasRole('trainer') && !auth()->user()->hasRole('admin')) 'My Members' @else 'Users' @endif) : ''">
+                       :title="$root.sidebarCollapsed ? '{{ $isTrainerOnly ? "My Members" : "Users" }}' : ''">
                         <svg class="w-4 h-4 transition-all duration-300" 
                              :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
                              fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                         </svg>
                         <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">
-                            @if(auth()->user()->hasRole('trainer') && !auth()->user()->hasRole('admin'))
-                                My Members
-                            @else
-                                Users
-                            @endif
+                            {{ $isTrainerOnly ? 'My Members' : 'Users' }}
                         </span>
                     </a>
                 </div>
@@ -226,13 +223,15 @@
             <a href="{{ route('admin.leads.index') }}" 
                class="admin-sidebar-item {{ request()->routeIs('admin.leads.*') ? 'active' : '' }}"
                :class="{ 'lg:justify-center lg:px-2': $root.sidebarCollapsed }"
-               :title="$root.sidebarCollapsed ? 'Leads' : ''">
+               :title="$root.sidebarCollapsed ? '{{ $isTrainerOnly ? 'My Leads' : 'Leads' }}' : ''">
                 <svg class="w-5 h-5 transition-all duration-300" 
                      :class="{ 'lg:mr-0': $root.sidebarCollapsed, 'lg:mr-3': !$root.sidebarCollapsed, 'mr-3': true }" 
                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                 </svg>
-                <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">Leads</span>
+                <span :class="{ 'lg:hidden': $root.sidebarCollapsed }" class="transition-all duration-300">
+                    {{ $isTrainerOnly ? 'My Leads' : 'Leads' }}
+                </span>
             </a>
             @endcan
 

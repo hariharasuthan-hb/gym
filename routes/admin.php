@@ -1,6 +1,38 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\{
+    DashboardController,
+    UserController,
+    SubscriptionPlanController,
+    SubscriptionController,
+    PaymentController,
+    InvoiceController,
+    InAppNotificationController,
+    ExpenseController,
+    IncomeController,
+    FinanceController,
+    ReportController,
+    LandingPageController,
+    SiteSettingsController,
+    BannerController,
+    PaymentSettingController,
+    OrphanedVideosController,
+    LeadController,
+    AnnouncementController,
+    ActivityLogController,
+    WorkoutVideoReviewController,
+    WorkoutPlanController,
+    DietPlanController,
+    UserActivityController,
+    NotificationCenterController,
+    ExportController
+};
+use App\Http\Controllers\Admin\Cms\{
+    PageController as CmsPageController,
+    ContentController as CmsContentController
+};
+use App\Http\Controllers\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,231 +47,241 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'prevent-back-history'])->group(function () {
     
     // Dashboard - accessible by both admin and trainer
-    Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])
+    Route::get('/dashboard', [DashboardController::class, 'index'])
         ->middleware('role:admin,trainer')
         ->name('dashboard');
 
-    // Users Management - Admins have full access, Trainers have read-only access to their members
+    // ============================================
+    // Users Management Routes
+    // ============================================
+    // IMPORTANT: /users/create must come BEFORE /users/{user} to avoid route conflicts
     Route::middleware(['role:admin,trainer'])->group(function () {
-        Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])
-            ->name('users.index');
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
     });
     
-    // Admin-only routes
     Route::middleware(['role:admin'])->group(function () {
-        // Users Management - Create, Edit, Delete (Admin only)
-        // IMPORTANT: /users/create must come BEFORE /users/{user} to avoid route conflicts
-        Route::get('/users/create', [\App\Http\Controllers\Admin\UserController::class, 'create'])
-            ->name('users.create');
-        Route::post('/users', [\App\Http\Controllers\Admin\UserController::class, 'store'])
-            ->name('users.store');
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
     });
     
-    // Users Management - Show (accessible by both admin and trainer)
-    // Must come AFTER /users/create to avoid route conflicts
     Route::middleware(['role:admin,trainer'])->group(function () {
-        Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])
-            ->name('users.show');
+        Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
     });
     
-    // Admin-only routes (continued)
     Route::middleware(['role:admin'])->group(function () {
-        Route::get('/users/{user}/edit', [\App\Http\Controllers\Admin\UserController::class, 'edit'])
-            ->name('users.edit');
-        Route::put('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'update'])
-            ->name('users.update');
-        Route::delete('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])
-            ->name('users.destroy');
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    });
+
+    // ============================================
+    // Admin-Only Resource Routes
+    // ============================================
+    Route::middleware(['role:admin'])->group(function () {
+        Route::resource('subscription-plans', SubscriptionPlanController::class);
+        Route::resource('subscriptions', SubscriptionController::class);
+        Route::resource('payments', PaymentController::class);
+        Route::resource('invoices', InvoiceController::class);
+        Route::resource('expenses', ExpenseController::class);
+        Route::resource('incomes', IncomeController::class);
+        Route::resource('banners', BannerController::class);
         
-        // Subscription Plans
-        Route::resource('subscription-plans', \App\Http\Controllers\Admin\SubscriptionPlanController::class);
-        
-        // Subscriptions
-        Route::post('subscriptions/{subscription}/cancel', [\App\Http\Controllers\Admin\SubscriptionController::class, 'cancel'])->name('subscriptions.cancel');
-        Route::resource('subscriptions', \App\Http\Controllers\Admin\SubscriptionController::class);
-        
-        // Payments
-        Route::resource('payments', \App\Http\Controllers\Admin\PaymentController::class);
-        
-        // Invoices
-        Route::resource('invoices', \App\Http\Controllers\Admin\InvoiceController::class);
+        // Leads Management - Create, Delete (Admin only)
+        Route::get('/leads/create', [LeadController::class, 'create'])->name('leads.create');
+        Route::post('/leads', [LeadController::class, 'store'])->name('leads.store');
+        Route::delete('/leads/{lead}', [LeadController::class, 'destroy'])->name('leads.destroy');
         
         // Notifications (admin-only management of in-app notification templates)
-        Route::resource('notifications', \App\Http\Controllers\Admin\InAppNotificationController::class)->except(['show']);
-
-        // Expenses
-        Route::resource('expenses', \App\Http\Controllers\Admin\ExpenseController::class);
+        Route::resource('notifications', InAppNotificationController::class)->except(['show']);
         
-        // Incomes
-        Route::resource('incomes', \App\Http\Controllers\Admin\IncomeController::class);
-
+        // Subscriptions - Custom routes
+        Route::post('subscriptions/{subscription}/cancel', [SubscriptionController::class, 'cancel'])
+            ->name('subscriptions.cancel');
+        
         // Finances Overview
-        Route::get('/finances', [\App\Http\Controllers\Admin\FinanceController::class, 'index'])
-            ->name('finances.index');
+        Route::get('/finances', [FinanceController::class, 'index'])->name('finances.index');
         
         // Reports
-        Route::get('/reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
         
         // CMS Management (for frontend content)
         Route::prefix('cms')->name('cms.')->group(function () {
-            Route::resource('pages', \App\Http\Controllers\Admin\Cms\PageController::class);
-            Route::resource('content', \App\Http\Controllers\Admin\Cms\ContentController::class);
+            Route::resource('pages', CmsPageController::class);
+            Route::resource('content', CmsContentController::class);
         });
         
         // Landing Page Content Management
-        Route::get('/landing-page', [\App\Http\Controllers\Admin\LandingPageController::class, 'index'])->name('landing-page.index');
-        Route::put('/landing-page/{landingPage}', [\App\Http\Controllers\Admin\LandingPageController::class, 'update'])->name('landing-page.update');
+        Route::get('/landing-page', [LandingPageController::class, 'index'])
+            ->name('landing-page.index');
+        Route::put('/landing-page/{landingPage}', [LandingPageController::class, 'update'])
+            ->name('landing-page.update');
         
         // Site Settings
-        Route::get('/site-settings', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'index'])
+        Route::get('/site-settings', [SiteSettingsController::class, 'index'])
             ->middleware('permission:view site settings')
             ->name('site-settings.index');
-        Route::put('/site-settings/{siteSetting}', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'update'])
+        Route::put('/site-settings/{siteSetting}', [SiteSettingsController::class, 'update'])
             ->middleware('permission:edit site settings')
             ->name('site-settings.update');
         
-        // Banners Management
-        Route::resource('banners', \App\Http\Controllers\Admin\BannerController::class);
-        
         // Payment Settings
-        Route::get('/payment-settings', [\App\Http\Controllers\Admin\PaymentSettingController::class, 'index'])
+        Route::get('/payment-settings', [PaymentSettingController::class, 'index'])
             ->name('payment-settings.index');
-        Route::put('/payment-settings', [\App\Http\Controllers\Admin\PaymentSettingController::class, 'update'])
+        Route::put('/payment-settings', [PaymentSettingController::class, 'update'])
             ->name('payment-settings.update');
 
         // Orphaned Videos Management
-        Route::get('/orphaned-videos', [\App\Http\Controllers\Admin\OrphanedVideosController::class, 'index'])
+        Route::get('/orphaned-videos', [OrphanedVideosController::class, 'index'])
             ->middleware('permission:view orphaned videos')
             ->name('orphaned-videos.index');
-        Route::delete('/orphaned-videos', [\App\Http\Controllers\Admin\OrphanedVideosController::class, 'destroy'])
+        Route::delete('/orphaned-videos', [OrphanedVideosController::class, 'destroy'])
             ->middleware('permission:delete orphaned videos')
             ->name('orphaned-videos.destroy');
-        Route::delete('/orphaned-videos/multiple', [\App\Http\Controllers\Admin\OrphanedVideosController::class, 'destroyMultiple'])
+        Route::delete('/orphaned-videos/multiple', [OrphanedVideosController::class, 'destroyMultiple'])
             ->middleware('permission:delete orphaned videos')
             ->name('orphaned-videos.destroy-multiple');
-
-        // Leads Management
-        Route::resource('leads', \App\Http\Controllers\Admin\LeadController::class);
-
     });
 
-    // Routes accessible by both admin and trainer (permission-based)
+    // ============================================
+    // Admin & Trainer Routes (Permission-Based)
+    // ============================================
     Route::middleware(['role:admin,trainer'])->group(function () {
-        // Announcements management (admin & trainer, permission-based)
-        Route::resource('announcements', \App\Http\Controllers\Admin\AnnouncementController::class)
+        // Leads Management - View, Edit, Update (Trainers can view/edit their assigned leads)
+        Route::get('/leads', [LeadController::class, 'index'])
+            ->middleware('permission:view leads')
+            ->name('leads.index');
+        Route::get('/leads/{lead}', [LeadController::class, 'show'])
+            ->middleware('permission:view leads')
+            ->name('leads.show');
+        Route::get('/leads/{lead}/edit', [LeadController::class, 'edit'])
+            ->middleware('permission:edit leads')
+            ->name('leads.edit');
+        Route::put('/leads/{lead}', [LeadController::class, 'update'])
+            ->middleware('permission:edit leads')
+            ->name('leads.update');
+        
+        // Announcements management
+        Route::resource('announcements', AnnouncementController::class)
             ->except(['show'])
             ->middleware('permission:view announcements|create announcements|edit announcements|delete announcements');
 
-        // Activity Logs (accessible by admin and trainer with permission)
-        Route::get('/activities', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])
+        // Activity Logs
+        Route::get('/activities', [ActivityLogController::class, 'index'])
             ->middleware('permission:view activities')
             ->name('activities.index');
 
+        // User Activity Overview
+        Route::get('/user-activity', [UserActivityController::class, 'index'])
+            ->middleware('permission:view activities')
+            ->name('user-activity.index');
+
         // Workout video reviews
-        Route::get('/trainer/workout-videos', [\App\Http\Controllers\Admin\WorkoutVideoReviewController::class, 'index'])
+        Route::get('/trainer/workout-videos', [WorkoutVideoReviewController::class, 'index'])
             ->name('trainer.workout-videos.index');
-        Route::post('/trainer/workout-videos/{workoutVideo}/review', [\App\Http\Controllers\Admin\WorkoutVideoReviewController::class, 'review'])
+        Route::post('/trainer/workout-videos/{workoutVideo}/review', [WorkoutVideoReviewController::class, 'review'])
             ->name('trainer.workout-videos.review');
         
         // Workout Plans - Full CRUD with permission checks
-        Route::get('/workout-plans', [\App\Http\Controllers\Admin\WorkoutPlanController::class, 'index'])
+        // IMPORTANT: Non-parameterized routes must come before parameterized routes
+        Route::get('/workout-plans', [WorkoutPlanController::class, 'index'])
             ->middleware('permission:view workout plans')
             ->name('workout-plans.index');
-        Route::get('/workout-plans/create', [\App\Http\Controllers\Admin\WorkoutPlanController::class, 'create'])
+        Route::get('/workout-plans/create', [WorkoutPlanController::class, 'create'])
             ->middleware('permission:create workout plans')
             ->name('workout-plans.create');
-        Route::post('/workout-plans', [\App\Http\Controllers\Admin\WorkoutPlanController::class, 'store'])
+        Route::post('/workout-plans', [WorkoutPlanController::class, 'store'])
             ->middleware('permission:create workout plans')
             ->name('workout-plans.store');
         
         // Demo video upload routes (chunked upload support) - MUST come before parameterized routes
-        // Routes without workoutPlan parameter (for create)
-        Route::post('/workout-plans/upload-demo-video', [\App\Http\Controllers\Admin\WorkoutPlanController::class, 'uploadDemoVideo'])
+        Route::post('/workout-plans/upload-demo-video', [WorkoutPlanController::class, 'uploadDemoVideo'])
             ->middleware('permission:create workout plans|edit workout plans')
             ->name('workout-plans.upload-demo-video');
-        Route::post('/workout-plans/upload-demo-video-chunk', [\App\Http\Controllers\Admin\WorkoutPlanController::class, 'uploadDemoVideoChunk'])
+        Route::post('/workout-plans/upload-demo-video-chunk', [WorkoutPlanController::class, 'uploadDemoVideoChunk'])
             ->middleware('permission:create workout plans|edit workout plans')
             ->name('workout-plans.upload-demo-video-chunk');
-        // Video conversion polling endpoint removed: admin demo videos are stored directly (no queue conversion)
         
         // Parameterized routes (must come after non-parameterized routes)
-        Route::get('/workout-plans/{workoutPlan}', [\App\Http\Controllers\Admin\WorkoutPlanController::class, 'show'])
+        Route::get('/workout-plans/{workoutPlan}', [WorkoutPlanController::class, 'show'])
             ->middleware('permission:view workout plans')
             ->name('workout-plans.show');
-        Route::get('/workout-plans/{workoutPlan}/edit', [\App\Http\Controllers\Admin\WorkoutPlanController::class, 'edit'])
+        Route::get('/workout-plans/{workoutPlan}/edit', [WorkoutPlanController::class, 'edit'])
             ->middleware('permission:edit workout plans')
             ->name('workout-plans.edit');
-        Route::put('/workout-plans/{workoutPlan}', [\App\Http\Controllers\Admin\WorkoutPlanController::class, 'update'])
+        Route::put('/workout-plans/{workoutPlan}', [WorkoutPlanController::class, 'update'])
             ->middleware('permission:edit workout plans')
             ->name('workout-plans.update');
-        Route::delete('/workout-plans/{workoutPlan}', [\App\Http\Controllers\Admin\WorkoutPlanController::class, 'destroy'])
+        Route::delete('/workout-plans/{workoutPlan}', [WorkoutPlanController::class, 'destroy'])
             ->middleware('permission:delete workout plans')
             ->name('workout-plans.destroy');
+        
         // Routes with workoutPlan parameter (for edit - optional, uses same controller)
-        Route::post('/workout-plans/{workoutPlan}/upload-demo-video', [\App\Http\Controllers\Admin\WorkoutPlanController::class, 'uploadDemoVideo'])
+        Route::post('/workout-plans/{workoutPlan}/upload-demo-video', [WorkoutPlanController::class, 'uploadDemoVideo'])
             ->middleware('permission:create workout plans|edit workout plans')
             ->name('workout-plans.upload-demo-video-existing');
-        Route::post('/workout-plans/{workoutPlan}/upload-demo-video-chunk', [\App\Http\Controllers\Admin\WorkoutPlanController::class, 'uploadDemoVideoChunk'])
+        Route::post('/workout-plans/{workoutPlan}/upload-demo-video-chunk', [WorkoutPlanController::class, 'uploadDemoVideoChunk'])
             ->middleware('permission:create workout plans|edit workout plans')
             ->name('workout-plans.upload-demo-video-chunk-existing');
         
         // Diet Plans - Full CRUD with permission checks
-        Route::get('/diet-plans', [\App\Http\Controllers\Admin\DietPlanController::class, 'index'])
+        Route::get('/diet-plans', [DietPlanController::class, 'index'])
             ->middleware('permission:view diet plans')
             ->name('diet-plans.index');
-        Route::get('/diet-plans/create', [\App\Http\Controllers\Admin\DietPlanController::class, 'create'])
+        Route::get('/diet-plans/create', [DietPlanController::class, 'create'])
             ->middleware('permission:create diet plans')
             ->name('diet-plans.create');
-        Route::post('/diet-plans', [\App\Http\Controllers\Admin\DietPlanController::class, 'store'])
+        Route::post('/diet-plans', [DietPlanController::class, 'store'])
             ->middleware('permission:create diet plans')
             ->name('diet-plans.store');
-        Route::get('/diet-plans/{dietPlan}', [\App\Http\Controllers\Admin\DietPlanController::class, 'show'])
+        Route::get('/diet-plans/{dietPlan}', [DietPlanController::class, 'show'])
             ->middleware('permission:view diet plans')
             ->name('diet-plans.show');
-        Route::get('/diet-plans/{dietPlan}/edit', [\App\Http\Controllers\Admin\DietPlanController::class, 'edit'])
+        Route::get('/diet-plans/{dietPlan}/edit', [DietPlanController::class, 'edit'])
             ->middleware('permission:edit diet plans')
             ->name('diet-plans.edit');
-        Route::put('/diet-plans/{dietPlan}', [\App\Http\Controllers\Admin\DietPlanController::class, 'update'])
+        Route::put('/diet-plans/{dietPlan}', [DietPlanController::class, 'update'])
             ->middleware('permission:edit diet plans')
             ->name('diet-plans.update');
-        Route::delete('/diet-plans/{dietPlan}', [\App\Http\Controllers\Admin\DietPlanController::class, 'destroy'])
+        Route::delete('/diet-plans/{dietPlan}', [DietPlanController::class, 'destroy'])
             ->middleware('permission:delete diet plans')
             ->name('diet-plans.destroy');
-        
-        // User Activity Overview (accessible by admin and trainer with permission)
-        Route::get('/user-activity', [\App\Http\Controllers\Admin\UserActivityController::class, 'index'])
-            ->middleware('permission:view activities')
-            ->name('user-activity.index');
     });
 
-    // Profile routes (accessible by all authenticated admin users)
+    // ============================================
+    // Profile Routes
+    // ============================================
     Route::middleware(['role:admin,trainer'])->group(function () {
-        Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
-        Route::patch('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     });
 
+    // ============================================
+    // Notification Center Routes
+    // ============================================
     Route::middleware(['role:admin,trainer,member', 'permission:view announcements|view notifications'])->group(function () {
-        Route::get('/notification-center', [\App\Http\Controllers\Admin\NotificationCenterController::class, 'index'])
+        Route::get('/notification-center', [NotificationCenterController::class, 'index'])
             ->name('notification-center.index');
     });
 
     Route::middleware(['role:admin,trainer,member', 'permission:mark notifications read'])->group(function () {
-        Route::post('/notification-center/{notification}/read', [\App\Http\Controllers\Admin\NotificationCenterController::class, 'markAsRead'])
+        Route::post('/notification-center/{notification}/read', [NotificationCenterController::class, 'markAsRead'])
             ->name('notification-center.read');
-        Route::post('/notification-center/db/{notificationId}/read', [\App\Http\Controllers\Admin\NotificationCenterController::class, 'markDbAsRead'])
+        Route::post('/notification-center/db/{notificationId}/read', [NotificationCenterController::class, 'markDbAsRead'])
             ->name('notification-center.db.read');
-        Route::post('/notification-center/read-all', [\App\Http\Controllers\Admin\NotificationCenterController::class, 'markAllAsRead'])
+        Route::post('/notification-center/read-all', [NotificationCenterController::class, 'markAllAsRead'])
             ->name('notification-center.read-all');
     });
 
+    // ============================================
+    // Export Routes
+    // ============================================
     Route::middleware(['role:admin,trainer', 'permission:view reports|export reports'])->group(function () {
-        Route::post('/exports/{type}', [\App\Http\Controllers\Admin\ExportController::class, 'export'])
+        Route::post('/exports/{type}', [ExportController::class, 'export'])
             ->name('exports.export');
-        Route::get('/exports/{export}/status', [\App\Http\Controllers\Admin\ExportController::class, 'status'])
+        Route::get('/exports/{export}/status', [ExportController::class, 'status'])
             ->name('exports.status');
-        Route::get('/exports/{export}/download', [\App\Http\Controllers\Admin\ExportController::class, 'download'])
+        Route::get('/exports/{export}/download', [ExportController::class, 'download'])
             ->name('exports.download');
     });
 
 });
-

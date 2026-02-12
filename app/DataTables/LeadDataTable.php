@@ -4,6 +4,7 @@ namespace App\DataTables;
 
 use App\Models\Lead;
 use App\Models\User;
+use App\Services\LeadAccessService;
 use Yajra\DataTables\Html\Column;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Builder;
@@ -146,11 +147,16 @@ class LeadDataTable extends BaseDataTable
     /**
      * Get query source of dataTable.
      * Orders by ID DESC (newest leads first).
+     * For trainers: only shows leads assigned to them
+     * For admins: shows all leads
      */
     public function query(Lead $model)
     {
         $query = $model->newQuery()
             ->with(['assignedTo', 'createdBy']);
+        
+        // Apply trainer filter (reusable service)
+        $query = LeadAccessService::applyTrainerFilter($query);
         
         // Default ordering: newest leads first (ID DESC)
         $query->orderByDesc('id');
