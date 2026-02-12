@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'prevent-back-history'])->group(function () {
+    
     // Dashboard - accessible by both admin and trainer
     Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])
         ->middleware('role:admin,trainer')
@@ -22,17 +23,27 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'prevent-back-histor
     Route::middleware(['role:admin,trainer'])->group(function () {
         Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])
             ->name('users.index');
-        Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])
-            ->name('users.show');
     });
     
     // Admin-only routes
     Route::middleware(['role:admin'])->group(function () {
         // Users Management - Create, Edit, Delete (Admin only)
+        // IMPORTANT: /users/create must come BEFORE /users/{user} to avoid route conflicts
         Route::get('/users/create', [\App\Http\Controllers\Admin\UserController::class, 'create'])
             ->name('users.create');
         Route::post('/users', [\App\Http\Controllers\Admin\UserController::class, 'store'])
             ->name('users.store');
+    });
+    
+    // Users Management - Show (accessible by both admin and trainer)
+    // Must come AFTER /users/create to avoid route conflicts
+    Route::middleware(['role:admin,trainer'])->group(function () {
+        Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])
+            ->name('users.show');
+    });
+    
+    // Admin-only routes (continued)
+    Route::middleware(['role:admin'])->group(function () {
         Route::get('/users/{user}/edit', [\App\Http\Controllers\Admin\UserController::class, 'edit'])
             ->name('users.edit');
         Route::put('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'update'])
