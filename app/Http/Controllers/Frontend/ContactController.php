@@ -4,12 +4,23 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Frontend\StoreContactRequest;
+use App\Mail\ContactFormSuccessMail;
+use App\Mail\LeadNotificationMail;
+use App\Models\Lead;
 use App\Models\SiteSetting;
+use App\Repositories\Interfaces\LeadRepositoryInterface;
+use App\Services\LeadAssignmentService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\RedirectResponse;
 
 class ContactController extends Controller
 {
+    public function __construct(
+        private readonly LeadRepositoryInterface $leadRepository,
+        private readonly LeadAssignmentService $leadAssignmentService
+    ) {
+    }
+
     /**
      * Handle contact form submission.
      */
@@ -17,39 +28,53 @@ class ContactController extends Controller
     {
         $validated = $request->validated();
 
-        // Send contact email to the configured site contact email
-        $siteSettings = SiteSetting::getSettings();
-        $toEmail = $siteSettings->contact_email ?? config('mail.from.address');
+        // Create lead record
+        $leadData = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'message' => $validated['message'],
+            'status' => Lead::STATUS_NEW,
+            'source' => Lead::SOURCE_WEBSITE,
+        ];
 
-        if ($toEmail) {
-            $subject = 'New contact message from landing page';
+        // Automatically assign lead to a trainer if available
+        $assignedTrainerId = $this->leadAssignmentService->assignLeadAutomatically();
+        if ($assignedTrainerId) {
+            $leadData['assigned_to'] = $assignedTrainerId;
+        }
 
-            $bodyLines = [
-                "You have received a new contact message from the landing page.",
-                "",
-                "Name: {$validated['name']}",
-                "Email: {$validated['email']}",
-            ];
+        $this->leadRepository->create($leadData);
 
-            if (!empty($validated['phone'])) {
-                $bodyLines[] = "Phone: {$validated['phone']}";
+        // Send emails (admin notification and customer confirmation)
+        // Wrap in try-catch so lead creation succeeds even if email fails
+        try {
+            $siteSettings = SiteSetting::getSettings();
+            $toEmail = $siteSettings->contact_email ?? config('mail.from.address');
+
+            // Send notification email to admin
+            if ($toEmail) {
+                $adminMail = new LeadNotificationMail(
+                    $validated['name'],
+                    $validated['email'],
+                    $validated['phone'] ?? null,
+                    $validated['message']
+                );
+
+                Mail::to($toEmail)->send($adminMail);
             }
 
-            $bodyLines[] = "";
-            $bodyLines[] = "Message:";
-            $bodyLines[] = $validated['message'];
-
-            $body = implode(PHP_EOL, $bodyLines);
-
-            Mail::raw($body, function ($message) use ($toEmail, $subject, $validated) {
-                $message->to($toEmail)
-                    ->subject($subject);
-
-                // Set reply-to so admin can answer directly
-                if (!empty($validated['email'])) {
-                    $message->replyTo($validated['email'], $validated['name'] ?? null);
-                }
-            });
+            // Send success/confirmation email to customer
+            $customerMail = new ContactFormSuccessMail($validated['name']);
+            Mail::to($validated['email'])
+                ->send($customerMail);
+        } catch (\Exception $e) {
+            // Log the email error but don't fail the request
+            // The lead has already been created, which is the most important part
+            \Log::error('Failed to send contact form email notification', [
+                'error' => $e->getMessage(),
+                'lead_email' => $validated['email'],
+            ]);
         }
 
         return redirect()->route('frontend.home')

@@ -123,6 +123,12 @@ class RolePermissionSeeder extends Seeder
             // Orphaned Videos Management
             'view orphaned videos',
             'delete orphaned videos',
+            
+            // Leads Management
+            'view leads',
+            'create leads',
+            'edit leads',
+            'delete leads',
         ];
 
         foreach ($permissions as $permission) {

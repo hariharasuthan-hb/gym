@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\ContentController;
+use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\MemberNotificationController;
 use App\Http\Controllers\Api\PageController;
@@ -39,6 +40,11 @@ Route::middleware('api')->name('api.')->group(function () {
             Route::put('/notifications/database/{id}/read', [MemberNotificationController::class, 'markDatabaseAsRead'])->name('notifications.database.read');
             Route::post('/notifications/read-all', [MemberNotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
         });
+    });
+
+    // Admin API routes
+    Route::middleware(['auth:api', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+        Route::apiResource('leads', LeadController::class);
     });
 });
 
