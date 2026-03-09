@@ -56,28 +56,27 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'prevent-back-histor
     // ============================================
     // IMPORTANT: /users/create must come BEFORE /users/{user} to avoid route conflicts
     Route::middleware(['role:admin,trainer'])->group(function () {
-        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users', [UserController::class, 'index'])
+            ->name('users.index');
     });
     
     Route::middleware(['role:admin'])->group(function () {
-        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
-        Route::post('/users', [UserController::class, 'store'])->name('users.store');
-    });
-    
-    Route::middleware(['role:admin,trainer'])->group(function () {
-        Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
-    });
-    
-    Route::middleware(['role:admin'])->group(function () {
-        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
-        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
-        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
-    });
+        // Users Management - Create, Edit, Delete (Admin only)
+        // IMPORTANT: /users/create must come BEFORE /users/{user} to avoid route conflicts
+        Route::get('/users/create', [UserController::class, 'create'])
+            ->name('users.create');
+        Route::post('/users', [UserController::class, 'store'])
+            ->name('users.store');
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])
+            ->name('users.edit');
+        Route::put('/users/{user}', [UserController::class, 'update'])
+            ->name('users.update');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])
+            ->name('users.destroy');
 
-    // ============================================
-    // Admin-Only Resource Routes
-    // ============================================
-    Route::middleware(['role:admin'])->group(function () {
+        // ============================================
+        // Admin-Only Resource Routes
+        // ============================================
         Route::resource('subscription-plans', SubscriptionPlanController::class);
         Route::resource('subscriptions', SubscriptionController::class);
         Route::resource('payments', PaymentController::class);
@@ -140,6 +139,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'prevent-back-histor
         Route::delete('/orphaned-videos/multiple', [OrphanedVideosController::class, 'destroyMultiple'])
             ->middleware('permission:delete orphaned videos')
             ->name('orphaned-videos.destroy-multiple');
+    });
+
+    // Users Management - Show (accessible by both admin and trainer)
+    // Must come AFTER /users/create to avoid route conflicts
+    Route::middleware(['role:admin,trainer'])->group(function () {
+        Route::get('/users/{user}', [UserController::class, 'show'])
+            ->name('users.show');
     });
 
     // ============================================
