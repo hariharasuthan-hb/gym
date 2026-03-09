@@ -123,6 +123,12 @@ class RolePermissionSeeder extends Seeder
             // Orphaned Videos Management
             'view orphaned videos',
             'delete orphaned videos',
+            
+            // Leads Management
+            'view leads',
+            'create leads',
+            'edit leads',
+            'delete leads',
         ];
 
         foreach ($permissions as $permission) {
@@ -149,6 +155,9 @@ class RolePermissionSeeder extends Seeder
             'export reports',
             'view notifications',
             'mark notifications read',
+            // Leads Management - Trainers can view and edit their assigned leads
+            'view leads',
+            'edit leads',
         ]);
 
         $memberRole = Role::firstOrCreate(['name' => 'member']);

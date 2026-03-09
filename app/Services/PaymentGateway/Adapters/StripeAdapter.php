@@ -13,13 +13,18 @@ use Stripe\Exception\ApiErrorException;
 
 class StripeAdapter
 {
-    protected StripeClient $stripe;
+    /** @var StripeClient|object */
+    protected $stripe;
     protected PaymentSetting $settings;
 
-    public function __construct(PaymentSetting $settings)
+    /**
+     * @param  PaymentSetting  $settings
+     * @param  StripeClient|object|null  $stripe  Optional for testing; when null, a real client is created.
+     */
+    public function __construct(PaymentSetting $settings, $stripe = null)
     {
         $this->settings = $settings;
-        $this->stripe = new StripeClient($settings->stripe_secret_key);
+        $this->stripe = $stripe ?? new StripeClient($settings->stripe_secret_key);
     }
 
     /**
@@ -587,9 +592,7 @@ class StripeAdapter
             // Fetch subscription from Stripe to get current_period_end
             $stripeSubscription = null;
             try {
-                $paymentSettings = \App\Models\PaymentSetting::getSettings();
-                $stripe = new \Stripe\StripeClient($paymentSettings->stripe_secret_key);
-                $stripeSubscription = $stripe->subscriptions->retrieve($subscriptionId);
+                $stripeSubscription = $this->stripe->subscriptions->retrieve($subscriptionId);
             } catch (\Exception $e) {
                 Log::warning('Failed to fetch Stripe subscription for payment succeeded', [
                     'subscription_id' => $subscription->id,
@@ -758,12 +761,10 @@ class StripeAdapter
             // If subscription not found, try to find by payment intent in invoices
             // This handles cases where payment succeeded but subscription wasn't linked
             try {
-                $paymentSettings = PaymentSetting::getSettings();
-                $stripe = new \Stripe\StripeClient($paymentSettings->stripe_secret_key);
-                $paymentIntent = $stripe->paymentIntents->retrieve($paymentIntentId);
+                $paymentIntent = $this->stripe->paymentIntents->retrieve($paymentIntentId);
                 
                 if (isset($paymentIntent->invoice)) {
-                    $invoice = $stripe->invoices->retrieve($paymentIntent->invoice);
+                    $invoice = $this->stripe->invoices->retrieve($paymentIntent->invoice);
                     if (isset($invoice->subscription)) {
                         $subscription = Subscription::where('gateway_subscription_id', $invoice->subscription)->first();
                         if ($subscription) {

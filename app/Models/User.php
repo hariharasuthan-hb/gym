@@ -148,4 +148,20 @@ class User extends Authenticatable
             ->withPivot(['read_at', 'dismissed_at'])
             ->withTimestamps();
     }
+
+    /**
+     * Get the leads assigned to this user (as trainer/admin).
+     */
+    public function assignedLeads()
+    {
+        return $this->hasMany(\App\Models\Lead::class, 'assigned_to');
+    }
+
+    /**
+     * Get the leads created by this user.
+     */
+    public function createdLeads()
+    {
+        return $this->hasMany(\App\Models\Lead::class, 'created_by');
+    }
 }

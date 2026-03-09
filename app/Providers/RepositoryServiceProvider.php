@@ -12,6 +12,7 @@ use App\Models\Payment;
 use App\Models\PaymentSetting;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
+use App\Models\Lead;
 use App\Models\WorkoutVideo;
 use App\Repositories\Eloquent\AnnouncementRepository;
 use App\Repositories\Eloquent\CmsContentRepository;
@@ -24,6 +25,7 @@ use App\Repositories\Eloquent\PaymentSettingRepository;
 use App\Repositories\Eloquent\SubscriptionPlanRepository;
 use App\Repositories\Eloquent\UserRepository;
 use App\Repositories\Eloquent\ActivityRepository;
+use App\Repositories\Eloquent\LeadRepository;
 use App\Repositories\Eloquent\WorkoutVideoRepository;
 use App\Repositories\Interfaces\ActivityRepositoryInterface;
 use App\Repositories\Interfaces\AnnouncementRepositoryInterface;
@@ -36,6 +38,7 @@ use App\Repositories\Interfaces\PaymentRepositoryInterface;
 use App\Repositories\Interfaces\PaymentSettingRepositoryInterface;
 use App\Repositories\Interfaces\SubscriptionPlanRepositoryInterface;
 use App\Repositories\Interfaces\UserRepositoryInterface;
+use App\Repositories\Interfaces\LeadRepositoryInterface;
 use App\Repositories\Interfaces\WorkoutVideoRepositoryInterface;
 use App\Repositories\Interfaces\OrphanedVideoRepositoryInterface;
 use App\Repositories\Eloquent\OrphanedVideoRepository;
@@ -159,6 +162,14 @@ class RepositoryServiceProvider extends ServiceProvider
             NotificationRepositoryInterface::class,
             function ($app) {
                 return new NotificationRepository();
+            }
+        );
+
+        // Bind Lead Repository
+        $this->app->bind(
+            LeadRepositoryInterface::class,
+            function ($app) {
+                return new LeadRepository(new Lead());
             }
         );
     }
